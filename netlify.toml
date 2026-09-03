@@ -1,0 +1,9 @@
+[build]
+command = "npx next build"
+publish = ".next"
+
+# Set in Netlify UI → Environment variables (then redeploy):
+#   NEXT_PUBLIC_SITE_URL = https://your-live-domain.netlify.app
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
