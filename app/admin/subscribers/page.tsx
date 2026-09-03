@@ -17,32 +17,61 @@ export default function AdminSubscribers() {
       <div>
         <PageHeader title="Subscribers" description="Newsletter subscribers" />
         <Card className="p-8 text-center">
-          <p className="text-sm text-slate-500">Only Administrators can manage subscribers. Switch your role to Admin using the role switcher.</p>
+          <p className="text-sm text-slate-500">
+            Only Administrators can manage subscribers. Switch your role to Admin.
+          </p>
         </Card>
       </div>
     );
   }
 
-  const filtered = initialSubscribers.filter((s) => !search || s.email.toLowerCase().includes(search.toLowerCase()));
+  const filtered = initialSubscribers.filter(
+    (s) => !search || s.email.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const exportCSV = () => {
+    const rows = [
+      ['Email', 'Subscribed At', 'Status'],
+      ...initialSubscribers.map((s) => [s.email, s.subscribedAt, s.status]),
+    ];
+    const csv = rows.map((r) => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = `ilm-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setExported(true);
+    setTimeout(() => setExported(false), 2000);
+  };
+
+  const active = initialSubscribers.filter((s) => s.status === 'active').length;
 
   return (
     <div>
       <PageHeader
         title="Subscribers"
-        description={`${initialSubscribers.filter(s => s.status === 'active').length} active subscribers`}
+        description={`${active} active · ${initialSubscribers.length} total`}
         action={
           <button
-            onClick={() => { setExported(true); setTimeout(() => setExported(false), 2000); }}
+            onClick={exportCSV}
             className="flex items-center gap-2 rounded-lg bg-ilm-gold px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-ilm-gold-dark"
           >
-            <Download size={15} /> {exported ? 'Exported!' : 'Export CSV'}
+            <Download size={14} /> {exported ? 'Downloading…' : 'Export CSV'}
           </button>
         }
       />
 
       <div className="relative mb-4 w-full sm:w-64">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input type="text" placeholder="Search subscribers..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-ilm-gold/70" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search subscribers…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-ilm-gold/70"
+        />
       </div>
 
       {filtered.length === 0 ? (
@@ -64,7 +93,14 @@ export default function AdminSubscribers() {
                     <td className="px-5 py-3.5 font-medium text-slate-700">{sub.email}</td>
                     <td className="hidden px-5 py-3.5 text-slate-400 sm:table-cell">{sub.subscribedAt}</td>
                     <td className="px-5 py-3.5">
-                      <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', sub.status === 'active' ? 'bg-ilm-cream text-ilm-navy' : 'bg-slate-100 text-slate-500')}>
+                      <span
+                        className={cn(
+                          'rounded-full px-2.5 py-1 text-xs font-medium',
+                          sub.status === 'active'
+                            ? 'bg-ilm-cream text-ilm-navy'
+                            : 'bg-slate-100 text-slate-500',
+                        )}
+                      >
                         {sub.status}
                       </span>
                     </td>

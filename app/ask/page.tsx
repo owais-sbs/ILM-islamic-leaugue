@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, CheckCircle } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
-import { PageHero, ModernCard } from '@/components/PageHero';
+import { PageHero } from '@/components/PageHero';
 import { categories } from '@/lib/data';
+
+const inputCls = 'ilm-input';
+const labelCls = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[.14em] text-ilm-navy/70';
 
 export default function AskPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -18,58 +21,78 @@ export default function AskPage() {
         title="Carrying a question?"
         description="Bring it to the conversation. Our Murabbiyūn review questions with care and respond when they can offer something genuinely useful."
       />
-      <section className="px-6 pb-20 md:px-12">
-        <div className="mx-auto max-w-2xl">
+
+      <section className="px-6 pb-20 pt-10 md:px-12 md:pt-12">
+        <div className="mx-auto max-w-xl">
           {submitted ? (
-            <ModernCard className="text-center">
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ilm-cream text-ilm-gold">
-                <Send size={22} />
-              </span>
+            <div className="rounded-2xl border border-slate-100 bg-[#F9F8F5] px-8 py-14 text-center shadow-sm">
+              <CheckCircle size={40} className="mx-auto text-ilm-gold" strokeWidth={1.5} />
               <h2 className="mt-5 font-display text-2xl text-ilm-navy">Thank you</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <p className="mt-3 text-[14px] leading-7 text-slate-500">
                 Your question has been received. If it is selected for a response, you will hear from us by email.
               </p>
-            </ModernCard>
+              <button
+                type="button"
+                onClick={() => setSubmitted(false)}
+                className="mt-6 text-[11px] font-semibold uppercase tracking-[.14em] text-ilm-gold underline"
+              >
+                Ask another question
+              </button>
+            </div>
           ) : (
-            <ModernCard>
+            <div className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_2px_24px_rgba(15,22,87,0.06)] md:p-9">
               <form
                 onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
                 className="space-y-5"
               >
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="name" className="mb-2 block text-xs font-semibold text-ilm-navy">Your name</label>
-                    <input id="name" required className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15" />
+                    <label htmlFor="name" className={labelCls}>Your name</label>
+                    <input id="name" required className={inputCls} placeholder="e.g. Ahmed Hassan" />
                   </div>
                   <div>
-                    <label htmlFor="email" className="mb-2 block text-xs font-semibold text-ilm-navy">Email</label>
-                    <input id="email" type="email" required className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15" />
+                    <label htmlFor="email" className={labelCls}>Email address</label>
+                    <input id="email" type="email" required className={inputCls} placeholder="you@example.com" />
                   </div>
                 </div>
+
                 <div>
-                  <label htmlFor="subject" className="mb-2 block text-xs font-semibold text-ilm-navy">Subject</label>
-                  <input id="subject" required className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15" />
+                  <label htmlFor="subject" className={labelCls}>Subject</label>
+                  <input id="subject" required className={inputCls} placeholder="Brief subject line" />
                 </div>
+
                 <div>
-                  <label htmlFor="category" className="mb-2 block text-xs font-semibold text-ilm-navy">Category</label>
-                  <select id="category" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-ilm-gold">
+                  <label htmlFor="category" className={labelCls}>Category</label>
+                  <select id="category" className={`${inputCls} cursor-pointer bg-white`}>
                     {categories.map((c) => (
                       <option key={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label htmlFor="body" className="mb-2 block text-xs font-semibold text-ilm-navy">Your question</label>
-                  <textarea id="body" required rows={6} className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15" placeholder="Share as much context as helps…" />
+                  <label htmlFor="body" className={labelCls}>Your question</label>
+                  <textarea
+                    id="body"
+                    required
+                    rows={7}
+                    className="ilm-textarea"
+                    placeholder="Share as much context as helps. The more detail you provide, the better we can respond…"
+                  />
                 </div>
-                <button type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ilm-gold text-sm font-semibold text-white transition hover:bg-ilm-gold-dark">
-                  Submit question <Send size={16} />
+
+                <button
+                  type="submit"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-ilm-gold text-[11px] font-semibold uppercase tracking-[.14em] text-white transition hover:bg-ilm-gold-dark"
+                >
+                  Submit question <Send size={14} />
                 </button>
               </form>
-            </ModernCard>
+            </div>
           )}
         </div>
       </section>
+
       <SiteFooter />
     </main>
   );
