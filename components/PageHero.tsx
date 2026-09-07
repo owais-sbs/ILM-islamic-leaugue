@@ -20,7 +20,7 @@ export function PageHero({
   return (
     <section
       className={cn(
-        'relative overflow-hidden border-b border-ilm-navy/[0.07] bg-[#F9F8F5] px-6 pb-12 pt-32 md:px-12 md:pb-16 md:pt-40',
+        'relative overflow-hidden border-b border-ilm-navy/[0.07] bg-[#F9F8F5] px-6 pb-12 pt-[var(--site-header-offset)] md:px-12 md:pb-16 md:pt-[calc(var(--site-header-offset)+1rem)]',
         className,
       )}
     >

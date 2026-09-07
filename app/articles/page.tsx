@@ -4,12 +4,18 @@ import { PageHero, SectionLabel, GoldDivider } from '@/components/PageHero';
 import { ArticleCard } from '@/components/ArticleCard';
 import { ArticleGrid } from '@/components/ArticleGrid';
 import { Reveal } from '@/components/Reveal';
-import { articles, categories } from '@/lib/data';
+import { fetchPublishedArticles, fetchPublicCategories } from '@/lib/public-content';
+import { EmptyArticles } from '@/components/EmptyArticles';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 
-export default function ArticlesPage() {
-  const published = articles.filter((a) => a.status === 'published');
+export const revalidate = 60;
+
+export default async function ArticlesPage() {
+  const [published, categories] = await Promise.all([
+    fetchPublishedArticles(),
+    fetchPublicCategories(),
+  ]);
 
   return (
     <main className="bg-white">
@@ -20,8 +26,7 @@ export default function ArticlesPage() {
         description="Essays on Qur'an, spirituality, history, character, and the questions that matter — written with care by qualified voices."
       />
 
-      {/* Category filter strip */}
-      <section className="sticky top-[72px] z-30 border-b border-slate-100 bg-white/95 px-6 py-3 backdrop-blur-sm md:px-12">
+      <section className="sticky top-[var(--site-header-offset)] z-30 border-b border-slate-100 bg-white/95 px-6 py-3 backdrop-blur-sm md:px-12">
         <div className="mx-auto flex max-w-7xl flex-wrap gap-2">
           {categories.map((cat) => (
             <Link
@@ -35,7 +40,17 @@ export default function ArticlesPage() {
         </div>
       </section>
 
-      {/* Featured / editor's pick */}
+      {published.length === 0 ? (
+        <section className="ilm-section">
+          <div className="mx-auto max-w-7xl">
+            <EmptyArticles
+              title="No published articles yet"
+              description="When essays are published from the admin panel, they will appear here."
+            />
+          </div>
+        </section>
+      ) : (
+        <>
       {published[0] && (
         <section className="px-6 py-12 md:px-12 md:py-14">
           <div className="mx-auto max-w-7xl">
@@ -51,7 +66,6 @@ export default function ArticlesPage() {
 
       <GoldDivider className="mx-auto max-w-7xl px-6 md:px-12" />
 
-      {/* All published essays */}
       <section className="px-6 pb-14 pt-12 md:px-12 md:pb-16">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -63,7 +77,6 @@ export default function ArticlesPage() {
         </div>
       </section>
 
-      {/* Browse by subject */}
       <section className="border-t border-slate-100 bg-[#F9F8F5] px-6 py-14 md:px-12 md:py-16">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -87,6 +100,8 @@ export default function ArticlesPage() {
           </div>
         </div>
       </section>
+        </>
+      )}
 
       <SiteFooter />
     </main>

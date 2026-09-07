@@ -18,6 +18,7 @@ import {
   Quote,
   Redo,
   Save,
+  Trash2,
   Underline,
   Undo,
   Upload,
@@ -25,11 +26,17 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/admin/AdminUI';
 import { StatusBadge } from '@/components/StatusBadge';
-import { usePermissions } from '@/components/admin/RoleContext';
+import { usePermissions, useRole } from '@/components/admin/RoleContext';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { createClient } from '@/lib/supabase/client';
-import { logActivity } from '@/lib/supabase/admin-helpers';
-import { slugify, type ArticleRow, type CategoryRow, type DbArticleStatus, type TagRow } from '@/lib/supabase/types';
+import {
+  fetchAdminArticle,
+  fetchAdminMeta,
+  deleteAdminArticle,
+  saveAdminArticle,
+  uploadAdminMedia,
+} from '@/lib/admin-api';
+import { slugify, type CategoryRow, type DbArticleStatus, type TagRow } from '@/lib/supabase/types';
+import Swal from 'sweetalert2';
 import { cn } from '@/lib/utils';
 
 const toolbarButtons = [
@@ -50,9 +57,12 @@ const toolbarButtons = [
 export default function ArticleEditor({ articleId }: { articleId?: string }) {
   const router = useRouter();
   const perms = usePermissions();
-  const { user, profile } = useAuth();
-  const supabase = createClient();
+  const { role } = useRole();
+  const { user } = useAuth();
   const bodyRef = useRef<HTMLDivElement>(null);
+  const editorInitialized = useRef(false);
+  const [editorEmpty, setEditorEmpty] = useState(true);
+  const [currentId, setCurrentId] = useState(articleId);
 
   const [loading, setLoading] = useState(!!articleId);
   const [saving, setSaving] = useState(false);
@@ -76,68 +86,70 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
   const [autosave, setAutosave] = useState('Ready');
 
   useEffect(() => {
-    const load = async () => {
-      const [{ data: cats }, { data: tagRows }] = await Promise.all([
-        supabase.from('categories').select('*').order('display_order'),
-        supabase.from('tags').select('*').order('name'),
-      ]);
-      setCategories((cats as CategoryRow[]) || []);
-      setTags((tagRows as TagRow[]) || []);
-      if (cats?.[0] && !articleId) setSelectedCategory(cats[0].id);
+    setCurrentId(articleId);
+  }, [articleId]);
 
-      if (articleId) {
-        const { data } = await supabase
-          .from('articles')
-          .select('*, article_tags(tags(id, name, slug))')
-          .eq('id', articleId)
-          .maybeSingle();
-        if (data) {
-          const row = data as ArticleRow;
-          setTitle(row.title);
-          setSlug(row.slug);
-          setExcerpt(row.excerpt);
-          setStatus(row.status);
-          setSelectedCategory(row.category_id || '');
-          setFeaturedImage(row.featured_image_url || '');
-          setBodyHtml(row.body_html || '');
-          setFootnotes(row.footnotes || '');
-          setSeoTitle(row.seo_title || '');
-          setSeoDesc(row.seo_description || '');
-          setReviewNotes(row.review_notes || '');
-          setSelectedTags(
-            (row.article_tags || []).map((t) => t.tags?.name).filter(Boolean) as string[],
-          );
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const meta = await fetchAdminMeta();
+        setCategories((meta.categories as CategoryRow[]) || []);
+        setTags((meta.tags as TagRow[]) || []);
+        if (meta.categories?.[0] && !currentId) {
+          setSelectedCategory((meta.categories[0] as CategoryRow).id);
         }
+
+        if (currentId) {
+          const { article, tagNames } = await fetchAdminArticle(currentId);
+          setTitle(article.title);
+          setSlug(article.slug);
+          setExcerpt(article.excerpt);
+          setStatus(article.status);
+          setSelectedCategory(article.category_id || '');
+          setFeaturedImage(article.featured_image_url || '');
+          setBodyHtml(article.body_html || '');
+          setFootnotes(article.footnotes || '');
+          setSeoTitle(article.seo_title || '');
+          setSeoDesc(article.seo_description || '');
+          setReviewNotes(article.review_notes || '');
+          setSelectedTags(tagNames);
+        }
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Failed to load article');
+      } finally {
         setLoading(false);
       }
     };
     load();
-  }, [articleId]);
+  }, [currentId]);
 
   useEffect(() => {
-    if (!loading && bodyRef.current && articleId) {
-      bodyRef.current.innerHTML = bodyHtml || '';
-    }
-  }, [loading, articleId, bodyHtml]);
+    editorInitialized.current = false;
+    setEditorEmpty(true);
+  }, [currentId]);
+
+  useEffect(() => {
+    if (loading || !bodyRef.current || editorInitialized.current) return;
+    bodyRef.current.innerHTML = bodyHtml || '';
+    setEditorEmpty(!bodyRef.current.textContent?.trim());
+    editorInitialized.current = true;
+  }, [loading, bodyHtml]);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    if (!articleId || !slug) setSlug(slugify(val));
+    if (!currentId || !slug) setSlug(slugify(val));
     setAutosave('Editing…');
   };
 
-  const syncTags = async (articleUuid: string, tagNames: string[]) => {
-    await supabase.from('article_tags').delete().eq('article_id', articleUuid);
-    const matched = tags.filter((t) => tagNames.includes(t.name));
-    if (matched.length === 0) return;
-    await supabase.from('article_tags').insert(
-      matched.map((t) => ({ article_id: articleUuid, tag_id: t.id })),
-    );
-  };
-
   const saveArticle = async (nextStatus?: DbArticleStatus) => {
-    if (!title.trim()) {
-      setMessage('Please add a title before saving.');
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Title required',
+        text: 'Please add a title before saving.',
+        confirmButtonColor: '#0F1657',
+      });
       return;
     }
     setSaving(true);
@@ -146,8 +158,8 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
     const words = html.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
     const finalStatus = nextStatus || status;
     const payload: Record<string, unknown> = {
-      title: title.trim(),
-      slug: slug || slugify(title),
+      title: trimmedTitle,
+      slug: slug || slugify(trimmedTitle),
       excerpt,
       body_html: html,
       footnotes,
@@ -169,61 +181,112 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
     }
 
     try {
-      if (articleId) {
-        const { error } = await supabase.from('articles').update(payload).eq('id', articleId);
-        if (error) throw error;
-        await syncTags(articleId, selectedTags);
-        await logActivity({
-          actorId: user?.id,
-          actorName: profile?.full_name,
-          action: nextStatus === 'published' ? 'published' : nextStatus === 'submitted' ? 'submitted for review' : 'updated',
-          entityType: 'article',
-          entityId: articleId,
-          entityLabel: title,
+      const result = await saveAdminArticle(payload, currentId, selectedTags);
+      const savedId = result.article.id;
+      setCurrentId(savedId);
+      setStatus(result.status);
+      setAutosave('Saved just now');
+
+      if (finalStatus === 'published') {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Published!',
+          text: `"${title}" is now live on the site.`,
+          confirmButtonColor: '#0F1657',
+          timer: 2800,
+          showConfirmButton: true,
         });
-        setStatus(finalStatus);
-        setAutosave('Saved just now');
-        setMessage('Article saved.');
+      } else if (finalStatus === 'submitted') {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Submitted for review',
+          text: 'Editors will review your article shortly.',
+          confirmButtonColor: '#0F1657',
+        });
       } else {
-        const { data, error } = await supabase.from('articles').insert(payload).select('id').single();
-        if (error) throw error;
-        await syncTags(data.id, selectedTags);
-        await logActivity({
-          actorId: user?.id,
-          actorName: profile?.full_name,
-          action: 'created draft',
-          entityType: 'article',
-          entityId: data.id,
-          entityLabel: title,
+        await Swal.fire({
+          icon: 'success',
+          title: 'Draft saved',
+          text: 'Your changes have been saved.',
+          confirmButtonColor: '#0F1657',
+          timer: 2000,
+          showConfirmButton: false,
         });
-        setAutosave('Saved just now');
-        router.push(`/admin/articles/${data.id}/edit`);
+      }
+
+      if (!articleId && savedId) {
+        router.replace(`/admin/articles/${savedId}/edit`);
       }
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : 'Save failed');
+      const msg = err instanceof Error ? err.message : 'Save failed';
+      setMessage(msg);
+      await Swal.fire({
+        icon: 'error',
+        title: finalStatus === 'published' ? 'Publish failed' : 'Save failed',
+        text: msg,
+        confirmButtonColor: '#0F1657',
+      });
     } finally {
       setSaving(false);
     }
   };
 
   const pickImage = async (file: File) => {
-    const path = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    const { error } = await supabase.storage.from('media').upload(path, file);
-    if (error) {
-      setMessage(error.message);
-      return;
+    try {
+      const { publicUrl } = await uploadAdminMedia(file);
+      setFeaturedImage(publicUrl);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Image uploaded',
+        timer: 1500,
+        showConfirmButton: false,
+        confirmButtonColor: '#0F1657',
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      setMessage(msg);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Upload failed',
+        text: msg,
+        confirmButtonColor: '#0F1657',
+      });
     }
-    const { data } = supabase.storage.from('media').getPublicUrl(path);
-    setFeaturedImage(data.publicUrl);
-    await supabase.from('media').insert({
-      file_name: file.name,
-      file_path: path,
-      file_url: data.publicUrl,
-      mime_type: file.type || 'image/jpeg',
-      size_bytes: file.size,
-      alt_text: file.name,
-      uploaded_by: user?.id,
+  };
+
+  const canDelete =
+    currentId &&
+    (role === 'admin' || role === 'editor' || (status === 'draft' || status === 'returned'));
+
+  const removeArticle = async () => {
+    if (!currentId) return;
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Delete article?',
+      text: 'This cannot be undone.',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Delete',
     });
+    if (!result.isConfirmed) return;
+    try {
+      await deleteAdminArticle(currentId);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Deleted',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      router.push('/admin/articles');
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Delete failed',
+        text: err instanceof Error ? err.message : 'Could not delete article',
+        confirmButtonColor: '#0F1657',
+      });
+    }
   };
 
   if (loading) {
@@ -246,7 +309,7 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
           </Link>
           <div>
             <h1 className="font-display text-2xl font-semibold text-ilm-navy">
-              {articleId ? 'Edit article' : 'New article'}
+              {currentId ? 'Edit article' : 'New article'}
             </h1>
             <div className="mt-1 flex items-center gap-3">
               <StatusBadge status={status} />
@@ -272,7 +335,7 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
           </button>
           <button
             type="button"
-            disabled={saving}
+            disabled={saving || loading}
             onClick={() => saveArticle('draft')}
             className="flex items-center gap-2 rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
           >
@@ -281,7 +344,7 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
           {(status === 'draft' || status === 'returned') && (
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || loading}
               onClick={() => saveArticle('submitted')}
               className="flex items-center gap-2 rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-sky-700"
             >
@@ -291,11 +354,20 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
           {perms.canPublish && (
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || loading}
               onClick={() => saveArticle('published')}
               className="flex items-center gap-2 rounded-lg bg-ilm-navy px-3.5 py-2 text-xs font-semibold text-white hover:bg-ilm-navy-light"
             >
               Publish
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={removeArticle}
+              className="flex items-center gap-2 rounded-lg border border-rose-200 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+            >
+              <Trash2 size={15} /> Delete
             </button>
           )}
         </div>
@@ -327,6 +399,7 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
               placeholder="Article title"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
+              autoComplete="off"
               className="w-full border-none bg-transparent font-display text-3xl font-semibold text-ilm-navy outline-none placeholder:text-slate-300"
             />
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
@@ -347,7 +420,11 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
             <textarea
               placeholder="Short summary for cards and search…"
               value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
+              onChange={(e) => {
+                setExcerpt(e.target.value);
+                setAutosave('Editing…');
+              }}
+              autoComplete="off"
               rows={3}
               className="w-full resize-none rounded-lg border border-slate-200 p-3 text-sm outline-none focus:border-ilm-navy/40"
             />
@@ -378,16 +455,25 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
               )}
               <span className="ml-auto text-[10px] text-slate-400">RTL · Arabic + diacritics</span>
             </div>
-            <div
-              ref={bodyRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={() => setAutosave('Editing…')}
-              className="article-body min-h-[380px] max-w-none p-6 outline-none"
-              dangerouslySetInnerHTML={
-                articleId ? undefined : { __html: '<p style="color:#94a3b8">Start writing…</p>' }
-              }
-            />
+            <div className="relative">
+              {editorEmpty && (
+                <p className="pointer-events-none absolute left-6 top-6 text-sm text-slate-400">
+                  Start writing…
+                </p>
+              )}
+              <div
+                ref={bodyRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={(e) => {
+                  const el = e.currentTarget;
+                  setBodyHtml(el.innerHTML);
+                  setEditorEmpty(!el.textContent?.trim());
+                  setAutosave('Editing…');
+                }}
+                className="article-body min-h-[380px] max-w-none p-6 outline-none"
+              />
+            </div>
           </Card>
 
           <Card className="p-5">
@@ -418,9 +504,9 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
               <option value="published">Published</option>
               <option value="returned">Returned</option>
             </select>
-            {articleId && (
+            {currentId && (
               <Link
-                href={`/admin/review/${articleId}`}
+                href={`/admin/review/${currentId}`}
                 className="mt-3 block text-center text-xs font-medium text-ilm-navy hover:underline"
               >
                 Open review screen →

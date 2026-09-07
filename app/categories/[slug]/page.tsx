@@ -4,9 +4,12 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { CategoryPageContent } from '@/components/CategoryPageContent';
 import { PageHero } from '@/components/PageHero';
-import { articles, categories } from '@/lib/data';
+import { fetchPublishedArticles, fetchPublicCategories } from '@/lib/public-content';
 
-export function generateStaticParams() {
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const categories = await fetchPublicCategories();
   return categories.map((c) => ({ slug: c.slug }));
 }
 
@@ -15,6 +18,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
+  const categories = await fetchPublicCategories();
   const category = categories.find((c) => c.slug === params.slug);
   if (!category) return {};
   return {
@@ -24,26 +28,24 @@ export async function generateMetadata({
   };
 }
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
+export default async function CategoryPage({ params }: { params: { slug: string } }) {
+  const [categories, published] = await Promise.all([
+    fetchPublicCategories(),
+    fetchPublishedArticles(),
+  ]);
+
   const category = categories.find((c) => c.slug === params.slug);
   if (!category) notFound();
 
-  const categoryArticles = articles.filter(
-    (a) => a.status === 'published' && a.category === category.name,
-  );
-
-  const moreFromLibrary = articles
-    .filter((a) => a.status === 'published' && a.category !== category.name)
+  const categoryArticles = published.filter((a) => a.category === category.name);
+  const moreFromLibrary = published
+    .filter((a) => a.category !== category.name)
     .slice(0, 3);
 
   return (
     <main className="bg-white">
       <SiteHeader />
-      <PageHero
-        eyebrow="Subject"
-        title={category.name}
-        description={category.description}
-      />
+      <PageHero eyebrow="Subject" title={category.name} description={category.description} />
       <CategoryPageContent
         category={category}
         categoryArticles={categoryArticles}

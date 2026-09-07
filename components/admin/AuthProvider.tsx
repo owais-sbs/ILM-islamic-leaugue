@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   session: null,
   profile: null,
-  role: 'admin',
+  role: 'author',
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -41,7 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        // Tables may not exist yet — still allow the shell to load
         console.warn('Profile load skipped:', error.message);
         setProfile(null);
         return;
@@ -51,6 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('Profile load failed:', err);
       setProfile(null);
     }
+  };
+
+  const resolveRole = (): DbRole => {
+    if (profile?.role) return profile.role;
+    const meta = user?.user_metadata?.role;
+    if (meta === 'admin' || meta === 'editor' || meta === 'author') return meta;
+    return 'author';
   };
 
   const refreshProfile = async () => {
@@ -77,8 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(next?.user ?? null);
 
         if (next?.user) {
-          // Don't block UI on profile fetch
-          void loadProfile(next.user.id);
+          await loadProfile(next.user.id);
         }
       } catch (err) {
         console.warn('Auth init failed:', err);
@@ -125,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         profile,
-        role: profile?.role ?? 'admin',
+        role: resolveRole(),
         loading,
         signOut,
         refreshProfile,

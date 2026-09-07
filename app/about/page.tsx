@@ -38,10 +38,10 @@ export default function AboutPage() {
         title={<>A library for the <em className="font-normal text-ilm-gold">work of becoming.</em></>}
         description="The Islamic League of Murabbiyūn publishes thoughtful writing on faith, practice, and renewal — for seekers who want depth without noise."
       />
-      <section className="px-6 py-20 md:px-12">
+      <section className="ilm-section">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:items-center">
           <Reveal>
-            <img src={images.arches2} alt="" className="aspect-[4/3] w-full rounded-3xl object-cover shadow-[0_20px_50px_rgba(15,22,87,0.10)]" />
+            <img src={images.arches2} alt="Islamic architectural arches" className="aspect-[4/3] w-full rounded-3xl object-cover shadow-[0_20px_50px_rgba(15,22,87,0.10)]" />
           </Reveal>
           <Reveal delay="delay-1">
             <SectionLabel>Our mission</SectionLabel>
@@ -55,7 +55,7 @@ export default function AboutPage() {
           </Reveal>
         </div>
       </section>
-      <section className="bg-ilm-cream/40 px-6 py-20 md:px-12">
+      <section className="ilm-section bg-ilm-cream/40">
         <div className="mx-auto max-w-7xl">
           <SectionLabel>What we stand for</SectionLabel>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -75,7 +75,7 @@ export default function AboutPage() {
       </section>
 
       {/* Methodology */}
-      <section className="px-6 py-20 md:px-12">
+      <section className="ilm-section">
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <SectionLabel>Our methodology</SectionLabel>
@@ -105,7 +105,7 @@ export default function AboutPage() {
       </section>
 
       {/* Governance */}
-      <section className="bg-ilm-navy px-6 py-20 md:px-12">
+      <section className="ilm-section bg-ilm-navy">
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <SectionLabel className="text-ilm-gold/70">Governance</SectionLabel>
@@ -150,15 +150,15 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="px-6 py-20 md:px-12">
+      <section className="ilm-section">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="font-display text-3xl text-ilm-navy">Ready to begin?</h2>
           <p className="mt-4 text-slate-600">Explore the library or meet the Murabbiyūn who write for ILM.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/articles" className="inline-flex items-center gap-2 rounded-full bg-ilm-gold px-6 py-3 text-xs font-semibold uppercase tracking-[.13em] text-white hover:bg-ilm-gold-dark">
+            <Link href="/articles" className="ilm-btn-primary">
               Article library <ArrowRight size={15} />
             </Link>
-            <Link href="/murabbiyun" className="inline-flex items-center gap-2 rounded-full border border-ilm-navy/15 px-6 py-3 text-xs font-semibold uppercase tracking-[.13em] text-ilm-navy hover:border-ilm-gold hover:text-ilm-gold">
+            <Link href="/murabbiyun" className="ilm-btn-secondary">
               Meet the Murabbiyūn
             </Link>
           </div>

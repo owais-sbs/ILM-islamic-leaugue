@@ -36,7 +36,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       const supabase = createClient();
       const { data } = await supabase
         .from('articles')
-        .select('*, categories(name), profiles(full_name, avatar_url)')
+        .select('*, categories(name), profiles!author_id(full_name, avatar_url)')
         .eq('id', params.id)
         .maybeSingle();
       const row = data as ArticleRow | null;

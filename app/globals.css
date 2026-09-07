@@ -14,6 +14,7 @@
   --ink-soft:   #3D3D3D;
   --font-display: 'Cormorant Garamond';
   --font-body:    'Inter';
+  --site-header-offset: 6.75rem; /* announcement strip + compact nav */
 }
 
 /* ─── Base ──────────────────────────────────────── */
@@ -39,6 +40,32 @@ body {
   @apply w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm
          text-slate-800 placeholder:text-slate-400 outline-none transition
          focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold focus:ring-opacity-20;
+}
+
+/* ─── Shared public-site buttons ───────────────── */
+.ilm-btn-primary {
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-ilm-gold px-5 py-2.5
+         text-[10.5px] font-semibold uppercase tracking-[.14em] text-white transition duration-200
+         hover:bg-ilm-gold-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/40
+         disabled:cursor-not-allowed disabled:opacity-60;
+}
+.ilm-btn-secondary {
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-ilm-navy/20 bg-white px-5 py-2.5
+         text-[10.5px] font-semibold uppercase tracking-[.14em] text-ilm-navy transition duration-200
+         hover:border-ilm-gold hover:text-ilm-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/25
+         disabled:cursor-not-allowed disabled:opacity-60;
+}
+.ilm-btn-navy {
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-ilm-navy px-5 py-2.5
+         text-[10.5px] font-semibold uppercase tracking-[.14em] text-white transition duration-200
+         hover:bg-ilm-navy-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-navy/30
+         disabled:cursor-not-allowed disabled:opacity-60;
+}
+.ilm-section {
+  @apply px-6 py-14 md:px-12 md:py-16;
+}
+.ilm-empty {
+  @apply rounded-xl border border-dashed border-slate-200 bg-[#F9F8F5] px-6 py-12 text-center;
 }
 
 /* ─── Geometric background pattern ──────────────── */
@@ -72,9 +99,15 @@ body {
 }
 
 .reveal {
-  opacity: 0;
-  transform: translateY(18px);
+  opacity: 1;
+  transform: none;
   transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+  }
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 .reveal.delay-1 { transition-delay: .07s; }

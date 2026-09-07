@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Eye, FileEdit, Loader2, Plus, Search } from 'lucide-react';
 import { PageHeader, Card, EmptyState } from '@/components/admin/AdminUI';
+import { TableRowActions } from '@/components/admin/TableRowActions';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useRole, usePermissions, roleLabels } from '@/components/admin/RoleContext';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { createClient } from '@/lib/supabase/client';
+import { deleteAdminArticle, fetchAdminArticles } from '@/lib/admin-api';
 import type { ArticleRow, DbArticleStatus } from '@/lib/supabase/types';
 import { cn } from '@/lib/utils';
 
@@ -23,21 +24,41 @@ export default function AdminArticles() {
   const [search, setSearch] = useState('');
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const loadArticles = async () => {
+    try {
+      const data = await fetchAdminArticles(perms.canViewAllArticles ? 'all' : 'mine');
+      setArticles(data);
+    } catch (err) {
+      console.error('Articles load failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      const supabase = createClient();
-      let query = supabase
-        .from('articles')
-        .select('*, categories(name), profiles(full_name, avatar_url)')
-        .order('updated_at', { ascending: false });
-      if (!perms.canViewAllArticles && user) query = query.eq('author_id', user.id);
-      const { data } = await query;
-      setArticles((data as ArticleRow[]) || []);
-      setLoading(false);
-    };
-    load();
+    setLoading(true);
+    void loadArticles();
   }, [perms.canViewAllArticles, user]);
+
+  const canDeleteArticle = (article: ArticleRow) => {
+    if (role === 'admin' || role === 'editor') return true;
+    return article.author_id === user?.id && ['draft', 'returned'].includes(article.status);
+  };
+
+  const removeArticle = async (article: ArticleRow) => {
+    if (!confirm(`Delete "${article.title || 'Untitled'}"? This cannot be undone.`)) return;
+    setDeletingId(article.id);
+    try {
+      await deleteAdminArticle(article.id);
+      setArticles((prev) => prev.filter((a) => a.id !== article.id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filtered = articles
     .filter((a) => filter === 'all' || a.status === filter)
@@ -145,9 +166,11 @@ export default function AdminArticles() {
                         <Link href={`/admin/review/${article.id}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" title="Review">
                           <Eye size={15} />
                         </Link>
-                        <Link href={`/admin/articles/${article.id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-sky-50 hover:text-ilm-navy" title="Edit">
-                          <FileEdit size={15} />
-                        </Link>
+                        <TableRowActions
+                          editHref={`/admin/articles/${article.id}/edit`}
+                          onDelete={canDeleteArticle(article) ? () => removeArticle(article) : undefined}
+                          deleteLabel={deletingId === article.id ? 'Deleting…' : 'Delete article'}
+                        />
                       </div>
                     </td>
                   </tr>

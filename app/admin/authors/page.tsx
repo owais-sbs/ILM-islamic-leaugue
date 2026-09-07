@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Pencil, Search, UserPlus, X } from 'lucide-react';
 import { PageHeader, Card, EmptyState } from '@/components/admin/AdminUI';
+import { TableRowActions } from '@/components/admin/TableRowActions';
 import { usePermissions, roleLabels } from '@/components/admin/RoleContext';
 import { createClient } from '@/lib/supabase/client';
 import { slugify, type DbRole, type ProfileRow } from '@/lib/supabase/types';
@@ -115,6 +116,13 @@ export default function AdminAuthors() {
     await load();
   };
 
+  const removeAuthor = async (author: ProfileRow) => {
+    if (!confirm(`Deactivate ${author.full_name}? They will no longer appear as an active contributor.`)) return;
+    const supabase = createClient();
+    await supabase.from('profiles').update({ is_active: false }).eq('id', author.id);
+    await load();
+  };
+
   const invite = async () => {
     if (!inviteEmail.trim()) { setError('Email is required'); return; }
     setSaving(true);
@@ -177,10 +185,13 @@ export default function AdminAuthors() {
                 {author.madhhab && <span className="text-xs text-slate-400">{author.madhhab}</span>}
                 {!author.is_active && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-500">Inactive</span>}
               </div>
-              <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
-                <button type="button" onClick={() => openEdit(author)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-sky-50 hover:text-ilm-navy">
-                  <Pencil size={13} /> Edit profile
-                </button>
+              <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                <TableRowActions
+                  onEdit={() => openEdit(author)}
+                  onDelete={author.is_active ? () => removeAuthor(author) : undefined}
+                  editLabel="Edit profile"
+                  deleteLabel="Deactivate author"
+                />
               </div>
             </Card>
           ))}

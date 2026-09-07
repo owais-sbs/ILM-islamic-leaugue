@@ -62,7 +62,7 @@ export default function AskPage() {
         description="Bring it to the conversation. Our Murabbiyūn review questions with care and respond when they can offer something genuinely useful."
       />
 
-      <section className="px-6 pb-20 pt-10 md:px-12 md:pt-12">
+      <section className="ilm-section !pt-8">
         <div className="mx-auto max-w-xl">
           {submitted ? (
             <div className="rounded-2xl border border-slate-100 bg-[#F9F8F5] px-8 py-14 text-center shadow-sm">
@@ -157,7 +157,7 @@ export default function AskPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ilm-gold text-sm font-semibold text-white transition hover:bg-ilm-gold-dark disabled:opacity-60"
+                  className="ilm-btn-primary w-full"
                 >
                   {loading ? (
                     <>

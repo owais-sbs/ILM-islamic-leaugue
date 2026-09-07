@@ -1,6 +1,3 @@
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -10,9 +7,8 @@ import {
   Compass,
   Feather,
   Scale,
-  Send,
-  Sparkles,
   Shield,
+  Sparkles,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,106 +17,70 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { Reveal } from '@/components/Reveal';
 import { HeroCollage } from '@/components/HeroCollage';
 import { ArticleCard } from '@/components/ArticleCard';
+import { NewsletterSubscribe } from '@/components/NewsletterSubscribe';
 import { SectionLabel, GoldDivider } from '@/components/PageHero';
-import { articles, categories, authors } from '@/lib/data';
-import { createClient } from '@/lib/supabase/client';
+import { fetchPublishedArticles, fetchPublicCategories } from '@/lib/public-content';
+import { authors } from '@/lib/data';
+
+export const revalidate = 60;
 
 const categoryIcons: Record<string, LucideIcon> = {
-  "Qur'an & Tafsir":    BookOpen,
-  'Spirituality':        Sparkles,
-  'Islamic History':     Compass,
-  'Character & Practice':Feather,
-  'Law & Methodology':   Scale,
+  "Qur'an & Tafsir": BookOpen,
+  Spirituality: Sparkles,
+  'Islamic History': Compass,
+  'Character & Practice': Feather,
+  'Law & Methodology': Scale,
   'Contemporary Issues': Shield,
 };
 
-export default function Home() {
-  const [subscribed, setSubscribed] = useState(false);
-  const [email, setEmail] = useState('');
-  const [subError, setSubError] = useState('');
-  const [subLoading, setSubLoading] = useState(false);
-  const published = articles.filter((a) => a.status === 'published');
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setSubError('');
-    setSubLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.from('subscribers').insert({
-      email: email.trim().toLowerCase(),
-      confirmed_at: new Date().toISOString(),
-      source: 'website',
-    });
-    setSubLoading(false);
-    if (error) {
-      // Duplicate email still counts as success for the visitor
-      if (error.code === '23505' || error.message.toLowerCase().includes('duplicate')) {
-        setSubscribed(true);
-        return;
-      }
-      setSubError(error.message);
-      return;
-    }
-    setSubscribed(true);
-  };
+export default async function Home() {
+  const [published, categories] = await Promise.all([
+    fetchPublishedArticles(),
+    fetchPublicCategories(),
+  ]);
 
   return (
     <main className="overflow-hidden bg-white">
       <SiteHeader />
 
-      {/* ═══════════════════════════════════════════════
-          HERO
-      ═══════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#F9F8F5] px-6 pb-12 pt-28 md:px-12 md:pb-16 md:pt-32">
-        {/* Geometric bg */}
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-[#F9F8F5] px-6 pb-12 pt-[calc(var(--site-header-offset)+0.5rem)] md:px-12 md:pb-16 md:pt-[calc(var(--site-header-offset)+1rem)]">
         <div className="pattern-geo pointer-events-none absolute inset-0 opacity-60" aria-hidden />
-        {/* Gold gradient bottom edge */}
-        <div className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-ilm-gold/40 via-ilm-gold/15 to-transparent" aria-hidden />
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-ilm-gold/40 via-ilm-gold/15 to-transparent"
+          aria-hidden
+        />
 
         <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          {/* Left: copy */}
           <div>
-            {/* Eyebrow */}
             <div className="hero-rise mb-5 flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-[.28em] text-ilm-gold">
               <span className="h-px w-7 bg-ilm-gold" />
               Knowledge · Understanding · Application
             </div>
 
-            {/* Headline */}
             <h1 className="hero-rise delay-1 font-display text-[2.6rem] leading-[1.06] tracking-[-0.025em] text-ilm-navy md:text-[3.1rem] lg:text-[3.4rem]">
-              The work of{' '}
-              <em className="not-italic text-ilm-gold">becoming.</em>
+              The work of <em className="not-italic text-ilm-gold">becoming.</em>
             </h1>
 
-            {/* Sub */}
             <p className="hero-rise delay-2 mt-4 max-w-[380px] text-[14.5px] leading-[1.8] text-slate-500">
               A considered space for the questions, practices, and ideas that help us live with more meaning.
             </p>
 
-            {/* CTAs */}
             <div className="hero-rise delay-3 mt-7 flex flex-wrap items-center gap-3">
-              <Link
-                href="/articles"
-                className="group flex items-center gap-2 rounded-lg bg-ilm-gold px-5 py-2.5 text-[10.5px] font-semibold uppercase tracking-[.14em] text-white transition duration-200 hover:bg-ilm-gold-dark"
-              >
+              <Link href="/articles" className="ilm-btn-primary group">
                 Explore the Library
                 <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link
-                href="/about"
-                className="rounded-lg border border-ilm-navy/20 bg-white px-5 py-2.5 text-[10.5px] font-semibold uppercase tracking-[.14em] text-ilm-navy transition duration-200 hover:border-ilm-gold hover:text-ilm-gold"
-              >
+              <Link href="/about" className="ilm-btn-secondary">
                 Why ILM
               </Link>
             </div>
 
-            {/* Feature strip */}
             <div className="hero-rise delay-4 mt-9 grid grid-cols-3 gap-4 border-t border-ilm-navy/[0.07] pt-6">
               {[
                 { icon: BookOpen, label: 'Authentic Sources', sub: "Rooted in Qur'ān & Sunnah" },
-                { icon: Users,    label: 'Qualified Voices',   sub: 'Scholars and teachers' },
-                { icon: Shield,   label: 'Beneficial Impact',  sub: 'Knowledge that transforms' },
+                { icon: Users, label: 'Qualified Voices', sub: 'Scholars and teachers' },
+                { icon: Shield, label: 'Beneficial Impact', sub: 'Knowledge that transforms' },
               ].map(({ icon: Icon, label, sub }) => (
                 <div key={label} className="flex items-start gap-2">
                   <Icon size={15} strokeWidth={1.5} className="mt-0.5 shrink-0 text-ilm-gold" />
@@ -133,14 +93,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: collage */}
           <HeroCollage featuredArticles={published.slice(0, 3)} />
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          FEATURED ARTICLE
-      ═══════════════════════════════════════════════ */}
+      {/* Featured article */}
       <section className="bg-white px-6 py-14 md:px-12 md:py-16">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -151,7 +108,14 @@ export default function Home() {
           </Reveal>
           <div className="mt-8">
             <Reveal delay="delay-1">
-              {published[0] && <ArticleCard article={published[0]} featured />}
+              {published[0] ? (
+                <ArticleCard article={published[0]} featured />
+              ) : (
+                <div className="ilm-empty">
+                  <p className="font-display text-lg text-ilm-navy">No published essays yet</p>
+                  <p className="mt-2 text-sm text-slate-500">Check back soon — new writing is on its way.</p>
+                </div>
+              )}
             </Reveal>
           </div>
         </div>
@@ -159,9 +123,7 @@ export default function Home() {
 
       <GoldDivider className="mx-auto max-w-7xl px-6 md:px-12" />
 
-      {/* ═══════════════════════════════════════════════
-          LATEST ARTICLES GRID
-      ═══════════════════════════════════════════════ */}
+      {/* Latest articles */}
       <section className="bg-white px-6 pb-14 pt-12 md:px-12 md:pb-16 md:pt-14">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -176,18 +138,22 @@ export default function Home() {
             </div>
           </Reveal>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {published.slice(1, 9).map((article, i) => (
-              <Reveal key={article.id} delay={`delay-${(i % 4) + 1}`}>
-                <ArticleCard article={article} compact />
-              </Reveal>
-            ))}
+            {published.length > 1 ? (
+              published.slice(1, 9).map((article, i) => (
+                <Reveal key={article.id} delay={`delay-${(i % 4) + 1}`}>
+                  <ArticleCard article={article} compact />
+                </Reveal>
+              ))
+            ) : (
+              <div className="ilm-empty sm:col-span-2 lg:col-span-3">
+                <p className="text-sm text-slate-500">More essays will appear here as they are published.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          SUBJECTS / CATEGORIES
-      ═══════════════════════════════════════════════ */}
+      {/* Categories */}
       <section className="bg-[#F9F8F5] px-6 py-14 md:px-12 md:py-16">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -237,9 +203,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          MURABBIYŪN TEASER
-      ═══════════════════════════════════════════════ */}
+      {/* Murabbiyūn */}
       <section className="bg-white px-6 py-14 md:px-12 md:py-16">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -247,8 +211,7 @@ export default function Home() {
               <div>
                 <SectionLabel>Meet the Murabbiyūn</SectionLabel>
                 <h2 className="font-display text-[1.85rem] leading-tight text-ilm-navy md:text-[2.25rem]">
-                  Good questions need{' '}
-                  <em className="not-italic text-ilm-gold">good company.</em>
+                  Good questions need <em className="not-italic text-ilm-gold">good company.</em>
                 </h2>
               </div>
               <Link
@@ -260,61 +223,52 @@ export default function Home() {
             </div>
           </Reveal>
 
-          {/* Scholar portrait cards — landscape format */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {authors.filter((a) => a.active).slice(0, 4).map((a, i) => (
-              <Reveal key={a.id} delay={`delay-${i + 1}`}>
-                <Link
-                  href={`/murabbiyun/${a.slug}`}
-                  className="group relative overflow-hidden rounded-xl bg-ilm-navy shadow-[0_4px_20px_rgba(15,22,87,0.15)] transition duration-300 hover:shadow-[0_12px_36px_rgba(15,22,87,0.22)]"
-                >
-                  {/* Portrait image — tall format */}
-                  <div className="aspect-[3/4] overflow-hidden">
-                    <img
-                      src={a.avatar}
-                      alt={a.name}
-                      className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-[1.04] group-hover:opacity-90"
-                    />
-                  </div>
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-ilm-navy via-ilm-navy/60 to-transparent" />
-                  {/* Content over image */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[.18em] text-ilm-gold/80">
-                      {a.madhhab}
-                    </p>
-                    <h3 className="mt-1 font-display text-[15px] leading-snug text-white">
-                      {a.name}
-                    </h3>
-                    <p className="mt-0.5 text-[11px] leading-tight text-white/60">
-                      {a.credentials}
-                    </p>
-                    <p className="mt-2.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ilm-gold/70">
-                      {a.articleCount} articles
-                    </p>
-                  </div>
-                  {/* Hover arrow */}
-                  <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:opacity-100">
-                    <ArrowRight size={12} className="text-white" />
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
+            {authors
+              .filter((a) => a.active)
+              .slice(0, 4)
+              .map((a, i) => (
+                <Reveal key={a.id} delay={`delay-${i + 1}`}>
+                  <Link
+                    href={`/murabbiyun/${a.slug}`}
+                    className="group relative overflow-hidden rounded-xl bg-ilm-navy shadow-[0_4px_20px_rgba(15,22,87,0.15)] transition duration-300 hover:shadow-[0_12px_36px_rgba(15,22,87,0.22)]"
+                  >
+                    <div className="aspect-[3/4] overflow-hidden">
+                      <img
+                        src={a.avatar}
+                        alt={a.name}
+                        className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-[1.04] group-hover:opacity-90"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-ilm-navy via-ilm-navy/60 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <p className="text-[8px] font-semibold uppercase tracking-[.18em] text-ilm-gold/80">
+                        {a.madhhab}
+                      </p>
+                      <h3 className="mt-1 font-display text-[15px] leading-snug text-white">{a.name}</h3>
+                      <p className="mt-0.5 text-[11px] leading-tight text-white/60">{a.credentials}</p>
+                      <p className="mt-2.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ilm-gold/70">
+                        {a.articleCount} articles
+                      </p>
+                    </div>
+                    <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:opacity-100">
+                      <ArrowRight size={12} className="text-white" />
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
           </div>
 
-          {/* Short description below */}
           <Reveal>
             <p className="mt-6 max-w-xl text-[13.5px] leading-7 text-slate-500">
-              Our contributors are teachers, researchers, and lifelong students — writing from within
-              the tradition with humility, clarity, and responsibility.
+              Our contributors are teachers, researchers, and lifelong students — writing from within the
+              tradition with humility, clarity, and responsibility.
             </p>
           </Reveal>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          QURANIC QUOTE — editorial break
-      ═══════════════════════════════════════════════ */}
+      {/* Quranic quote */}
       <section className="relative overflow-hidden border-y border-ilm-navy/[0.06] bg-ilm-navy px-6 py-14 md:px-12 md:py-16">
         <div className="pattern-geo-gold pointer-events-none absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-3xl text-center">
@@ -330,16 +284,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          NEWSLETTER
-      ═══════════════════════════════════════════════ */}
+      {/* Newsletter */}
       <section className="relative overflow-hidden bg-[#F9F8F5] px-6 py-14 md:px-12 md:py-16">
         <div className="pattern-geo pointer-events-none absolute inset-0 opacity-50" aria-hidden />
         <div className="relative mx-auto max-w-xl text-center">
           <Reveal>
-            <span className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-full border border-ilm-gold/30 bg-white text-ilm-gold shadow-sm">
-              <Send size={17} />
-            </span>
             <SectionLabel className="justify-center">Stay connected</SectionLabel>
             <h2 className="font-display text-[1.85rem] text-ilm-navy md:text-[2.1rem]">
               A thoughtful note, occasionally.
@@ -347,27 +296,12 @@ export default function Home() {
             <p className="mx-auto mt-3 max-w-sm text-[13.5px] leading-7 text-slate-500">
               New essays, quiet provocations, and things worth carrying with you.
             </p>
-            {subscribed ? (
-              <div className="mx-auto mt-7 rounded-xl border border-ilm-gold/25 bg-white p-4 text-sm text-ilm-navy shadow-sm">
-                Thank you — your first letter is on its way.
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row">
-                <label className="sr-only" htmlFor="email">Your email address</label>
-                <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" className="h-12 flex-1 rounded-full border border-slate-200 bg-white px-5 text-sm text-ilm-ink shadow-sm outline-none placeholder:text-slate-400 focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/20" />
-                <button disabled={subLoading} className="h-12 rounded-full bg-ilm-gold px-6 text-xs font-semibold uppercase tracking-[.13em] text-white transition hover:bg-ilm-gold-dark disabled:opacity-60">
-                  {subLoading ? '…' : 'Subscribe'}
-                </button>
-              </form>
-            )}
-            {subError && <p className="mt-3 text-sm text-rose-600">{subError}</p>}
+            <NewsletterSubscribe />
           </Reveal>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          ASK CTA
-      ═══════════════════════════════════════════════ */}
+      {/* Ask CTA */}
       <section className="bg-white px-6 py-10 md:px-12 md:py-12">
         <div className="mx-auto max-w-7xl">
           <Reveal>
@@ -381,10 +315,7 @@ export default function Home() {
                   <p className="mt-0.5 text-[13px] text-slate-500">Bring it to the conversation.</p>
                 </div>
               </div>
-              <Link
-                href="/ask"
-                className="group flex items-center gap-2 rounded-lg bg-ilm-navy px-5 py-2.5 text-[10.5px] font-semibold uppercase tracking-[.13em] text-white transition hover:bg-ilm-navy-light"
-              >
+              <Link href="/ask" className="ilm-btn-navy group shrink-0">
                 Ask a question <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>

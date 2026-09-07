@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,7 +16,6 @@ import {
   LogOut,
   Menu,
   MessageCircle,
-  Plus,
   Settings,
   Tag,
   Users,
@@ -149,16 +148,11 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         <button
           type="button"
           onClick={onMenuClick}
+          aria-label="Open navigation menu"
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 lg:hidden"
         >
-          <Menu size={18} />
+          <Menu size={18} aria-hidden="true" />
         </button>
-        <Link
-          href="/admin/articles/new"
-          className="flex items-center gap-2 rounded-lg bg-ilm-navy px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-ilm-navy-light"
-        >
-          <Plus size={15} /> <span className="hidden sm:inline">New Article</span>
-        </Link>
       </div>
       <div className="flex items-center gap-3">
         <span className="hidden rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-ilm-navy sm:inline">
@@ -190,7 +184,13 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { loading, user } = useAuth();
+  const { loading, user, profile, refreshProfile } = useAuth();
+
+  useEffect(() => {
+    if (user && !profile) {
+      void refreshProfile();
+    }
+  }, [user, profile, refreshProfile]);
 
   if (loading) {
     return (
@@ -219,6 +219,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <>
+      {!profile && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
+          Staff profile is still loading. If admin pages show errors, run{' '}
+          <code className="rounded bg-amber-100 px-1">supabase/admin-bootstrap.sql</code> in Supabase, then refresh.
+        </div>
+      )}
     <div className="flex min-h-screen bg-[#F4F7FB]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-hidden shadow-xl shadow-ilm-navy/10 lg:block">
         <SidebarContent />
@@ -248,6 +255,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="flex-1 p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
+    </>
   );
 }
 

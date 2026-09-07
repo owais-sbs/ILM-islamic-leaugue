@@ -164,9 +164,9 @@ export default function AdminCategories() {
                 <p className="font-medium text-slate-800">{cat.name}</p>
                 <p className="truncate text-xs text-slate-400">{cat.description || `/${cat.slug}`}</p>
               </div>
-              <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                <button type="button" onClick={() => openEdit(cat)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-sky-50 hover:text-ilm-navy"><Pencil size={14} /></button>
-                <button type="button" onClick={() => remove(cat.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 size={14} /></button>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => openEdit(cat)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-sky-50 hover:text-ilm-navy" title="Edit"><Pencil size={14} /></button>
+                <button type="button" onClick={() => remove(cat.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600" title="Delete"><Trash2 size={14} /></button>
               </div>
             </div>
           ))}

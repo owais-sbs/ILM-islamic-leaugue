@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Printer, Share2 } from 'lucide-react';
 import { Reveal } from '@/components/Reveal';
 import { ArticleCard } from '@/components/ArticleCard';
+import { ArticleImage } from '@/components/ArticleImage';
 import { SectionLabel } from '@/components/PageHero';
 import type { Article, Author } from '@/lib/data';
 
@@ -27,7 +28,7 @@ export function ArticleDetailView({
   return (
     <>
       {/* ── Article header ─────────────────────────────── */}
-      <article className="bg-white px-6 pb-16 pt-32 md:px-12 md:pt-40">
+      <article className="bg-white px-6 pb-16 pt-[var(--site-header-offset)] md:px-12 md:pt-[calc(var(--site-header-offset)+1rem)]">
         <div className="mx-auto max-w-7xl">
 
           {/* Back link */}
@@ -69,7 +70,7 @@ export function ArticleDetailView({
               </div>
 
               {/* Title */}
-              <h1 className="mt-5 font-display text-[2rem] leading-[1.1] tracking-[-0.02em] text-ilm-navy md:text-[2.75rem] lg:text-[3rem]">
+              <h1 className="mt-5 font-display text-[2rem] leading-[1.1] tracking-[-0.02em] text-ilm-navy md:text-[2.75rem] lg:text-[3rem] line-clamp-none">
                 {article.title}
               </h1>
 
@@ -104,18 +105,18 @@ export function ArticleDetailView({
                   <button
                     type="button"
                     onClick={handleShare}
-                    aria-label="Share"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-ilm-gold hover:text-ilm-gold"
+                    aria-label="Share article"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-ilm-gold hover:text-ilm-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/30"
                   >
-                    <Share2 size={14} />
+                    <Share2 size={15} />
                   </button>
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    aria-label="Print"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-ilm-gold hover:text-ilm-gold"
+                    aria-label="Print article"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-ilm-gold hover:text-ilm-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/30"
                   >
-                    <Printer size={14} />
+                    <Printer size={15} />
                   </button>
                 </div>
               </div>
@@ -125,10 +126,10 @@ export function ArticleDetailView({
             {article.featuredImage && (
               <Reveal delay="delay-1" className="lg:sticky lg:top-28">
                 <div className="overflow-hidden rounded-2xl shadow-[0_16px_48px_rgba(15,22,87,0.12)]">
-                  <img
+                  <ArticleImage
                     src={article.featuredImage}
-                    alt=""
-                    className="aspect-[4/3] w-full object-cover"
+                    alt={`Featured image for ${article.title}`}
+                    className="aspect-[4/3] w-full"
                   />
                 </div>
               </Reveal>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -10,45 +10,60 @@ import {
   MessageCircle,
   TrendingUp,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { PageHeader, StatCard, Card } from '@/components/admin/AdminUI';
 import { StatusBadge } from '@/components/StatusBadge';
-import { useRole, roleLabels } from '@/components/admin/RoleContext';
-import { createClient } from '@/lib/supabase/client';
+import { useRole, usePermissions, roleLabels } from '@/components/admin/RoleContext';
+import { useAuth } from '@/components/admin/AuthProvider';
+import { fetchAdminDashboard } from '@/lib/admin-api';
 import type { ArticleRow, ProfileRow, QuestionRow } from '@/lib/supabase/types';
 
 export default function AdminDashboard() {
   const { role } = useRole();
+  const perms = usePermissions();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [authors, setAuthors] = useState<ProfileRow[]>([]);
 
-  useEffect(() => {
-    const load = async () => {
-      const supabase = createClient();
-      const [{ data: arts }, { data: qs }, { data: profiles }] = await Promise.all([
-        supabase.from('articles').select('*, profiles(full_name, avatar_url)').order('updated_at', { ascending: false }),
-        supabase.from('questions').select('*'),
-        supabase.from('profiles').select('*').eq('is_active', true),
-      ]);
-      setArticles((arts as ArticleRow[]) || []);
-      setQuestions((qs as QuestionRow[]) || []);
-      setAuthors((profiles as ProfileRow[]) || []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const data = await fetchAdminDashboard();
+      setArticles((data.articles as ArticleRow[]) || []);
+      setQuestions((data.questions as QuestionRow[]) || []);
+      setAuthors((data.authors as ProfileRow[]) || []);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      setArticles([]);
+      setQuestions([]);
+      setAuthors([]);
+    } finally {
       setLoading(false);
-    };
-    load();
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const visibleArticles = perms.canViewAllArticles
+    ? articles
+    : articles.filter((a) => a.author_id === user?.id);
 
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const publishedThisMonth = articles.filter(
+  const publishedThisMonth = visibleArticles.filter(
     (a) => a.status === 'published' && a.published_at?.startsWith(thisMonth),
   ).length;
-  const awaitingReview = articles.filter((a) => a.status === 'submitted').length;
-  const myDrafts = articles.filter((a) => a.status === 'draft').length;
+  const awaitingReview = visibleArticles.filter((a) => a.status === 'submitted').length;
+  const myDrafts = visibleArticles.filter((a) => a.status === 'draft').length;
   const unanswered = questions.filter((q) => q.status === 'new').length;
-  const recentArticles = articles.slice(0, 5);
+  const recentArticles = visibleArticles.slice(0, 5);
 
   const byAuthor = authors
     .map((a) => ({
@@ -77,7 +92,22 @@ export default function AdminDashboard() {
       <PageHeader
         title="Dashboard"
         description={`Welcome back. Signed in as ${roleLabels[role]}.`}
+        action={
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+        }
       />
+
+      {loadError && (
+        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {loadError}. Check Supabase connection and run <code className="rounded bg-rose-100 px-1">admin-bootstrap.sql</code>.
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Published this month" value={publishedThisMonth} icon={CheckCircle2} color="emerald" />
@@ -148,8 +178,8 @@ export default function AdminDashboard() {
           )}
           <div className="mt-6 grid grid-cols-3 gap-3 border-t border-slate-100 pt-4 text-center">
             <div>
-              <p className="font-display text-2xl font-semibold text-ilm-navy">{articles.length}</p>
-              <p className="text-[10px] uppercase tracking-wide text-slate-400">Total</p>
+              <p className="font-display text-2xl font-semibold text-ilm-navy">{visibleArticles.length}</p>
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">Articles</p>
             </div>
             <div>
               <p className="font-display text-2xl font-semibold text-ilm-navy">{authors.length}</p>
@@ -157,7 +187,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="font-display text-2xl font-semibold text-ilm-navy">
-                {articles.reduce((sum, a) => sum + (a.views || 0), 0).toLocaleString()}
+                {visibleArticles.reduce((sum, a) => sum + (a.views || 0), 0).toLocaleString()}
               </p>
               <p className="text-[10px] uppercase tracking-wide text-slate-400">Views</p>
             </div>

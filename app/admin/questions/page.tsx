@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Archive, ArrowRight, FileText, Inbox, Loader2, Search } from 'lucide-react';
+import { Archive, ArrowRight, FileText, Inbox, Loader2, Pencil, Search, Trash2 } from 'lucide-react';
 import { PageHeader, Card, EmptyState } from '@/components/admin/AdminUI';
+import { TableRowActions } from '@/components/admin/TableRowActions';
 import { usePermissions } from '@/components/admin/RoleContext';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { createClient } from '@/lib/supabase/client';
@@ -31,6 +32,8 @@ export default function AdminQuestions() {
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState({ subject: '', name: '', email: '', body: '' });
 
   const load = async () => {
     setLoadError('');
@@ -58,6 +61,30 @@ export default function AdminQuestions() {
   const updateQuestion = async (id: string, patch: Record<string, unknown>) => {
     const supabase = createClient();
     await supabase.from('questions').update(patch).eq('id', id);
+    await load();
+  };
+
+  const openEdit = (q: QuestionRow) => {
+    setEditForm({ subject: q.subject, name: q.name, email: q.email, body: q.body });
+    setSelected(q.id);
+    setShowEdit(true);
+  };
+
+  const saveEdit = async () => {
+    if (!selected) return;
+    await updateQuestion(selected, editForm);
+    setShowEdit(false);
+  };
+
+  const removeQuestion = async (id: string) => {
+    if (!confirm('Delete this question permanently?')) return;
+    const supabase = createClient();
+    const { error } = await supabase.from('questions').delete().eq('id', id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    if (selected === id) setSelected(null);
     await load();
   };
 
@@ -170,18 +197,26 @@ export default function AdminQuestions() {
               filtered.map((q) => {
                 const sc = statusConfig[q.status];
                 return (
-                  <Card key={q.id} className={cn('cursor-pointer p-4 transition hover:shadow-md', selected === q.id && 'ring-2 ring-ilm-navy')}>
-                    <div onClick={() => setSelected(q.id)}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-slate-800">{q.subject}</p>
-                          <p className="mt-0.5 text-xs text-slate-400">
-                            {q.name} · {q.categories?.name || 'General'} · {new Date(q.created_at).toLocaleDateString()}
-                          </p>
+                  <Card key={q.id} className={cn('p-4 transition hover:shadow-md', selected === q.id && 'ring-2 ring-ilm-navy')}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setSelected(q.id)}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-slate-800">{q.subject}</p>
+                            <p className="mt-0.5 text-xs text-slate-400">
+                              {q.name} · {q.categories?.name || 'General'} · {new Date(q.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold', sc.classes)}>{sc.label}</span>
                         </div>
-                        <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold', sc.classes)}>{sc.label}</span>
+                        <p className="mt-2 line-clamp-2 text-sm text-slate-500">{q.body}</p>
                       </div>
-                      <p className="mt-2 line-clamp-2 text-sm text-slate-500">{q.body}</p>
+                      <TableRowActions
+                        onEdit={() => openEdit(q)}
+                        onDelete={perms.canManageUsers ? () => removeQuestion(q.id) : undefined}
+                        editLabel="Edit question"
+                        deleteLabel="Delete question"
+                      />
                     </div>
                   </Card>
                 );
@@ -255,6 +290,24 @@ export default function AdminQuestions() {
                   >
                     <Archive size={15} /> Archive
                   </button>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(selectedItem)}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-sky-50"
+                    >
+                      <Pencil size={15} /> Edit
+                    </button>
+                    {perms.canManageUsers && (
+                      <button
+                        type="button"
+                        onClick={() => removeQuestion(selectedItem.id)}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-100"
+                      >
+                        <Trash2 size={15} /> Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ) : (
@@ -264,6 +317,37 @@ export default function AdminQuestions() {
                 <p className="mt-2 text-sm text-slate-400">Choose a question to assign, answer, or convert.</p>
               </Card>
             )}
+          </div>
+        </div>
+      )}
+
+      {showEdit && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ilm-navy/40 p-4" onClick={() => setShowEdit(false)}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-4 font-display text-xl font-semibold text-ilm-navy">Edit question</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500">Subject</label>
+                <input value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-ilm-navy/40" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Name</label>
+                  <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-ilm-navy/40" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Email</label>
+                  <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-ilm-navy/40" />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500">Message</label>
+                <textarea value={editForm.body} onChange={(e) => setEditForm({ ...editForm, body: e.target.value })} rows={5} className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-ilm-navy/40" />
+              </div>
+              <button type="button" onClick={saveEdit} className="flex w-full items-center justify-center gap-2 rounded-lg bg-ilm-navy py-2.5 text-sm font-semibold text-white hover:bg-ilm-navy-light">
+                <Pencil size={15} /> Save changes
+              </button>
+            </div>
           </div>
         </div>
       )}

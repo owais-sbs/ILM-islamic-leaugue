@@ -33,7 +33,7 @@ export default function MurabbiyunPage() {
         description="Our contributors are teachers, researchers, and lifelong students — writing from within the tradition with humility and clarity."
       />
 
-      <section className="px-6 py-14 md:px-12 md:py-16">
+      <section className="ilm-section">
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <SectionLabel>Contributors</SectionLabel>

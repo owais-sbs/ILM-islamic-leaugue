@@ -1,27 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Copy, Image as ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-react';
+import { Copy, Image as ImageIcon, Loader2, Pencil, Trash2, Upload, X } from 'lucide-react';
 import { PageHeader, Card } from '@/components/admin/AdminUI';
-import { useAuth } from '@/components/admin/AuthProvider';
+import { fetchAdminMedia, deleteAdminMedia, uploadAdminMedia } from '@/lib/admin-api';
 import { createClient } from '@/lib/supabase/client';
 import { formatBytes, type MediaRow } from '@/lib/supabase/types';
 import { cn } from '@/lib/utils';
 
 export default function AdminMedia() {
-  const { user } = useAuth();
   const [items, setItems] = useState<MediaRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const [altText, setAltText] = useState('');
+  const [savingAlt, setSavingAlt] = useState(false);
 
   const load = async () => {
-    const supabase = createClient();
-    const { data } = await supabase.from('media').select('*').order('created_at', { ascending: false });
-    setItems((data as MediaRow[]) || []);
-    setLoading(false);
+    try {
+      const data = await fetchAdminMedia();
+      setItems((data as MediaRow[]) || []);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to load media');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -29,29 +34,43 @@ export default function AdminMedia() {
   const upload = async (file: File) => {
     setUploading(true);
     setMessage('');
-    const supabase = createClient();
-    const path = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    const { error } = await supabase.storage.from('media').upload(path, file);
-    if (error) { setMessage(error.message); setUploading(false); return; }
-    const { data } = supabase.storage.from('media').getPublicUrl(path);
-    await supabase.from('media').insert({
-      file_name: file.name,
-      file_path: path,
-      file_url: data.publicUrl,
-      mime_type: file.type || 'image/jpeg',
-      size_bytes: file.size,
-      alt_text: file.name.replace(/\.[^.]+$/, ''),
-      uploaded_by: user?.id,
-    });
-    setUploading(false);
-    await load();
+    try {
+      await uploadAdminMedia(file);
+      await load();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const remove = async (id: string) => {
     if (!confirm('Delete this file?')) return;
+    try {
+      await deleteAdminMedia(id);
+      setSelected(null);
+      await load();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
+
+  const openDetails = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    setSelected(id);
+    setAltText(item?.alt_text || '');
+  };
+
+  const saveAltText = async () => {
+    if (!selected) return;
+    setSavingAlt(true);
     const supabase = createClient();
-    await supabase.from('media').delete().eq('id', id);
-    setSelected(null);
+    const { error } = await supabase.from('media').update({ alt_text: altText }).eq('id', selected);
+    setSavingAlt(false);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
     await load();
   };
 
@@ -96,7 +115,7 @@ export default function AdminMedia() {
         <div className="grid gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {items.map((item) => (
             <Card key={item.id} className={cn('group cursor-pointer overflow-hidden transition hover:shadow-md', selected === item.id && 'ring-2 ring-ilm-navy')}>
-              <div onClick={() => setSelected(item.id)} className="relative aspect-square overflow-hidden">
+              <div onClick={() => openDetails(item.id)} className="relative aspect-square overflow-hidden">
                 <img src={item.file_url} alt={item.alt_text || item.file_name} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 flex items-center justify-center gap-2 bg-ilm-navy/40 opacity-0 transition group-hover:opacity-100">
                   <button type="button" onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(item.file_url); setCopied(true); setTimeout(() => setCopied(false), 1200); }} className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90"><Copy size={14} /></button>
@@ -137,14 +156,34 @@ export default function AdminMedia() {
                   </button>
                 </div>
               </div>
+              <div>
+                <span className="text-slate-400">Alt text:</span>
+                <input
+                  value={altText}
+                  onChange={(e) => setAltText(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-ilm-navy/40"
+                  placeholder="Describe this image for accessibility"
+                />
+                <button
+                  type="button"
+                  disabled={savingAlt}
+                  onClick={saveAltText}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-sky-50"
+                >
+                  {savingAlt ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
+                  Save alt text
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => remove(selectedItem.id)}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100"
-            >
-              <Trash2 size={15} /> Delete file
-            </button>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => remove(selectedItem.id)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100"
+              >
+                <Trash2 size={15} /> Delete file
+              </button>
+            </div>
           </div>
         </div>
       )}

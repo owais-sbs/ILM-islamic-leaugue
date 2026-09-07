@@ -47,7 +47,7 @@ export default function AuthorProfilePage({
       <SiteHeader />
 
       {/* Profile hero */}
-      <section className="px-6 pb-0 pt-32 md:px-12 md:pt-40">
+      <section className="px-6 pb-0 pt-[var(--site-header-offset)] md:px-12 md:pt-[calc(var(--site-header-offset)+1rem)]">
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <Link
@@ -99,7 +99,7 @@ export default function AuthorProfilePage({
       </section>
 
       {/* Articles */}
-      <section className="px-6 py-14 md:px-12 md:py-20">
+      <section className="ilm-section">
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-[.2em] text-ilm-gold">
