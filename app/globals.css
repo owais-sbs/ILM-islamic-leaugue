@@ -2,24 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design Tokens ─────────────────────────────── */
 :root {
-  --navy: #0F1657;
-  --navy-light: #1a2380;
-  --gold: #C9972E;
-  --gold-dark: #A87F24;
-  --gold-light: #E5B84A;
-  --cream: #FDFDFB;
-  --paper: #ffffff;
-  --ink: #2A2A2A;
-  --ink-soft: #4A4A4A;
-  --muted: #6B7280;
+  --navy:        #0F1657;
+  --navy-light:  #1a2380;
+  --gold:        #C9972E;
+  --gold-dark:   #A87F24;
+  --gold-light:  #E5B84A;
+  --cream:       #FDFDFB;
+  --cream-dark:  #F6F5F0;
+  --paper:       #ffffff;
+  --ink:         #1C1C2E;
+  --ink-soft:    #3D3D5C;
+  --muted:       #6B7280;
   --muted-light: #9CA3AF;
-  --border: rgba(15, 22, 87, 0.12);
-  --border-soft: rgba(15, 22, 87, 0.08);
+  --border:      rgba(15, 22, 87, 0.10);
+  --border-soft: rgba(15, 22, 87, 0.06);
+  --section-pad: clamp(3.5rem, 6vw, 5rem);
+  --radius:      0.75rem;
 }
 
+/* ─── Reset ─────────────────────────────────────── */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
   background: var(--paper);
@@ -27,44 +33,49 @@ body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+  line-height: 1.7;
 }
-.font-display { font-family: var(--font-display), Georgia, 'Times New Roman', serif; }
-.font-arabic { font-family: var(--font-display), Georgia, 'Times New Roman', serif; }
-::selection { background: rgba(201, 151, 46, 0.25); color: var(--navy); }
 
+.font-display { font-family: var(--font-display), Georgia, 'Times New Roman', serif; }
+.font-arabic  { font-family: var(--font-display), Georgia, serif; direction: rtl; }
+
+::selection { background: rgba(201, 151, 46, 0.18); color: var(--navy); }
+
+/* ─── Typography Scale ──────────────────────────── */
+h1, h2, h3, h4 { font-family: var(--font-display), Georgia, serif; line-height: 1.1; color: var(--navy); }
+
+/* ─── Utilities ─────────────────────────────────── */
 .gold-rule {
   height: 1px;
-  background: var(--gold);
+  background: linear-gradient(90deg, var(--gold), transparent);
 }
 
-@keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slide-in { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-.reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1); }
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal.delay-1 { transition-delay: .08s; }
-.reveal.delay-2 { transition-delay: .16s; }
-.reveal.delay-3 { transition-delay: .24s; }
-.reveal.delay-4 { transition-delay: .32s; }
-.hero-rise { animation: rise .9s cubic-bezier(.22,1,.36,1) both; }
-.delay-1 { animation-delay: .1s; }
-.delay-2 { animation-delay: .2s; }
-.delay-3 { animation-delay: .3s; }
-.delay-4 { animation-delay: .4s; }
-.animate-slide-in { animation: slide-in .4s ease both; }
+.text-balance { text-wrap: balance; }
+
+/* ─── Islamic Geometric Pattern ─────────────────── */
+/* Used as very subtle bg overlay — felt not seen */
+.pattern-geo {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230F1657' fill-opacity='0.035'%3E%3Cpath d='M30 0l8.66 5v10L30 20l-8.66-5V5L30 0zm0 40l8.66 5v10L30 60l-8.66-5V45L30 40zM0 20l8.66 5v10L0 40l-8.66-5V25L0 20zm60 0l8.66 5v10L60 40l-8.66-5V25L60 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.pattern-geo-gold {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9972E' fill-opacity='0.06'%3E%3Cpath d='M30 0l8.66 5v10L30 20l-8.66-5V5L30 0zm0 40l8.66 5v10L30 60l-8.66-5V45L30 40zM0 20l8.66 5v10L0 40l-8.66-5V25L0 20zm60 0l8.66 5v10L60 40l-8.66-5V25L60 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
 
 .grid-paper {
   background-image:
-    linear-gradient(rgba(15, 22, 87, .04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 22, 87, .04) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(15, 22, 87, .03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 22, 87, .03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
-.text-balance { text-wrap: balance; }
 
-.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(15, 22, 87, 0.2); border-radius: 3px; }
+/* ─── Animations ────────────────────────────────── */
+@keyframes rise     { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in  { from { opacity: 0; }                              to { opacity: 1; } }
+@keyframes slide-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
 
+<<<<<<< HEAD
 /* Hide admin sidebar scrollbar while keeping scroll */
 .admin-sidebar-scroll {
   scrollbar-width: none;
@@ -76,19 +87,131 @@ body {
   height: 0;
 }
 
-.article-body { max-width: 68ch; }
-.article-body p { margin-bottom: 1.5rem; line-height: 1.85; font-size: 1.125rem; color: var(--ink-soft); }
-.article-body h2 { font-family: var(--font-display), Georgia, serif; font-size: 1.875rem; margin-top: 2.5rem; margin-bottom: 1rem; color: var(--navy); line-height: 1.2; }
-.article-body h3 { font-family: var(--font-display), Georgia, serif; font-size: 1.5rem; margin-top: 2rem; margin-bottom: .75rem; color: var(--navy); line-height: 1.25; }
-.article-body blockquote { border-left: 3px solid var(--gold); padding-left: 1.5rem; margin: 2rem 0; font-family: var(--font-display), Georgia, serif; font-size: 1.25rem; font-style: italic; color: var(--navy); line-height: 1.6; }
-.article-body ul, .article-body ol { margin: 1.5rem 0 1.5rem 1.5rem; }
-.article-body ul { list-style: disc; }
-.article-body ol { list-style: decimal; }
-.article-body li { margin-bottom: .5rem; line-height: 1.8; color: var(--ink-soft); }
-.article-body .footnote { font-size: .85rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1.5rem; }
-.article-body .footnote sup { color: var(--gold); }
-.article-body .arabic { direction: rtl; display: block; text-align: right; font-size: 1.5rem; margin: 1.5rem 0; color: var(--navy); }
+=======
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal.delay-1 { transition-delay: .07s; }
+.reveal.delay-2 { transition-delay: .14s; }
+.reveal.delay-3 { transition-delay: .21s; }
+.reveal.delay-4 { transition-delay: .28s; }
 
+.hero-rise          { animation: rise .85s cubic-bezier(.22,1,.36,1) both; }
+.delay-1            { animation-delay: .10s; }
+.delay-2            { animation-delay: .20s; }
+.delay-3            { animation-delay: .30s; }
+.delay-4            { animation-delay: .40s; }
+.animate-fade-in    { animation: fade-in .4s ease both; }
+.animate-slide-in   { animation: slide-in .35s ease both; }
+
+/* ─── Scrollbar ─────────────────────────────────── */
+.scrollbar-thin::-webkit-scrollbar        { width: 5px; height: 5px; }
+.scrollbar-thin::-webkit-scrollbar-track  { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb  { background: rgba(15,22,87,0.18); border-radius: 3px; }
+
+/* ─── Article Body Typography ───────────────────── */
+>>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
+.article-body { max-width: 68ch; }
+.article-body p {
+  margin-bottom: 1.6rem;
+  line-height: 1.88;
+  font-size: 1.0625rem;        /* 17px */
+  color: var(--ink-soft);
+}
+.article-body h2 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.75rem;
+  margin-top: 2.75rem;
+  margin-bottom: .875rem;
+  color: var(--navy);
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
+.article-body h3 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.375rem;
+  margin-top: 2rem;
+  margin-bottom: .625rem;
+  color: var(--navy);
+  line-height: 1.25;
+}
+.article-body blockquote {
+  border-left: 2px solid var(--gold);
+  padding: .75rem 0 .75rem 1.5rem;
+  margin: 2rem 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  color: var(--navy);
+  line-height: 1.65;
+  background: rgba(201,151,46,.04);
+  border-radius: 0 .5rem .5rem 0;
+}
+.article-body ul,
+.article-body ol  { margin: 1.5rem 0 1.5rem 1.5rem; }
+.article-body ul  { list-style: disc; }
+.article-body ol  { list-style: decimal; }
+.article-body li  { margin-bottom: .5rem; line-height: 1.8; color: var(--ink-soft); }
+.article-body .footnote {
+  font-size: .8125rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+}
+.article-body .footnote sup { color: var(--gold); }
+.article-body .arabic {
+  direction: rtl;
+  display: block;
+  text-align: right;
+  font-size: 1.5rem;
+  margin: 1.5rem 0;
+  color: var(--navy);
+  line-height: 2;
+}
+
+/* ─── Form inputs shared ───────────────────────── */
+.ilm-input {
+  height: 2.75rem;
+  width: 100%;
+  border-radius: .625rem;
+  border: 1px solid rgba(15,22,87,.12);
+  padding: 0 .875rem;
+  font-size: .9375rem;
+  color: var(--ink);
+  background: white;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.ilm-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,151,46,.12);
+}
+.ilm-textarea {
+  width: 100%;
+  border-radius: .625rem;
+  border: 1px solid rgba(15,22,87,.12);
+  padding: .75rem .875rem;
+  font-size: .9375rem;
+  color: var(--ink);
+  background: white;
+  outline: none;
+  resize: vertical;
+  transition: border-color .2s, box-shadow .2s;
+  line-height: 1.7;
+}
+.ilm-textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,151,46,.12);
+}
+
+/* ─── Section rhythm ───────────────────────────── */
+.section-pad { padding-top: var(--section-pad); padding-bottom: var(--section-pad); }
+
+/* ─── Reduced motion ───────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
