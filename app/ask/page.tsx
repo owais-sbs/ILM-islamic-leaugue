@@ -1,23 +1,13 @@
 'use client';
 
-<<<<<<< HEAD
 import { useEffect, useState } from 'react';
-import { Loader2, Send } from 'lucide-react';
+import { CheckCircle, Loader2, Send } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { PageHero, ModernCard } from '@/components/PageHero';
 import { createClient } from '@/lib/supabase/client';
 import type { CategoryRow } from '@/lib/supabase/types';
-=======
-import { useState } from 'react';
-import { Send, CheckCircle } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
-import { SiteFooter } from '@/components/SiteFooter';
-import { PageHero } from '@/components/PageHero';
-import { categories } from '@/lib/data';
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
 
-const inputCls = 'ilm-input';
 const labelCls = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[.14em] text-ilm-navy/70';
 
 export default function AskPage() {
@@ -90,7 +80,6 @@ export default function AskPage() {
               </button>
             </div>
           ) : (
-<<<<<<< HEAD
             <ModernCard>
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
@@ -100,70 +89,44 @@ export default function AskPage() {
                 )}
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="name" className="mb-2 block text-xs font-semibold text-ilm-navy">
-                      Your name
-                    </label>
+                    <label htmlFor="name" className={labelCls}>Your name</label>
                     <input
                       id="name"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Ahmed Hassan"
                       className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="mb-2 block text-xs font-semibold text-ilm-navy">
-                      Email
-                    </label>
+                    <label htmlFor="email" className={labelCls}>Email address</label>
                     <input
                       id="email"
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
                       className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
                     />
-=======
-            <div className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_2px_24px_rgba(15,22,87,0.06)] md:p-9">
-              <form
-                onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
-                className="space-y-5"
-              >
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="name" className={labelCls}>Your name</label>
-                    <input id="name" required className={inputCls} placeholder="e.g. Ahmed Hassan" />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className={labelCls}>Email address</label>
-                    <input id="email" type="email" required className={inputCls} placeholder="you@example.com" />
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
                   </div>
                 </div>
 
                 <div>
-<<<<<<< HEAD
-                  <label htmlFor="subject" className="mb-2 block text-xs font-semibold text-ilm-navy">
-                    Subject
-                  </label>
+                  <label htmlFor="subject" className={labelCls}>Subject</label>
                   <input
                     id="subject"
                     required
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Brief subject line"
                     className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
                   />
-=======
-                  <label htmlFor="subject" className={labelCls}>Subject</label>
-                  <input id="subject" required className={inputCls} placeholder="Brief subject line" />
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
                 </div>
 
                 <div>
-<<<<<<< HEAD
-                  <label htmlFor="category" className="mb-2 block text-xs font-semibold text-ilm-navy">
-                    Category
-                  </label>
+                  <label htmlFor="category" className={labelCls}>Category</label>
                   <select
                     id="category"
                     value={categoryId}
@@ -171,10 +134,6 @@ export default function AskPage() {
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-ilm-gold"
                   >
                     {categories.length === 0 && <option value="">Loading…</option>}
-=======
-                  <label htmlFor="category" className={labelCls}>Category</label>
-                  <select id="category" className={`${inputCls} cursor-pointer bg-white`}>
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -184,10 +143,7 @@ export default function AskPage() {
                 </div>
 
                 <div>
-<<<<<<< HEAD
-                  <label htmlFor="body" className="mb-2 block text-xs font-semibold text-ilm-navy">
-                    Your question
-                  </label>
+                  <label htmlFor="body" className={labelCls}>Your question</label>
                   <textarea
                     id="body"
                     required
@@ -212,26 +168,9 @@ export default function AskPage() {
                       Submit question <Send size={16} />
                     </>
                   )}
-=======
-                  <label htmlFor="body" className={labelCls}>Your question</label>
-                  <textarea
-                    id="body"
-                    required
-                    rows={7}
-                    className="ilm-textarea"
-                    placeholder="Share as much context as helps. The more detail you provide, the better we can respond…"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-ilm-gold text-[11px] font-semibold uppercase tracking-[.14em] text-white transition hover:bg-ilm-gold-dark"
-                >
-                  Submit question <Send size={14} />
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
                 </button>
               </form>
-            </div>
+            </ModernCard>
           )}
         </div>
       </section>

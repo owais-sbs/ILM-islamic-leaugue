@@ -35,20 +35,13 @@ export default function AdminSubscribers() {
     return (
       <div>
         <PageHeader title="Subscribers" description="Newsletter subscribers" />
-<<<<<<< HEAD
-        <Card className="p-8 text-center"><p className="text-sm text-slate-500">Only Administrators can manage subscribers.</p></Card>
-=======
         <Card className="p-8 text-center">
-          <p className="text-sm text-slate-500">
-            Only Administrators can manage subscribers. Switch your role to Admin.
-          </p>
+          <p className="text-sm text-slate-500">Only Administrators can manage subscribers.</p>
         </Card>
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
       </div>
     );
   }
 
-<<<<<<< HEAD
   const filtered = items.filter((s) => !search || s.email.toLowerCase().includes(search.toLowerCase()));
   const activeCount = items.filter((s) => !s.unsubscribed_at).length;
 
@@ -63,30 +56,11 @@ export default function AdminSubscribers() {
     a.href = url;
     a.download = 'subscribers.csv';
     a.click();
-=======
-  const filtered = initialSubscribers.filter(
-    (s) => !search || s.email.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const exportCSV = () => {
-    const rows = [
-      ['Email', 'Subscribed At', 'Status'],
-      ...initialSubscribers.map((s) => [s.email, s.subscribedAt, s.status]),
-    ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href     = url;
-    link.download = `ilm-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
     URL.revokeObjectURL(url);
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
     setExported(true);
     setTimeout(() => setExported(false), 2000);
   };
 
-<<<<<<< HEAD
   const add = async () => {
     if (!email.trim()) { setError('Email is required'); return; }
     setSaving(true);
@@ -103,15 +77,11 @@ export default function AdminSubscribers() {
     setEmail('');
     await load();
   };
-=======
-  const active = initialSubscribers.filter((s) => s.status === 'active').length;
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
 
   return (
     <div>
       <PageHeader
         title="Subscribers"
-<<<<<<< HEAD
         description={`${activeCount} active subscribers`}
         action={
           <div className="flex gap-2">
@@ -122,33 +92,18 @@ export default function AdminSubscribers() {
               <Download size={15} /> {exported ? 'Exported!' : 'Export CSV'}
             </button>
           </div>
-=======
-        description={`${active} active · ${initialSubscribers.length} total`}
-        action={
-          <button
-            onClick={exportCSV}
-            className="flex items-center gap-2 rounded-lg bg-ilm-gold px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-ilm-gold-dark"
-          >
-            <Download size={14} /> {exported ? 'Downloading…' : 'Export CSV'}
-          </button>
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
         }
       />
 
       <div className="relative mb-4 w-full sm:w-64">
-<<<<<<< HEAD
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input type="text" placeholder="Search subscribers..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-ilm-navy/40" />
-=======
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          placeholder="Search subscribers…"
+          placeholder="Search subscribers..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-ilm-gold/70"
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-ilm-navy/40"
         />
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
       </div>
 
       {loading ? (
@@ -174,20 +129,8 @@ export default function AdminSubscribers() {
                       {sub.confirmed_at ? new Date(sub.confirmed_at).toLocaleDateString() : '—'}
                     </td>
                     <td className="px-5 py-3.5">
-<<<<<<< HEAD
                       <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', sub.unsubscribed_at ? 'bg-slate-100 text-slate-500' : 'bg-sky-50 text-ilm-navy')}>
                         {sub.unsubscribed_at ? 'unsubscribed' : 'active'}
-=======
-                      <span
-                        className={cn(
-                          'rounded-full px-2.5 py-1 text-xs font-medium',
-                          sub.status === 'active'
-                            ? 'bg-ilm-cream text-ilm-navy'
-                            : 'bg-slate-100 text-slate-500',
-                        )}
-                      >
-                        {sub.status}
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
                       </span>
                     </td>
                   </tr>
@@ -206,8 +149,19 @@ export default function AdminSubscribers() {
               <button type="button" onClick={() => setShowAdd(false)}><X size={18} /></button>
             </div>
             {error && <div className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-ilm-navy/40" placeholder="reader@email.com" />
-            <button type="button" disabled={saving} onClick={add} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-ilm-navy py-2.5 text-sm font-semibold text-white hover:bg-ilm-navy-light disabled:opacity-60">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-ilm-navy/40"
+              placeholder="reader@email.com"
+            />
+            <button
+              type="button"
+              disabled={saving}
+              onClick={add}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-ilm-navy py-2.5 text-sm font-semibold text-white hover:bg-ilm-navy-light disabled:opacity-60"
+            >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
               Add subscriber
             </button>

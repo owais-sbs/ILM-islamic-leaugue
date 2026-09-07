@@ -21,13 +21,9 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { Reveal } from '@/components/Reveal';
 import { HeroCollage } from '@/components/HeroCollage';
 import { ArticleCard } from '@/components/ArticleCard';
-<<<<<<< HEAD
-import { articles, categories, authors, images } from '@/lib/data';
-import { createClient } from '@/lib/supabase/client';
-=======
 import { SectionLabel, GoldDivider } from '@/components/PageHero';
 import { articles, categories, authors } from '@/lib/data';
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
+import { createClient } from '@/lib/supabase/client';
 
 const categoryIcons: Record<string, LucideIcon> = {
   "Qur'an & Tafsir":    BookOpen,
@@ -40,13 +36,9 @@ const categoryIcons: Record<string, LucideIcon> = {
 
 export default function Home() {
   const [subscribed, setSubscribed] = useState(false);
-<<<<<<< HEAD
   const [email, setEmail] = useState('');
   const [subError, setSubError] = useState('');
   const [subLoading, setSubLoading] = useState(false);
-=======
-  const [email,      setEmail]      = useState('');
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
   const published = articles.filter((a) => a.status === 'published');
 
   const handleSubscribe = async (e: React.FormEvent) => {
@@ -360,33 +352,11 @@ export default function Home() {
                 Thank you — your first letter is on its way.
               </div>
             ) : (
-<<<<<<< HEAD
               <form onSubmit={handleSubscribe} className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row">
                 <label className="sr-only" htmlFor="email">Your email address</label>
                 <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" className="h-12 flex-1 rounded-full border border-slate-200 bg-white px-5 text-sm text-ilm-ink shadow-sm outline-none placeholder:text-slate-400 focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/20" />
                 <button disabled={subLoading} className="h-12 rounded-full bg-ilm-gold px-6 text-xs font-semibold uppercase tracking-[.13em] text-white transition hover:bg-ilm-gold-dark disabled:opacity-60">
                   {subLoading ? '…' : 'Subscribe'}
-=======
-              <form
-                onSubmit={(e) => { e.preventDefault(); if (email.trim()) setSubscribed(true); }}
-                className="mx-auto mt-7 flex max-w-sm flex-col gap-2 sm:flex-row"
-              >
-                <label className="sr-only" htmlFor="hero-email">Your email address</label>
-                <input
-                  id="hero-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your email address"
-                  className="ilm-input flex-1 rounded-lg"
-                />
-                <button
-                  type="submit"
-                  className="rounded-lg bg-ilm-gold px-5 py-2.5 text-[10.5px] font-semibold uppercase tracking-[.13em] text-white transition hover:bg-ilm-gold-dark"
-                >
-                  Subscribe
->>>>>>> 03a3145bf8aa2b0217bde3a2111ce6e5470555b0
                 </button>
               </form>
             )}
