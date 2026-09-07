@@ -65,6 +65,17 @@ body {
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(15, 22, 87, 0.2); border-radius: 3px; }
 
+/* Hide admin sidebar scrollbar while keeping scroll */
+.admin-sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.admin-sidebar-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .article-body { max-width: 68ch; }
 .article-body p { margin-bottom: 1.5rem; line-height: 1.85; font-size: 1.125rem; color: var(--ink-soft); }
 .article-body h2 { font-family: var(--font-display), Georgia, serif; font-size: 1.875rem; margin-top: 2.5rem; margin-bottom: 1rem; color: var(--navy); line-height: 1.2; }

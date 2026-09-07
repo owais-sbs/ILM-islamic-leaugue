@@ -1,33 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, FileEdit, Plus, Search } from 'lucide-react';
+import { Eye, FileEdit, Loader2, Plus, Search } from 'lucide-react';
 import { PageHeader, Card, EmptyState } from '@/components/admin/AdminUI';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useRole, usePermissions, roleLabels } from '@/components/admin/RoleContext';
-import { articles, type ArticleStatus } from '@/lib/data';
+import { useAuth } from '@/components/admin/AuthProvider';
+import { createClient } from '@/lib/supabase/client';
+import type { ArticleRow, DbArticleStatus } from '@/lib/supabase/types';
 import { cn } from '@/lib/utils';
 
-const statusFilters: (ArticleStatus | 'all')[] = ['all', 'draft', 'submitted', 'approved', 'published', 'returned'];
+const statusFilters: (DbArticleStatus | 'all')[] = [
+  'all', 'draft', 'submitted', 'approved', 'published', 'returned',
+];
 
 export default function AdminArticles() {
   const { role } = useRole();
+  const { user } = useAuth();
   const perms = usePermissions();
-  const [filter, setFilter] = useState<ArticleStatus | 'all'>('all');
+  const [filter, setFilter] = useState<DbArticleStatus | 'all'>('all');
   const [search, setSearch] = useState('');
+  const [articles, setArticles] = useState<ArticleRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const visible = perms.canViewAllArticles
-    ? articles
-    : articles.filter((a) => a.authorName === 'Ustadh Kareem Rahman');
+  useEffect(() => {
+    const load = async () => {
+      const supabase = createClient();
+      let query = supabase
+        .from('articles')
+        .select('*, categories(name), profiles(full_name, avatar_url)')
+        .order('updated_at', { ascending: false });
+      if (!perms.canViewAllArticles && user) query = query.eq('author_id', user.id);
+      const { data } = await query;
+      setArticles((data as ArticleRow[]) || []);
+      setLoading(false);
+    };
+    load();
+  }, [perms.canViewAllArticles, user]);
 
-  const filtered = visible
+  const filtered = articles
     .filter((a) => filter === 'all' || a.status === filter)
     .filter((a) => !search || a.title.toLowerCase().includes(search.toLowerCase()));
 
   const counts = statusFilters.reduce((acc, s) => {
-    if (s === 'all') acc[s] = visible.length;
-    else acc[s] = visible.filter((a) => a.status === s).length;
+    acc[s] = s === 'all' ? articles.length : articles.filter((a) => a.status === s).length;
     return acc;
   }, {} as Record<string, number>);
 
@@ -35,9 +52,16 @@ export default function AdminArticles() {
     <div>
       <PageHeader
         title="Articles"
-        description={perms.canViewAllArticles ? `All articles across all authors (${visible.length})` : `Your articles only — viewing as ${roleLabels[role]}`}
+        description={
+          perms.canViewAllArticles
+            ? `All articles (${articles.length})`
+            : `Your articles — ${roleLabels[role]}`
+        }
         action={
-          <Link href="/admin/articles/new" className="flex items-center gap-2 rounded-lg bg-ilm-gold px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-ilm-gold-dark">
+          <Link
+            href="/admin/articles/new"
+            className="flex items-center gap-2 rounded-lg bg-ilm-navy px-4 py-2.5 text-xs font-semibold text-white hover:bg-ilm-navy-light"
+          >
             <Plus size={15} /> New Article
           </Link>
         }
@@ -48,12 +72,11 @@ export default function AdminArticles() {
           {statusFilters.map((s) => (
             <button
               key={s}
+              type="button"
               onClick={() => setFilter(s)}
               className={cn(
                 'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium capitalize transition',
-                filter === s
-                  ? 'bg-ilm-gold text-white'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-ilm-gold/60 hover:bg-ilm-cream'
+                filter === s ? 'bg-ilm-navy text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-sky-50',
               )}
             >
               {s === 'all' ? 'All' : s}
@@ -70,17 +93,17 @@ export default function AdminArticles() {
             placeholder="Search articles..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-ilm-gold/70"
+            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-ilm-navy/40"
           />
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={FileEdit}
-          title="No articles found"
-          description={search ? "Try a different search term or filter." : "Get started by creating your first article."}
-        />
+      {loading ? (
+        <div className="flex justify-center py-16 text-sm text-slate-500">
+          <Loader2 className="mr-2 animate-spin" size={18} /> Loading…
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={FileEdit} title="No articles found" description="Create your first article to get started." />
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
@@ -97,28 +120,32 @@ export default function AdminArticles() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((article) => (
-                  <tr key={article.id} className="group transition hover:bg-ilm-cream/30">
+                  <tr key={article.id} className="hover:bg-sky-50/40">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <img src={article.featuredImage} alt="" className="h-10 w-14 rounded-lg object-cover" />
+                        {article.featured_image_url ? (
+                          <img src={article.featured_image_url} alt="" className="h-10 w-14 rounded-lg object-cover" />
+                        ) : (
+                          <div className="flex h-10 w-14 items-center justify-center rounded-lg bg-sky-50 text-[10px] text-sky-400">No img</div>
+                        )}
                         <div className="min-w-0">
-                          <Link href={`/admin/articles/${article.id}/edit`} className="block truncate font-medium text-slate-800 transition hover:text-ilm-navy">
-                            {article.title}
+                          <Link href={`/admin/articles/${article.id}/edit`} className="block truncate font-medium text-slate-800 hover:text-ilm-navy">
+                            {article.title || 'Untitled'}
                           </Link>
                           <p className="truncate text-xs text-slate-400">{article.excerpt}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="hidden px-5 py-3.5 text-slate-600 md:table-cell">{article.authorName}</td>
-                    <td className="hidden px-5 py-3.5 text-slate-600 lg:table-cell">{article.category}</td>
+                    <td className="hidden px-5 py-3.5 text-slate-600 md:table-cell">{article.profiles?.full_name || '—'}</td>
+                    <td className="hidden px-5 py-3.5 text-slate-600 lg:table-cell">{article.categories?.name || '—'}</td>
                     <td className="px-5 py-3.5"><StatusBadge status={article.status} /></td>
-                    <td className="hidden px-5 py-3.5 text-slate-400 lg:table-cell">{article.updatedAt}</td>
+                    <td className="hidden px-5 py-3.5 text-slate-400 lg:table-cell">{new Date(article.updated_at).toLocaleDateString()}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/admin/review/${article.id}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" title="Preview">
+                        <Link href={`/admin/review/${article.id}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" title="Review">
                           <Eye size={15} />
                         </Link>
-                        <Link href={`/admin/articles/${article.id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-ilm-navy/10 hover:text-ilm-gold" title="Edit">
+                        <Link href={`/admin/articles/${article.id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-sky-50 hover:text-ilm-navy" title="Edit">
                           <FileEdit size={15} />
                         </Link>
                       </div>

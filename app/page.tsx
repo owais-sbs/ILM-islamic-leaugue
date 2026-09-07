@@ -20,6 +20,7 @@ import { Reveal } from '@/components/Reveal';
 import { HeroCollage } from '@/components/HeroCollage';
 import { ArticleCard } from '@/components/ArticleCard';
 import { articles, categories, authors, images } from '@/lib/data';
+import { createClient } from '@/lib/supabase/client';
 
 const categoryIcons: Record<string, LucideIcon> = {
   'Qur\'an & Tafsir': BookOpen,
@@ -31,7 +32,33 @@ const categoryIcons: Record<string, LucideIcon> = {
 export default function Home() {
   const [subscribed, setSubscribed] = useState(false);
   const [email, setEmail] = useState('');
+  const [subError, setSubError] = useState('');
+  const [subLoading, setSubLoading] = useState(false);
   const published = articles.filter((a) => a.status === 'published');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubError('');
+    setSubLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.from('subscribers').insert({
+      email: email.trim().toLowerCase(),
+      confirmed_at: new Date().toISOString(),
+      source: 'website',
+    });
+    setSubLoading(false);
+    if (error) {
+      // Duplicate email still counts as success for the visitor
+      if (error.code === '23505' || error.message.toLowerCase().includes('duplicate')) {
+        setSubscribed(true);
+        return;
+      }
+      setSubError(error.message);
+      return;
+    }
+    setSubscribed(true);
+  };
 
   return (
     <main className="overflow-hidden bg-white">
@@ -207,14 +234,15 @@ export default function Home() {
                 Thank you. Your first letter is on its way.
               </div>
             ) : (
-              <form onSubmit={(e) => { e.preventDefault(); if (email.trim()) setSubscribed(true); }} className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row">
+              <form onSubmit={handleSubscribe} className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row">
                 <label className="sr-only" htmlFor="email">Your email address</label>
                 <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" className="h-12 flex-1 rounded-full border border-slate-200 bg-white px-5 text-sm text-ilm-ink shadow-sm outline-none placeholder:text-slate-400 focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/20" />
-                <button className="h-12 rounded-full bg-ilm-gold px-6 text-xs font-semibold uppercase tracking-[.13em] text-white transition hover:bg-ilm-gold-dark">
-                  Subscribe
+                <button disabled={subLoading} className="h-12 rounded-full bg-ilm-gold px-6 text-xs font-semibold uppercase tracking-[.13em] text-white transition hover:bg-ilm-gold-dark disabled:opacity-60">
+                  {subLoading ? '…' : 'Subscribe'}
                 </button>
               </form>
             )}
+            {subError && <p className="mt-3 text-sm text-rose-600">{subError}</p>}
           </Reveal>
         </div>
       </section>

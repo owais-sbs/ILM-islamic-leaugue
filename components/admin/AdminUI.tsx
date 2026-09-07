@@ -5,6 +5,7 @@ export function PageHeader({ title, description, action }: { title: string; desc
   return (
     <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-end">
       <div>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.2em] text-sky-600/70">ILM Admin</p>
         <h1 className="font-display text-3xl font-semibold text-ilm-navy">{title}</h1>
         {description && <p className="mt-1.5 text-sm text-slate-500">{description}</p>}
       </div>
