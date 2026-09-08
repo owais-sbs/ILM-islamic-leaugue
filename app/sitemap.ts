@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { articles, categories, authors } from '@/lib/data';
+import { getSiteUrl } from '@/lib/site-url';
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ilm.org';
+const BASE = getSiteUrl();
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [

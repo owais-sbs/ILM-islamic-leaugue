@@ -1,6 +1,7 @@
 import { articles } from '@/lib/data';
+import { getSiteUrl } from '@/lib/site-url';
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ilm.org';
+const BASE = getSiteUrl();
 
 export function GET() {
   const published = articles

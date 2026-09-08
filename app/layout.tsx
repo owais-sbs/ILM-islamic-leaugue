@@ -1,12 +1,13 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Fraunces } from 'next/font/google';
+import { getMetadataBase } from '@/lib/site-url';
 
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const display = Fraunces({ subsets: ['latin'], variable: '--font-display', display: 'swap', weight: ['400', '500', '600'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: getMetadataBase(),
   title: 'ILM — Islamic League of Murabbiyūn',
   description: 'A considered library of Islamic thought, practice, and renewal. Mentors · Educators · Cultivators.',
   applicationName: 'ILM',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/admin';
+import { getSiteUrl } from '@/lib/site-url';
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     const admin = createServiceClient();
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName || email.split('@')[0], role },
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login`,
+      redirectTo: `${getSiteUrl()}/login`,
     });
 
     if (error) {
