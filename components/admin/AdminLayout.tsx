@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   Activity,
   Bell,
-  ChevronDown,
   ExternalLink,
   Eye,
   FileEdit,
@@ -26,9 +25,17 @@ import {
 import { SiteLogo } from '@/components/Logo';
 import { AuthProvider, useAuth } from '@/components/admin/AuthProvider';
 import { RoleProvider, usePermissions, useRole, roleLabels } from '@/components/admin/RoleContext';
+import { roleHomePath, stripRolePrefix, type AdminRole } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 
-const baseNavGroups = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: typeof Home;
+  adminOnly?: boolean;
+};
+
+const baseNavGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Dashboard',
     items: [{ label: 'Overview', href: '/admin', icon: Home }],
@@ -70,7 +77,7 @@ const baseNavGroups = [
   },
 ];
 
-const authorNavGroups = [
+const authorNavGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Main',
     items: [
@@ -104,16 +111,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const perms = usePermissions();
   const { signOut, profile } = useAuth();
-  const { role } = useRole();
+  const { role, adminPath } = useRole();
 
   const activeNavGroups = role === 'author' ? authorNavGroups : baseNavGroups;
+  const logicalPath = stripRolePrefix(pathname || '/admin');
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#0B1248] via-[#0F1657] to-[#151d6b] text-white">
-      <Link href="/admin" onClick={onNavigate} className="block border-b border-white/10 px-5 py-5">
+      <Link
+        href={adminPath('/admin')}
+        onClick={onNavigate}
+        className="block border-b border-white/10 px-5 py-5"
+      >
         <SiteLogo size="sm" onDark className="brightness-110" />
         <span className="mt-2 block text-[9px] font-medium uppercase tracking-[.22em] text-sky-200/70">
-          Admin Panel
+          {role === 'author' ? 'Author Portal' : role === 'editor' ? 'Editor Portal' : 'Admin Panel'}
         </span>
       </Link>
 
@@ -131,12 +143,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <div className="space-y-0.5">
                 {visibleItems.map((item) => {
                   const Icon = item.icon;
+                  const itemPath = item.href.split('?')[0];
                   const isActive =
-                    pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                    logicalPath === itemPath ||
+                    (itemPath !== '/admin' && logicalPath.startsWith(itemPath));
                   return (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={adminPath(item.href)}
                       onClick={onNavigate}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
@@ -159,8 +173,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="space-y-1 border-t border-white/10 p-3">
         <div className="mb-2 rounded-lg bg-white/5 px-3 py-2.5">
-          <p className="truncate text-xs font-medium text-white">{profile?.full_name || 'Admin'}</p>
+          <p className="truncate text-xs font-medium text-white">{profile?.full_name || 'Staff'}</p>
           <p className="truncate text-[10px] text-sky-200/50">{profile?.email}</p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-sky-300/80">
+            Role · {role}
+          </p>
         </div>
         <Link
           href="/"
@@ -183,7 +200,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
-  const { profile, role } = useAuth();
+  const { profile } = useAuth();
+  const { role, setRole } = useRole();
 
   return (
     <div className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl md:px-6">
@@ -196,14 +214,42 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         >
           <Menu size={18} aria-hidden="true" />
         </button>
+        <div
+          role="group"
+          aria-label="View portal as"
+          className="hidden items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 sm:flex"
+        >
+          {(['author', 'editor', 'admin'] as const).map((r) => {
+            const active = role === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition',
+                  active
+                    ? 'bg-ilm-navy text-white shadow-sm'
+                    : 'text-slate-500 hover:bg-white hover:text-ilm-navy',
+                )}
+              >
+                {r === 'author' ? 'Author' : r === 'editor' ? 'Editor' : 'Admin'}
+              </button>
+            );
+          })}
+        </div>
+        <span className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 font-mono text-[10px] font-semibold text-emerald-800">
+          /admin/as/{role}
+        </span>
       </div>
       <div className="flex items-center gap-3">
-        <span className="hidden rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-ilm-navy sm:inline">
+        <span className="hidden rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-ilm-navy md:inline">
           {roleLabels[role]}
         </span>
         <button
           type="button"
           className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+          aria-label="Notifications"
         >
           <Bell size={17} />
         </button>
@@ -217,7 +263,7 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             className="h-7 w-7 rounded-full object-cover ring-2 ring-sky-100"
           />
           <span className="hidden text-xs font-medium text-slate-700 sm:inline">
-            {profile?.full_name || 'Admin'}
+            {profile?.full_name || 'Staff'}
           </span>
         </div>
       </div>
@@ -227,7 +273,7 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { loading, user, profile, refreshProfile } = useAuth();
+  const { loading, user, profile, refreshProfile, role: authRole } = useAuth();
 
   useEffect(() => {
     if (user && !profile) {
@@ -247,12 +293,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    const next = roleHomePath((authRole as AdminRole) || 'admin');
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 px-6 text-center">
         <SiteLogo size="sm" />
         <p className="text-sm text-slate-500">Please sign in to open the admin panel.</p>
         <Link
-          href="/login?next=/admin"
+          href={`/login?next=${encodeURIComponent(next)}`}
           className="rounded-lg bg-ilm-navy px-4 py-2.5 text-sm font-semibold text-white hover:bg-ilm-navy-light"
         >
           Go to login
@@ -269,35 +316,35 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <code className="rounded bg-amber-100 px-1">supabase/admin-bootstrap.sql</code> in Supabase, then refresh.
         </div>
       )}
-    <div className="flex min-h-screen bg-[#F4F7FB]">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-hidden shadow-xl shadow-ilm-navy/10 lg:block">
-        <SidebarContent />
-      </aside>
+      <div className="flex min-h-screen bg-[#F4F7FB]">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-hidden shadow-xl shadow-ilm-navy/10 lg:block">
+          <SidebarContent />
+        </aside>
 
-      {sidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-ilm-navy/40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 overflow-hidden shadow-2xl lg:hidden">
-            <button
-              type="button"
+        {sidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-ilm-navy/40 lg:hidden"
               onClick={() => setSidebarOpen(false)}
-              className="absolute right-3 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white"
-            >
-              <X size={18} />
-            </button>
-            <SidebarContent onNavigate={() => setSidebarOpen(false)} />
-          </aside>
-        </>
-      )}
+            />
+            <aside className="fixed inset-y-0 left-0 z-50 w-64 overflow-hidden shadow-2xl lg:hidden">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="absolute right-3 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white"
+              >
+                <X size={18} />
+              </button>
+              <SidebarContent onNavigate={() => setSidebarOpen(false)} />
+            </aside>
+          </>
+        )}
 
-      <div className="flex flex-1 flex-col lg:pl-64">
-        <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <div className="flex-1 p-4 md:p-6 lg:p-8">{children}</div>
+        <div className="flex flex-1 flex-col lg:pl-64">
+          <Topbar onMenuClick={() => setSidebarOpen(true)} />
+          <div className="flex-1 p-4 md:p-6 lg:p-8">{children}</div>
+        </div>
       </div>
-    </div>
     </>
   );
 }

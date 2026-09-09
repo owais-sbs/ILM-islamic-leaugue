@@ -216,7 +216,7 @@ export function SiteHeader() {
               <Search size={17} strokeWidth={1.75} />
             </Link>
             <Link
-              href="/admin"
+              href="/admin/as/admin"
               className="hidden min-h-[36px] items-center rounded-full bg-ilm-gold px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-ilm-navy transition hover:bg-ilm-gold-dark hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/40 sm:inline-flex"
             >
               Admin

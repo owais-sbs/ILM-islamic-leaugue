@@ -6,17 +6,80 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Loader2 } from 'lucide-react';
 import { SiteLogo } from '@/components/Logo';
 import { createClient } from '@/lib/supabase/client';
+import {
+  AdminRole,
+  ALL_ROLES,
+  DEMO_ACCOUNTS,
+  ROLE_LABELS,
+  roleHomePath,
+  setTempRole,
+  type AdminRole as RoleKey,
+} from '@/lib/roles';
+
+interface RoleSelectorProps {
+  selected: RoleKey;
+  onChange: (role: RoleKey) => void;
+}
+
+function RoleSelector({ selected, onChange }: RoleSelectorProps) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold text-ilm-navy" id="role-selector-label">
+        Sign in as
+      </p>
+      <div
+        role="radiogroup"
+        aria-labelledby="role-selector-label"
+        className="flex w-full gap-1 rounded-xl border border-slate-200 bg-white p-1"
+      >
+        {ALL_ROLES.map((role) => {
+          const isSelected = selected === role;
+          return (
+            <button
+              key={role}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => onChange(role)}
+              className={[
+                'flex-1 rounded-lg px-2 py-2.5 text-xs font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-navy/40',
+                isSelected
+                  ? 'bg-ilm-navy text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-ilm-navy',
+              ].join(' ')}
+            >
+              {ROLE_LABELS[role]}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+        Toggle fills the demo email & password for that portal. Sign in with those credentials to
+        open the matching workspace.
+      </p>
+    </div>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/admin';
+  const nextParam = searchParams.get('next');
 
-  const [email, setEmail] = useState('adminops@gmail.com');
-  const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<RoleKey>(AdminRole.ADMIN);
+  const [email, setEmail] = useState(DEMO_ACCOUNTS[AdminRole.ADMIN].email);
+  const [password, setPassword] = useState(DEMO_ACCOUNTS[AdminRole.ADMIN].password);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const applyRole = (role: RoleKey) => {
+    setSelectedRole(role);
+    const demo = DEMO_ACCOUNTS[role];
+    setEmail(demo.email);
+    setPassword(demo.password);
+    setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,17 +87,32 @@ function LoginForm() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
       if (signInError) {
-        setError(signInError.message);
+        setError(
+          `${signInError.message} — If demo accounts are missing, run: node scripts/smoke-roles.mjs`,
+        );
         setLoading(false);
         return;
       }
-      // Role comes from profiles.role in Supabase — never from the client
-      router.push(next);
+      // Keep UI portal preference + URL role segment in sync
+      setTempRole(selectedRole);
+      const destination =
+        nextParam && nextParam.startsWith('/')
+          ? nextParam.includes('/admin/as/')
+            ? nextParam
+            : nextParam.startsWith('/admin')
+              ? nextParam.replace(/^\/admin/, `/admin/as/${selectedRole}`)
+              : nextParam
+          : roleHomePath(selectedRole);
+      router.push(destination);
       router.refresh();
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(message);
       setLoading(false);
     }
   };
@@ -47,6 +125,8 @@ function LoginForm() {
         </div>
       )}
 
+      <RoleSelector selected={selectedRole} onChange={applyRole} />
+
       <div>
         <label htmlFor="email" className="mb-2 block text-xs font-semibold text-ilm-navy">
           Email address
@@ -57,6 +137,7 @@ function LoginForm() {
             id="email"
             type="email"
             required
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
@@ -80,6 +161,7 @@ function LoginForm() {
             id="password"
             type={showPassword ? 'text' : 'password'}
             required
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
@@ -94,6 +176,15 @@ function LoginForm() {
             {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
           </button>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[11px] leading-relaxed text-slate-600">
+        <p className="font-semibold text-ilm-navy">Demo credentials</p>
+        <ul className="mt-1 space-y-0.5 font-mono">
+          <li>Admin — {DEMO_ACCOUNTS.admin.email} / {DEMO_ACCOUNTS.admin.password}</li>
+          <li>Editor — {DEMO_ACCOUNTS.editor.email} / {DEMO_ACCOUNTS.editor.password}</li>
+          <li>Author — {DEMO_ACCOUNTS.author.email} / {DEMO_ACCOUNTS.author.password}</li>
+        </ul>
       </div>
 
       <button
@@ -151,7 +242,7 @@ export default function LoginPage() {
             </p>
             <h2 className="font-display text-4xl font-semibold text-ilm-navy">Welcome back</h2>
             <p className="mt-2 text-sm text-slate-500">
-              Sign in to continue. Your role (Author, Editor, or Administrator) comes from your account.
+              Choose Author, Editor, or Administrator, then sign in to open that portal.
             </p>
           </div>
 

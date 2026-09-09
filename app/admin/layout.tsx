@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export const metadata: Metadata = {
@@ -11,5 +12,15 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayoutRoute({ children }: { children: React.ReactNode }) {
-  return <AdminLayout>{children}</AdminLayout>;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
+          Loading workspace…
+        </div>
+      }
+    >
+      <AdminLayout>{children}</AdminLayout>
+    </Suspense>
+  );
 }

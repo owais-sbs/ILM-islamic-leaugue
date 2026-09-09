@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import type { ProfileRow, DbRole } from '@/lib/supabase/types';
+import { clearTempRole } from '@/lib/roles';
 
 interface AuthContextValue {
   user: User | null;
@@ -117,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const signOut = async () => {
+    clearTempRole();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

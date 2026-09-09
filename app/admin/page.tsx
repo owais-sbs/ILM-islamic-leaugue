@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
   ArrowRight,
   FileText,
@@ -18,6 +17,7 @@ import { PageHeader, StatCard, Card } from '@/components/admin/AdminUI';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useRole, usePermissions, roleLabels } from '@/components/admin/RoleContext';
 import { useAuth } from '@/components/admin/AuthProvider';
+import { AdminLink } from '@/components/admin/AdminLink';
 import { fetchAdminDashboard, fetchAuthorDashboard, type AuthorDashboardData } from '@/lib/admin-api';
 import type { ArticleRow, ProfileRow, QuestionRow } from '@/lib/supabase/types';
 
@@ -102,22 +102,22 @@ function AuthorDashboard() {
       <div className="mt-8">
         <h2 className="mb-4 font-display text-xl font-semibold text-ilm-navy">Quick Actions</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link
+          <AdminLink
             href="/admin/articles/new"
             className="flex flex-col items-center justify-center gap-2 rounded-xl bg-ilm-navy py-6 text-white transition hover:bg-ilm-navy-light"
           >
             <FileEdit size={24} />
             <span className="text-sm font-semibold">Create New Article</span>
-          </Link>
+          </AdminLink>
 
           {recentDraft ? (
-            <Link
+            <AdminLink
               href={`/admin/articles/${recentDraft.id}/edit`}
               className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-6 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               <RefreshCw size={24} className="text-blue-500" />
               <span className="text-sm font-semibold">Continue Draft</span>
-            </Link>
+            </AdminLink>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 py-6 text-slate-400">
               <RefreshCw size={24} />
@@ -125,21 +125,21 @@ function AuthorDashboard() {
             </div>
           )}
 
-          <Link
+          <AdminLink
             href="/admin/articles?status=submitted"
             className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-6 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             <Inbox size={24} className="text-amber-500" />
             <span className="text-sm font-semibold">Submitted ({counts.submitted})</span>
-          </Link>
+          </AdminLink>
 
-          <Link
+          <AdminLink
             href="/admin/articles?status=returned"
             className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-6 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             <MessageCircle size={24} className="text-rose-500" />
             <span className="text-sm font-semibold">Returned ({counts.returned})</span>
-          </Link>
+          </AdminLink>
         </div>
       </div>
 
@@ -147,12 +147,12 @@ function AuthorDashboard() {
       <div className="mt-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-xl font-semibold text-ilm-navy">My Articles</h2>
-          <Link
+          <AdminLink
             href="/admin/articles"
             className="flex items-center gap-1 text-xs font-medium text-ilm-navy transition hover:gap-2 hover:text-ilm-gold"
           >
             View all <ArrowRight size={14} />
-          </Link>
+          </AdminLink>
         </div>
 
         <Card className="overflow-hidden">
@@ -160,12 +160,12 @@ function AuthorDashboard() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileEdit size={32} className="mb-3 text-slate-300" />
               <p className="text-sm text-slate-500">No articles yet.</p>
-              <Link
+              <AdminLink
                 href="/admin/articles/new"
                 className="mt-3 text-sm font-medium text-ilm-navy hover:underline"
               >
                 Write your first article →
-              </Link>
+              </AdminLink>
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -203,22 +203,22 @@ function AuthorDashboard() {
                   <div className="flex shrink-0 items-center gap-3">
                     <StatusBadge status={article.status} />
                     {(article.status === 'draft' || article.status === 'returned') && (
-                      <Link
+                      <AdminLink
                         href={`/admin/articles/${article.id}/edit`}
                         className={`text-xs font-medium hover:underline ${
                           article.status === 'returned' ? 'text-rose-600' : 'text-sky-600'
                         }`}
                       >
                         {article.status === 'returned' ? 'Correct & resubmit' : 'Edit'}
-                      </Link>
+                      </AdminLink>
                     )}
                     {(article.status === 'submitted' || article.status === 'approved' || article.status === 'published') && (
-                      <Link
+                      <AdminLink
                         href={`/admin/articles/${article.id}/preview`}
                         className="text-xs font-medium text-slate-500 hover:underline"
                       >
                         View
-                      </Link>
+                      </AdminLink>
                     )}
                   </div>
                 </div>
@@ -349,16 +349,16 @@ export default function AdminDashboard() {
           <Card className="p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold text-ilm-navy">Review Queue</h2>
-              <Link href="/admin/review" className="flex items-center gap-1 text-xs font-medium text-ilm-navy transition hover:gap-2 hover:text-ilm-gold">
+              <AdminLink href="/admin/review" className="flex items-center gap-1 text-xs font-medium text-ilm-navy transition hover:gap-2 hover:text-ilm-gold">
                 Open full queue <ArrowRight size={14} />
-              </Link>
+              </AdminLink>
             </div>
             {submitted.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-400">No articles awaiting review.</p>
             ) : (
               <div className="divide-y divide-slate-50">
                 {submitted.slice(0, 5).map((article) => (
-                  <Link
+                  <AdminLink
                     key={article.id}
                     href={`/admin/review/${article.id}`}
                     className="flex items-center gap-4 rounded-lg px-3 py-3 transition hover:bg-amber-50/40"
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <StatusBadge status={article.status as any} />
-                  </Link>
+                  </AdminLink>
                 ))}
               </div>
             )}
@@ -421,19 +421,19 @@ export default function AdminDashboard() {
         <Card className="p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-xl font-semibold text-ilm-navy">Recent articles</h2>
-            <Link href="/admin/articles" className="flex items-center gap-1 text-xs font-medium text-ilm-navy hover:gap-2">
+            <AdminLink href="/admin/articles" className="flex items-center gap-1 text-xs font-medium text-ilm-navy hover:gap-2">
               View all <ArrowRight size={14} />
-            </Link>
+            </AdminLink>
           </div>
           {recentArticles.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-400">
               No articles yet.{' '}
-              <Link href="/admin/articles/new" className="font-medium text-ilm-navy hover:underline">Create one</Link>
+              <AdminLink href="/admin/articles/new" className="font-medium text-ilm-navy hover:underline">Create one</AdminLink>
             </p>
           ) : (
             <div className="space-y-1">
               {recentArticles.map((article) => (
-                <Link key={article.id} href={`/admin/articles/${article.id}/edit`} className="flex items-center gap-4 rounded-lg px-3 py-3 hover:bg-sky-50/60">
+                <AdminLink key={article.id} href={`/admin/articles/${article.id}/edit`} className="flex items-center gap-4 rounded-lg px-3 py-3 hover:bg-sky-50/60">
                   {article.featured_image_url ? (
                     <img src={article.featured_image_url} alt="" className="h-12 w-16 rounded-lg object-cover" />
                   ) : (
@@ -446,7 +446,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <StatusBadge status={article.status} />
-                </Link>
+                </AdminLink>
               ))}
             </div>
           )}
@@ -508,9 +508,9 @@ export default function AdminDashboard() {
                 {new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' })}
               </p>
             </div>
-            <Link href="/admin/authors" className="flex items-center gap-1 text-xs font-medium text-ilm-navy transition hover:gap-2 hover:text-ilm-gold">
+            <AdminLink href="/admin/authors" className="flex items-center gap-1 text-xs font-medium text-ilm-navy transition hover:gap-2 hover:text-ilm-gold">
               Manage authors <ArrowRight size={13} />
-            </Link>
+            </AdminLink>
           </div>
 
           <div className="overflow-x-auto">

@@ -14,6 +14,13 @@ const nextConfig = {
       { protocol: 'https', hostname: 'tfigmkhchtvuhtqeeciq.supabase.co', pathname: '/**' },
     ],
   },
+  async rewrites() {
+    return [
+      // Role portals: /admin/as/{author|editor|admin}/... → same pages under /admin/...
+      { source: '/admin/as/:role', destination: '/admin' },
+      { source: '/admin/as/:role/:path*', destination: '/admin/:path*' },
+    ];
+  },
   async headers() {
     return [
       {
