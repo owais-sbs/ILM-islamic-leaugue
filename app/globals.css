@@ -14,7 +14,7 @@
   --ink-soft:   #3D3D3D;
   --font-display: 'Cormorant Garamond';
   --font-body:    'Inter';
-  --site-header-offset: 6.75rem; /* announcement strip + compact nav */
+  --site-header-offset: 5rem; /* fixed header height only — announcement bar is separate */
 }
 
 /* ─── Base ──────────────────────────────────────── */

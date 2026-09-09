@@ -97,6 +97,58 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Mission statement */}
+      <section className="relative overflow-hidden border-b border-ilm-navy/[0.06] bg-white px-6 py-14 md:px-12 md:py-16">
+        <div className="pointer-events-none absolute left-0 top-0 h-px w-full bg-gradient-to-r from-ilm-gold/40 via-ilm-gold/10 to-transparent" aria-hidden />
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-20">
+            {/* Left — heading */}
+            <Reveal>
+              <SectionLabel>Our mission</SectionLabel>
+              <h2 className="font-display text-[2rem] leading-[1.1] tracking-[-0.015em] text-ilm-navy md:text-[2.5rem]">
+                Mentors.{' '}
+                <em className="not-italic text-ilm-gold">Educators.</em>{' '}
+                Cultivators.
+              </h2>
+              <div className="mt-5 h-px w-12 bg-ilm-gold/50" />
+              <p className="mt-5 max-w-md text-[14.5px] leading-[1.85] text-slate-500">
+                ILM is a public library of thoughtful Islamic writing — a
+                considered space for those who seek depth over noise. We bring
+                together qualified voices, careful editorial work, and the
+                conviction that good knowledge should feel both rigorous and
+                alive.
+              </p>
+              <Link
+                href="/about"
+                className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.15em] text-ilm-navy transition hover:gap-3 hover:text-ilm-gold"
+              >
+                Learn about ILM <ArrowRight size={13} />
+              </Link>
+            </Reveal>
+            {/* Right — three pillars */}
+            <Reveal delay="delay-1">
+              <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                {[
+                  { icon: BookOpen, title: 'Authentic Sources', body: "Every essay is grounded in the Qur'ān, Sunnah, and the recognised schools of Islamic thought." },
+                  { icon: Users,    title: 'Qualified Voices',  body: 'Contributors are vetted teachers, researchers, and scholars — not anonymous commentators.' },
+                  { icon: Sparkles, title: 'Beneficial Impact', body: 'We write for formation, not performance — knowledge that changes how we meet the world.' },
+                ].map(({ icon: Icon, title, body }) => (
+                  <div key={title} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-[#F9F8F5] p-5">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-ilm-gold shadow-sm">
+                      <Icon size={18} strokeWidth={1.5} />
+                    </span>
+                    <div>
+                      <p className="text-[12px] font-semibold text-ilm-navy">{title}</p>
+                      <p className="mt-1 text-[12px] leading-relaxed text-slate-500">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* Featured article */}
       <section className="bg-white px-6 py-14 md:px-12 md:py-16">
         <div className="mx-auto max-w-7xl">

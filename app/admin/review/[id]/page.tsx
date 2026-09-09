@@ -20,6 +20,7 @@ import { Card } from '@/components/admin/AdminUI';
 import { StatusBadge } from '@/components/StatusBadge';
 import { usePermissions, useRole } from '@/components/admin/RoleContext';
 import { useAuth } from '@/components/admin/AuthProvider';
+import { createClient } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/supabase/admin-helpers';
 import { saveAdminArticle, fetchAdminArticle } from '@/lib/admin-api';
 import type { ArticleRow, DbArticleStatus } from '@/lib/supabase/types';

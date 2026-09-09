@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ArrowRight, BookOpen, Heart, Users, Scale, Globe } from 'lucide-react';
+import { ArrowRight, BookOpen, Heart, Users, Scale, Globe, GraduationCap } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { PageHero, ModernCard, SectionLabel } from '@/components/PageHero';
@@ -38,12 +38,76 @@ export default function AboutPage() {
         title={<>A library for the <em className="font-normal text-ilm-gold">work of becoming.</em></>}
         description="The Islamic League of Murabbiyūn publishes thoughtful writing on faith, practice, and renewal — for seekers who want depth without noise."
       />
+
+      {/* ── Meaning of Murabbiyūn ────────────────────── */}
+      <section className="ilm-section border-b border-slate-100 bg-[#F9F8F5]">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-20">
+
+            {/* Left — image composition */}
+            <Reveal>
+              <div className="relative pb-8 pr-4">
+                {/* Main image */}
+                <div className="overflow-hidden rounded-2xl shadow-[0_20px_50px_rgba(15,22,87,0.14)]">
+                  <img
+                    src={images.reading}
+                    alt="Scholar studying classical texts"
+                    className="aspect-[4/5] w-full object-cover"
+                  />
+                </div>
+                {/* Overlapping secondary image */}
+                <div className="absolute -bottom-2 -right-2 w-[52%] overflow-hidden rounded-xl border-[3px] border-white shadow-[0_12px_36px_rgba(15,22,87,0.18)]">
+                  <img
+                    src={images.arches}
+                    alt="Mosque archway"
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Right — content */}
+            <Reveal delay="delay-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-ilm-navy text-ilm-gold shadow-md">
+                  <GraduationCap size={24} strokeWidth={1.5} />
+                </div>
+                <p className="text-[9px] font-semibold uppercase tracking-[.22em] text-slate-400">
+                  Murabbiyūn — plural of Murabbī
+                </p>
+              </div>
+              <h2 className="font-display text-[1.9rem] leading-[1.15] text-ilm-navy md:text-[2.2rem]">
+                The Meaning of{' '}
+                <em className="not-italic text-ilm-gold">Murabbiyūn</em>
+              </h2>
+              <div className="mt-5 h-px w-10 bg-ilm-gold/50" />
+              <p className="mt-5 text-[15px] leading-8 text-slate-600">
+                <strong className="font-semibold text-ilm-navy">Murabbī</strong> (مُرَبِّي) comes from the Arabic root{' '}
+                <span dir="rtl" className="font-semibold text-ilm-gold">ر ب و</span> — to nourish, to raise, to cultivate. A Murabbī is one who does not merely transmit information, but who tends to the growth of those in their care.
+              </p>
+              <p className="mt-4 text-[15px] leading-8 text-slate-600">
+                In the Islamic tradition, a Murabbī is a teacher who forms character as much as intellect — someone who accompanies the student on the path of becoming, not just the path of knowing. They carry the trust of knowledge with humility, and they give it with sincerity.
+              </p>
+              <p className="mt-4 text-[15px] leading-8 text-slate-600">
+                <strong className="font-semibold text-ilm-navy">Murabbiyūn</strong> is the plural: those who cultivate. Together they form a community of educators, scholars, and guides who believe that knowledge is not a transaction — it is a living inheritance, passed carefully from hand to hand, and from heart to heart.
+              </p>
+              <div className="mt-7 rounded-xl border border-ilm-gold/20 bg-white p-5">
+                <p className="font-display text-[1.05rem] italic text-ilm-navy leading-relaxed">
+                  &ldquo;The best of you are those who learn knowledge and then teach it.&rdquo;
+                </p>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[.18em] text-ilm-gold/70">
+                  — Prophet Muhammad ﷺ (Sunan Ibn Mājah)
+                </p>
+              </div>
+            </Reveal>
+
+          </div>
+        </div>
+      </section>
+
       <section className="ilm-section">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:items-center">
+        <div className="mx-auto max-w-4xl">
           <Reveal>
-            <img src={images.arches2} alt="Islamic architectural arches" className="aspect-[4/3] w-full rounded-3xl object-cover shadow-[0_20px_50px_rgba(15,22,87,0.10)]" />
-          </Reveal>
-          <Reveal delay="delay-1">
             <SectionLabel>Our mission</SectionLabel>
             <h2 className="font-display text-3xl text-ilm-navy md:text-4xl">Mentors · Educators · Cultivators</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
