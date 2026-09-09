@@ -8,6 +8,8 @@ import {
   Bell,
   ChevronDown,
   ExternalLink,
+  Eye,
+  FileEdit,
   FileText,
   FolderTree,
   Home,
@@ -23,10 +25,10 @@ import {
 } from 'lucide-react';
 import { SiteLogo } from '@/components/Logo';
 import { AuthProvider, useAuth } from '@/components/admin/AuthProvider';
-import { RoleProvider, usePermissions, roleLabels } from '@/components/admin/RoleContext';
+import { RoleProvider, usePermissions, useRole, roleLabels } from '@/components/admin/RoleContext';
 import { cn } from '@/lib/utils';
 
-const navGroups = [
+const baseNavGroups = [
   {
     label: 'Dashboard',
     items: [{ label: 'Overview', href: '/admin', icon: Home }],
@@ -34,10 +36,11 @@ const navGroups = [
   {
     label: 'Content',
     items: [
-      { label: 'Articles',   href: '/admin/articles',   icon: FileText },
-      { label: 'Categories', href: '/admin/categories', icon: FolderTree, adminOnly: true },
-      { label: 'Tags',       href: '/admin/tags',       icon: Tag,        adminOnly: true },
-      { label: 'Media',      href: '/admin/media',      icon: ImageIcon },
+      { label: 'Articles',     href: '/admin/articles',   icon: FileText },
+      { label: 'Review Queue', href: '/admin/review',     icon: Eye },
+      { label: 'Categories',   href: '/admin/categories', icon: FolderTree },
+      { label: 'Tags',         href: '/admin/tags',       icon: Tag        },
+      { label: 'Media',        href: '/admin/media',      icon: ImageIcon },
     ],
   },
   {
@@ -58,12 +61,48 @@ const navGroups = [
       { label: 'Activity Log',  href: '/admin/activity', icon: Activity, adminOnly: true },
     ],
   },
+  {
+    label: 'Account',
+    items: [
+      { label: 'My Profile',       href: '/admin/profile', icon: Users },
+      { label: 'Help / Guidelines', href: '/admin/help',   icon: ExternalLink },
+    ],
+  },
+];
+
+const authorNavGroups = [
+  {
+    label: 'Main',
+    items: [
+      { label: 'Dashboard', href: '/admin', icon: Home },
+      { label: 'My Articles', href: '/admin/articles', icon: FileText },
+      { label: 'Create Article', href: '/admin/articles/new', icon: FileEdit },
+    ],
+  },
+  {
+    label: 'Content',
+    items: [
+      { label: 'Drafts', href: '/admin/articles?status=draft', icon: FileText },
+      { label: 'Submitted', href: '/admin/articles?status=submitted', icon: Inbox },
+      { label: 'Returned', href: '/admin/articles?status=returned', icon: MessageCircle },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { label: 'My Profile', href: '/admin/profile', icon: Users },
+      { label: 'Help / Guidelines', href: '/admin/help', icon: ExternalLink },
+    ],
+  },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const perms = usePermissions();
   const { signOut, profile } = useAuth();
+  const { role } = useRole();
+
+  const activeNavGroups = role === 'author' ? authorNavGroups : baseNavGroups;
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#0B1248] via-[#0F1657] to-[#151d6b] text-white">
@@ -75,7 +114,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
 
       <nav className="admin-sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
-        {navGroups.map((group) => {
+        {activeNavGroups.map((group) => {
           const visibleItems = group.items.filter(
             (item) => !('adminOnly' in item && item.adminOnly) || perms.canManageSettings,
           );

@@ -9,6 +9,7 @@ import {
   Eye,
   Heading2,
   Heading3,
+  History,
   Image as ImageIcon,
   Italic,
   Link2,
@@ -17,6 +18,7 @@ import {
   Loader2,
   Quote,
   Redo,
+  RotateCcw,
   Save,
   Trash2,
   Underline,
@@ -34,6 +36,8 @@ import {
   deleteAdminArticle,
   saveAdminArticle,
   uploadAdminMedia,
+  fetchArticleRevisions,
+  type RevisionRow,
 } from '@/lib/admin-api';
 import { slugify, type CategoryRow, type DbArticleStatus, type TagRow } from '@/lib/supabase/types';
 import Swal from 'sweetalert2';
@@ -82,8 +86,12 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
   const [featuredImage, setFeaturedImage] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [footnotes, setFootnotes] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
-  const [autosave, setAutosave] = useState('Ready');
+  const [showPreview,      setShowPreview]      = useState(false);
+  const [autosave,         setAutosave]         = useState('Ready');
+  const [showRevisions,    setShowRevisions]    = useState(false);
+  const [restoredId,       setRestoredId]       = useState<string | null>(null);
+  const [revisions,        setRevisions]        = useState<RevisionRow[]>([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
 
   useEffect(() => {
     setCurrentId(articleId);
@@ -92,6 +100,7 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
   useEffect(() => {
     const load = async () => {
       try {
+        // All roles now use the real Supabase API
         const meta = await fetchAdminMeta();
         setCategories((meta.categories as CategoryRow[]) || []);
         setTags((meta.tags as TagRow[]) || []);
@@ -113,6 +122,11 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
           setSeoDesc(article.seo_description || '');
           setReviewNotes(article.review_notes || '');
           setSelectedTags(tagNames);
+
+          // Load revision history (non-blocking)
+          fetchArticleRevisions(currentId)
+            .then(setRevisions)
+            .catch(() => setRevisions([]));
         }
       } catch (err) {
         setMessage(err instanceof Error ? err.message : 'Failed to load article');
@@ -121,7 +135,7 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
       }
     };
     load();
-  }, [currentId]);
+  }, [currentId, role]);
 
   useEffect(() => {
     editorInitialized.current = false;
@@ -181,13 +195,32 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
     }
 
     try {
+      let savedId = currentId;
+
+      // All roles now use the real Supabase API.
+      // The server enforces author_id = user.id (RLS + API layer).
       const result = await saveAdminArticle(payload, currentId, selectedTags);
-      const savedId = result.article.id;
+      savedId = result.article.id;
       setCurrentId(savedId);
       setStatus(result.status);
       setAutosave('Saved just now');
 
       if (finalStatus === 'published') {
+        // Immediately bust the ISR cache so the article appears on the
+        // public site without waiting for the 60-second revalidate window.
+        const articleSlug = slug || result.article.slug;
+        fetch('/api/revalidate', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paths: ['/', '/articles', `/articles/${articleSlug}`],
+          }),
+        }).catch(() => {
+          // Non-blocking — a revalidation failure should not prevent the
+          // publish success message from showing.
+        });
+
         await Swal.fire({
           icon: 'success',
           title: 'Published!',
@@ -333,24 +366,30 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
           >
             <Eye size={15} /> Preview
           </button>
-          <button
-            type="button"
-            disabled={saving || loading}
-            onClick={() => saveArticle('draft')}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-          >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save draft
-          </button>
-          {(status === 'draft' || status === 'returned') && (
-            <button
-              type="button"
-              disabled={saving || loading}
-              onClick={() => saveArticle('submitted')}
-              className="flex items-center gap-2 rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-sky-700"
-            >
-              Submit for review
-            </button>
-          )}
+          
+          {role !== 'author' || status === 'draft' || status === 'returned' || !currentId ? (
+            <>
+              <button
+                type="button"
+                disabled={saving || loading}
+                onClick={() => saveArticle('draft')}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+              >
+                {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save draft
+              </button>
+              {(status === 'draft' || status === 'returned' || !currentId) && (
+                <button
+                  type="button"
+                  disabled={saving || loading}
+                  onClick={() => saveArticle('submitted')}
+                  className="flex items-center gap-2 rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-sky-700"
+                >
+                  Submit for review
+                </button>
+              )}
+            </>
+          ) : null}
+
           {perms.canPublish && (
             <button
               type="button"
@@ -493,6 +532,9 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
         <div className="space-y-4">
           <Card className="p-5">
             <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">Status</h3>
+            {/* Authors can only have draft/submitted/returned — they cannot self-promote to approved/published */}
+            {/* Editors can have draft/submitted/returned/approved — they cannot publish */}
+            {/* Admins have full control */}
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as DbArticleStatus)}
@@ -500,11 +542,15 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
             >
               <option value="draft">Draft</option>
               <option value="submitted">Submitted</option>
-              <option value="approved">Approved</option>
-              <option value="published">Published</option>
               <option value="returned">Returned</option>
+              {(role === 'editor' || role === 'admin') && (
+                <option value="approved">Approved</option>
+              )}
+              {role === 'admin' && (
+                <option value="published">Published</option>
+              )}
             </select>
-            {currentId && (
+            {currentId && (role === 'editor' || role === 'admin') && (
               <Link
                 href={`/admin/review/${currentId}`}
                 className="mt-3 block text-center text-xs font-medium text-ilm-navy hover:underline"
@@ -624,6 +670,80 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
               </div>
             </div>
           </Card>
+
+          {/* ── Revision History ── */}
+          {revisions.length > 0 && (
+            <Card className="p-5">
+              <button
+                type="button"
+                onClick={() => setShowRevisions(!showRevisions)}
+                className="flex w-full items-center justify-between"
+              >
+                <h3 className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">
+                  <History size={13} /> Revision history
+                </h3>
+                <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-600">
+                  {revisions.length}
+                </span>
+              </button>
+
+              {showRevisions && (
+                <div className="mt-3 space-y-2">
+                  {revisions.map((rev, idx) => {
+                    const versionNum = revisions.length - idx; // newest first → highest number first
+                    const editorName = (rev as any).profiles?.full_name || rev.edited_by?.slice(0, 8) || 'Unknown';
+                    const isRestored = restoredId === rev.id;
+                    return (
+                      <div
+                        key={rev.id}
+                        className={cn(
+                          'rounded-lg border p-3 text-xs transition',
+                          isRestored
+                            ? 'border-sky-200 bg-sky-50'
+                            : 'border-slate-100 bg-slate-50/50',
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-700">
+                              v{versionNum} — {rev.title || 'Untitled'}
+                            </p>
+                            <p className="mt-0.5 text-slate-400">
+                              {editorName} ·{' '}
+                              {new Date(rev.created_at).toLocaleDateString('en-GB', {
+                                day: 'numeric', month: 'short',
+                                hour: '2-digit', minute: '2-digit',
+                              })}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (bodyRef.current) {
+                                bodyRef.current.innerHTML = rev.body_html || '';
+                                setBodyHtml(rev.body_html || '');
+                              }
+                              setRestoredId(rev.id);
+                              setAutosave(`Restored v${versionNum} — save to keep`);
+                            }}
+                            className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium text-slate-600 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+                            title="Restore this version"
+                          >
+                            <RotateCcw size={11} /> Restore
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {restoredId && (
+                    <p className="mt-1 text-[10px] text-amber-600">
+                      Version restored. Click Save draft to keep this version.
+                    </p>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       </div>
 

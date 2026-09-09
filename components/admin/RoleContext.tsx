@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useEffect, useState, type ReactNode } from 'react';
 import type { Role } from '@/lib/data';
 import { useAuth } from '@/components/admin/AuthProvider';
+import { getTempRole } from '@/lib/roles';
 
 interface RoleContextValue {
   role: Role;
@@ -11,15 +12,25 @@ interface RoleContextValue {
 
 const RoleContext = createContext<RoleContextValue>({ role: 'admin', setRole: () => {} });
 
-/** Role comes from the signed-in Supabase profile (RLS-backed). */
+/** Role comes from the signed-in Supabase profile (RLS-backed), but overridden by temporary role for Step 2 UI development. */
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const { role } = useAuth();
+  const { role: authRole } = useAuth();
+  const [role, setRole] = useState<Role>(authRole as Role);
+
+  useEffect(() => {
+    // Override with the temporary role for Step 2 testing if available
+    const tempRole = getTempRole();
+    if (tempRole) {
+      setRole(tempRole as Role);
+    } else {
+      setRole(authRole as Role);
+    }
+  }, [authRole]);
+
   const value = useMemo(
     () => ({
       role,
-      setRole: () => {
-        /* Role is managed in the database profile, not switched in the UI */
-      },
+      setRole: (newRole: Role) => setRole(newRole),
     }),
     [role],
   );

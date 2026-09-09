@@ -63,5 +63,15 @@ export async function POST(request: Request) {
     }
   }
 
+  // Initial revision snapshot
+  await supabase.from('article_revisions').insert({
+    article_id: data.id,
+    title:      data.title,
+    body_html:  data.body_html,
+    edited_by:  user.id,
+  }).then(({ error: revErr }) => {
+    if (revErr) console.warn('Initial revision snapshot failed:', revErr.message);
+  });
+
   return NextResponse.json({ article: data, status: data.status });
 }

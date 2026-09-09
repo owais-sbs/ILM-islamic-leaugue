@@ -44,7 +44,17 @@ export async function PATCH(request: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  // Editors and admins use the service-role client so that RLS update
+  // policies (which restrict by current row status) never silently block
+  // a legitimate publish or status-change. The role check above already
+  // enforces who is allowed to publish. This mirrors the same pattern
+  // already used in the DELETE handler below.
+  const db =
+    profile.role === 'editor' || profile.role === 'admin'
+      ? createServiceClient()
+      : supabase;
+
+  const { data, error } = await db
     .from('articles')
     .update(payload)
     .eq('id', params.id)
@@ -55,12 +65,33 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Guard against a silent RLS block (update matched 0 rows → data is null)
+  if (!data) {
+    return NextResponse.json(
+      { error: 'Article not found or you do not have permission to update it.' },
+      { status: 403 },
+    );
+  }
+
+  // ── Revision snapshot ─────────────────────────────────────────────────
+  // Insert a snapshot into article_revisions on every successful save.
+  // Errors are non-fatal — we log but don't block the response.
+  const { error: revErr } = await db.from('article_revisions').insert({
+    article_id: data.id,
+    title:      data.title,
+    body_html:  data.body_html,
+    edited_by:  auth.ctx.user.id,
+  });
+  if (revErr) {
+    console.warn('Revision snapshot failed (non-fatal):', revErr.message);
+  }
+
   if (Array.isArray(tagNames)) {
-    await supabase.from('article_tags').delete().eq('article_id', params.id);
-    const { data: tags } = await supabase.from('tags').select('id, name');
+    await db.from('article_tags').delete().eq('article_id', params.id);
+    const { data: tags } = await db.from('tags').select('id, name');
     const matched = (tags || []).filter((t) => tagNames.includes(t.name));
     if (matched.length > 0) {
-      await supabase.from('article_tags').insert(
+      await db.from('article_tags').insert(
         matched.map((t) => ({ article_id: params.id, tag_id: t.id })),
       );
     }

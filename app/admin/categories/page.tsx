@@ -41,17 +41,41 @@ export default function AdminCategories() {
   };
 
   useEffect(() => {
-    if (perms.canManageTaxonomy) load();
-    else setLoading(false);
+    // Both admin (full manage) and editor (read-only reference) need the list
+    load();
   }, [perms.canManageTaxonomy]);
 
+  // Editor sees a read-only reference list — they need it when editing articles
   if (!perms.canManageTaxonomy) {
     return (
       <div>
-        <PageHeader title="Categories" description="Manage article subjects" />
-        <Card className="p-8 text-center">
-          <p className="text-sm text-slate-500">Only Administrators can manage categories.</p>
-        </Card>
+        <PageHeader title="Categories" description="Subject categories — reference view" />
+        {loading ? (
+          <div className="flex justify-center py-16 text-sm text-slate-500">
+            <Loader2 className="mr-2 animate-spin" size={18} /> Loading…
+          </div>
+        ) : (
+          <Card className="divide-y divide-slate-50">
+            {items.length === 0 ? (
+              <p className="px-5 py-8 text-center text-sm text-slate-400">No categories yet.</p>
+            ) : (
+              items.map((cat) => (
+                <div key={cat.id} className="flex items-center gap-4 px-5 py-3.5">
+                  <span className="h-3 w-3 rounded-full shrink-0" style={{ background: cat.color }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-slate-800">{cat.name}</p>
+                    <p className="text-xs text-slate-400">{cat.description || `/${cat.slug}`}</p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div className="px-5 py-3 bg-slate-50/50">
+              <p className="text-[11px] text-slate-400">
+                Category management is restricted to Administrators.
+              </p>
+            </div>
+          </Card>
+        )}
       </div>
     );
   }

@@ -88,3 +88,43 @@ export async function deleteAdminMedia(id: string) {
   });
   return parseJson<{ ok: boolean }>(res);
 }
+
+// ── Author-specific API ───────────────────────────────────────────────────
+
+export interface AuthorDashboardData {
+  profile: import('@/lib/supabase/types').ProfileRow;
+  counts: {
+    draft: number;
+    submitted: number;
+    returned: number;
+    approved: number;
+    published: number;
+    total: number;
+  };
+  recentArticles: import('@/lib/supabase/types').ArticleRow[];
+}
+
+export async function fetchAuthorDashboard(): Promise<AuthorDashboardData> {
+  const res = await fetch('/api/author/dashboard', { credentials: 'include' });
+  return parseJson<AuthorDashboardData>(res);
+}
+
+// ── Revision history ─────────────────────────────────────────────────────
+
+export interface RevisionRow {
+  id: string;
+  article_id: string;
+  title: string;
+  body_html: string;
+  edited_by: string | null;
+  created_at: string;
+  profiles?: { full_name: string } | null;
+}
+
+export async function fetchArticleRevisions(articleId: string): Promise<RevisionRow[]> {
+  const res = await fetch(`/api/admin/articles/${articleId}/revisions`, {
+    credentials: 'include',
+  });
+  const data = await parseJson<{ revisions: RevisionRow[] }>(res);
+  return data.revisions;
+}

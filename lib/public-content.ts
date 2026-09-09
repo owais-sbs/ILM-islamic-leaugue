@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Article, Category } from '@/lib/data';
-import { articles as mockArticles, categories as mockCategories } from '@/lib/data';
 import { mapRowToArticle } from '@/lib/map-article';
 import type { ArticleRow, CategoryRow } from '@/lib/supabase/types';
 
@@ -11,6 +10,11 @@ const ARTICLE_SELECT = `
   article_tags(tags(name, slug))
 `;
 
+/**
+ * Fetch all published articles from Supabase.
+ * Returns an empty array on error — never falls back to mock data.
+ * The public pages handle an empty array gracefully with an EmptyArticles state.
+ */
 export async function fetchPublishedArticles(): Promise<Article[]> {
   try {
     const supabase = createClient();
@@ -20,15 +24,22 @@ export async function fetchPublishedArticles(): Promise<Article[]> {
       .eq('status', 'published')
       .order('published_at', { ascending: false });
 
-    if (error || !data?.length) {
-      return mockArticles.filter((a) => a.status === 'published');
+    if (error) {
+      console.error('[public-content] fetchPublishedArticles error:', error.message);
+      return [];
     }
-    return data.map((row) => mapRowToArticle(row as ArticleRow));
-  } catch {
-    return mockArticles.filter((a) => a.status === 'published');
+
+    return (data ?? []).map((row) => mapRowToArticle(row as ArticleRow));
+  } catch (err) {
+    console.error('[public-content] fetchPublishedArticles exception:', err);
+    return [];
   }
 }
 
+/**
+ * Fetch a single published article by slug.
+ * Returns null if not found or not published.
+ */
 export async function fetchArticleBySlug(slug: string): Promise<Article | null> {
   try {
     const supabase = createClient();
@@ -39,15 +50,21 @@ export async function fetchArticleBySlug(slug: string): Promise<Article | null> 
       .eq('status', 'published')
       .maybeSingle();
 
-    if (error || !data) {
-      return mockArticles.find((a) => a.slug === slug && a.status === 'published') ?? null;
+    if (error) {
+      console.error('[public-content] fetchArticleBySlug error:', error.message);
+      return null;
     }
-    return mapRowToArticle(data as ArticleRow);
-  } catch {
-    return mockArticles.find((a) => a.slug === slug && a.status === 'published') ?? null;
+
+    return data ? mapRowToArticle(data as ArticleRow) : null;
+  } catch (err) {
+    console.error('[public-content] fetchArticleBySlug exception:', err);
+    return null;
   }
 }
 
+/**
+ * Fetch all categories with real published article counts.
+ */
 export async function fetchPublicCategories(): Promise<Category[]> {
   try {
     const supabase = createClient();
@@ -56,8 +73,9 @@ export async function fetchPublicCategories(): Promise<Category[]> {
       supabase.from('articles').select('category_id').eq('status', 'published'),
     ]);
 
-    if (catErr || !cats?.length) {
-      return mockCategories;
+    if (catErr) {
+      console.error('[public-content] fetchPublicCategories error:', catErr.message);
+      return [];
     }
 
     const counts = new Map<string, number>();
@@ -67,7 +85,7 @@ export async function fetchPublicCategories(): Promise<Category[]> {
       }
     }
 
-    return (cats as CategoryRow[]).map((c) => ({
+    return (cats ?? []).map((c: CategoryRow) => ({
       id: c.id,
       name: c.name,
       slug: c.slug,
@@ -75,7 +93,8 @@ export async function fetchPublicCategories(): Promise<Category[]> {
       color: c.color,
       articleCount: counts.get(c.id) || 0,
     }));
-  } catch {
-    return mockCategories;
+  } catch (err) {
+    console.error('[public-content] fetchPublicCategories exception:', err);
+    return [];
   }
 }

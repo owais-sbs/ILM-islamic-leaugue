@@ -27,17 +27,41 @@ export default function AdminTags() {
   };
 
   useEffect(() => {
-    if (perms.canManageTaxonomy) load();
-    else setLoading(false);
+    // Both admin (full manage) and editor (read-only reference) need the list
+    load();
   }, [perms.canManageTaxonomy]);
 
+  // Editor sees a read-only reference list — needed when tagging articles
   if (!perms.canManageTaxonomy) {
     return (
       <div>
-        <PageHeader title="Tags" description="Manage article tags" />
-        <Card className="p-8 text-center">
-          <p className="text-sm text-slate-500">Only Administrators can manage tags.</p>
-        </Card>
+        <PageHeader title="Tags" description="Article tags — reference view" />
+        {loading ? (
+          <div className="flex justify-center py-16 text-sm text-slate-500">
+            <Loader2 className="mr-2 animate-spin" size={18} /> Loading…
+          </div>
+        ) : (
+          <Card className="p-5">
+            {items.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-400">No tags yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {items.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-ilm-gold/60" />
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-400">
+              Tag management is restricted to Administrators.
+            </p>
+          </Card>
+        )}
       </div>
     );
   }

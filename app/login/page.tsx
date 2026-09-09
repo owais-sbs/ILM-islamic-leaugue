@@ -6,6 +6,56 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Loader2 } from 'lucide-react';
 import { SiteLogo } from '@/components/Logo';
 import { createClient } from '@/lib/supabase/client';
+import { AdminRole, ALL_ROLES, ROLE_LABELS, setTempRole } from '@/lib/roles';
+
+// ---------------------------------------------------------------------------
+// Role selector
+// ---------------------------------------------------------------------------
+
+interface RoleSelectorProps {
+  selected: AdminRole;
+  onChange: (role: AdminRole) => void;
+}
+
+function RoleSelector({ selected, onChange }: RoleSelectorProps) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold text-ilm-navy" id="role-selector-label">
+        Sign in as
+      </p>
+      <div
+        role="radiogroup"
+        aria-labelledby="role-selector-label"
+        className="flex w-full rounded-xl border border-slate-200 bg-white p-1 gap-1"
+      >
+        {ALL_ROLES.map((role) => {
+          const isSelected = selected === role;
+          return (
+            <button
+              key={role}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => onChange(role)}
+              className={[
+                'flex-1 rounded-lg px-2 py-2.5 text-xs font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-navy/40',
+                isSelected
+                  ? 'bg-ilm-navy text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-ilm-navy',
+              ].join(' ')}
+            >
+              {ROLE_LABELS[role]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Login form
+// ---------------------------------------------------------------------------
 
 function LoginForm() {
   const router = useRouter();
@@ -17,6 +67,9 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Default to AUTHOR so a role is always selected before the user touches it.
+  const [selectedRole, setSelectedRole] = useState<AdminRole>(AdminRole.AUTHOR);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +83,9 @@ function LoginForm() {
         setLoading(false);
         return;
       }
+      // Persist temporary role for the next development step.
+      // This does NOT modify Supabase Auth, the profiles table, or any RLS policy.
+      setTempRole(selectedRole);
       router.push(next);
       router.refresh();
     } catch {
@@ -45,6 +101,11 @@ function LoginForm() {
           {error}
         </div>
       )}
+
+      {/* Role selector — ABOVE the email/password fields */}
+      <RoleSelector selected={selectedRole} onChange={setSelectedRole} />
+
+      {/* Email */}
       <div>
         <label htmlFor="email" className="mb-2 block text-xs font-semibold text-ilm-navy">
           Email address
@@ -62,6 +123,8 @@ function LoginForm() {
           />
         </div>
       </div>
+
+      {/* Password */}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label htmlFor="password" className="block text-xs font-semibold text-ilm-navy">
@@ -92,6 +155,10 @@ function LoginForm() {
           </button>
         </div>
       </div>
+
+      {/* Role selector — temporary testing toggle, Step 1 only — moved above */}
+
+      {/* Submit */}
       <button
         type="submit"
         disabled={loading}
@@ -110,6 +177,10 @@ function LoginForm() {
     </form>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function LoginPage() {
   return (
