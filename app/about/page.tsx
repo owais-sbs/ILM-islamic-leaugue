@@ -7,15 +7,14 @@ import { PageHero, ModernCard, SectionLabel } from '@/components/PageHero';
 import { Reveal } from '@/components/Reveal';
 import { images } from '@/lib/data';
 
-export const metadata: Metadata = {
-  title: 'About ILM — Islamic League of Murabbiyūn',
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'About ILM',
   description:
-    'About ILM — a public library of thoughtful Islamic writing. Our mission, methodology, and governance.',
-  openGraph: {
-    title: 'About ILM',
-    description: 'A public library of thoughtful Islamic writing. Mission, methodology, governance.',
-  },
-};
+    'About the Islamic League of Murabbiyūn — a public library of thoughtful Islamic writing. Our mission, methodology, and governance.',
+  path: '/about',
+});
 
 const values = [
   { icon: BookOpen, title: 'Rigorous & alive', text: 'Knowledge that is faithful to tradition and written for real life — never dry, never careless.' },
@@ -45,7 +44,7 @@ export default function AboutPage() {
           <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-20">
 
             {/* Left — image composition */}
-            <Reveal>
+            <Reveal from="left">
               <div className="relative pb-8 pr-4">
                 {/* Main image */}
                 <div className="overflow-hidden rounded-2xl shadow-[0_20px_50px_rgba(15,22,87,0.14)]">
@@ -67,7 +66,7 @@ export default function AboutPage() {
             </Reveal>
 
             {/* Right — content */}
-            <Reveal delay="delay-1">
+            <Reveal from="right" delay="delay-1">
               <div className="flex items-center gap-3 mb-5">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-ilm-navy text-ilm-gold shadow-md">
                   <GraduationCap size={24} strokeWidth={1.5} />

@@ -6,14 +6,13 @@ import { PageHero, SectionLabel } from '@/components/PageHero';
 import { Reveal } from '@/components/Reveal';
 import { authors } from '@/lib/data';
 
-export const metadata: Metadata = {
-  title: 'Murabbiyūn — ILM',
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Murabbiyūn',
   description: 'Meet the teachers, researchers, and lifelong students who write for ILM.',
-  openGraph: {
-    title: 'Murabbiyūn — Islamic League of Murabbiyūn',
-    description: 'Meet the contributors who write for ILM.',
-  },
-};
+  path: '/murabbiyun',
+});
 
 export default function MurabbiyunPage() {
   const activeAuthors = authors.filter((a) => a.active);

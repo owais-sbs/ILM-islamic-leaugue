@@ -2,15 +2,20 @@
 
 ## Fresh start (delete old tables & rebuild)
 
-Run these **in order** in [Supabase SQL Editor](https://supabase.com/dashboard/project/tfigmkhchtvuhtqeeciq/sql/new):
+Run **one file** in [Supabase SQL Editor](https://supabase.com/dashboard/project/tfigmkhchtvuhtqeeciq/sql/new):
 
-| Step | File | What it does |
-|------|------|----------------|
-| 1 | `supabase/reset-database.sql` | Drops all ILM tables (⚠️ deletes data) |
-| 2 | `supabase/schema.sql` | Creates tables, RLS, seeds categories/tags |
-| 3 | `supabase/admin-bootstrap.sql` | Backfills profiles + promotes admin |
+### `supabase/reset-and-setup.sql`
 
-Then create the auth user (local terminal):
+This script:
+
+1. Drops all old ILM tables / triggers / helpers  
+2. Recreates the full schema (profiles, articles, revisions, questions, …)  
+3. Enables **strong RLS** for Author / Editor / Administrator (PDF §7)  
+4. Adds a workflow trigger so Editors **cannot publish** and Authors cannot approve  
+5. Seeds categories, tags, settings  
+6. Promotes `adminops@gmail.com` to Administrator if that Auth user already exists  
+
+Then in your local terminal:
 
 ```bash
 npm run db:create-admin
@@ -19,13 +24,33 @@ npm run db:create-admin
 - Email: `adminops@gmail.com`
 - Password: `admin123`
 
-Restart dev server, sign out, sign in at `/login`.
+Sign out, sign in at `/login`. Your role comes from `profiles.role` — there is no client “view as” switch.
 
 ---
 
-## First-time setup only
+## Role matrix (enforced in UI + RLS + trigger)
 
-If the database is empty, skip step 1 and run **schema.sql** → **admin-bootstrap.sql** → **db:create-admin**.
+| Capability | Author | Editor | Admin |
+|---|---|---|---|
+| Create / edit own draft | Yes | Yes | Yes |
+| Edit another author’s article | No | Yes | Yes |
+| Submit for review | Yes | Yes | Yes |
+| Approve / return | No | Yes | Yes |
+| Publish / unpublish | No | **No** | Yes |
+| Categories / tags | No | No | Yes |
+| Invite / change roles | No | No | Yes |
+| Questions | Assigned only | Yes | Yes |
+| Subscribers / settings / activity | No | No | Yes |
+
+---
+
+## Patch without wiping data
+
+If the database is already set up and you only need the latest role guards:
+
+Run `supabase/fix-role-guards.sql` in the SQL Editor (does **not** delete tables).
+
+This blocks non-admins from changing `role` / `is_active`, and keeps the Author/Editor/Admin publish workflow trigger.
 
 ---
 
@@ -33,10 +58,6 @@ If the database is empty, skip step 1 and run **schema.sql** → **admin-bootstr
 
 | Error | Fix |
 |-------|-----|
-| `403 Forbidden` on `/api/admin/*` | Run `admin-bootstrap.sql`, sign out/in |
-| `more than one relationship articles/profiles` | Fixed in code — use `profiles!author_id(...)` |
-| Article editor text resets while typing | Fixed — content editor no longer re-injects placeholder HTML |
-
-## Admin routes
-
-See routes table in project docs — `/admin`, `/admin/articles`, `/admin/articles/new`, etc.
+| `403 Forbidden` on `/api/admin/*` | Re-run reset script or promote admin, then sign out/in |
+| Homepage cards empty after reset | Publish articles as Admin, or homepage shows demo cards until DB has published content |
+| Editor can publish | Should be blocked by RLS + `enforce_article_workflow` — re-run `reset-and-setup.sql` |

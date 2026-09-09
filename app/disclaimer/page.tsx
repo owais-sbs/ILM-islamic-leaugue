@@ -4,10 +4,14 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { PageHero, SectionLabel } from '@/components/PageHero';
 
-export const metadata: Metadata = {
-  title: 'Disclaimer — ILM',
-  description: 'Editorial disclaimer covering authorship, ikhtilāf, the no-fatwa policy, and corrections.',
-};
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Disclaimer',
+  description:
+    'Editorial disclaimer covering authorship, ikhtilāf, the no-fatwa policy, and corrections.',
+  path: '/disclaimer',
+});
 
 const sections = [
   {

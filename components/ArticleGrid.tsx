@@ -23,7 +23,7 @@ export function ArticleGrid({
   return (
     <div className={`grid gap-4 ${colClass}`}>
       {articles.map((article, i) => (
-        <Reveal key={article.id} delay={`delay-${(i % 4) + 1}`}>
+        <Reveal key={article.id} from="scale" delay={`delay-${(i % 4) + 1}`} className="h-full">
           <ArticleCard article={article} compact={compact} />
         </Reveal>
       ))}

@@ -36,11 +36,11 @@ const baseNavGroups = [
   {
     label: 'Content',
     items: [
-      { label: 'Articles',     href: '/admin/articles',   icon: FileText },
-      { label: 'Review Queue', href: '/admin/review',     icon: Eye },
-      { label: 'Categories',   href: '/admin/categories', icon: FolderTree },
-      { label: 'Tags',         href: '/admin/tags',       icon: Tag        },
-      { label: 'Media',        href: '/admin/media',      icon: ImageIcon },
+      { label: 'Articles', href: '/admin/articles', icon: FileText },
+      { label: 'Review Queue', href: '/admin/review', icon: Eye },
+      { label: 'Categories', href: '/admin/categories', icon: FolderTree, adminOnly: true },
+      { label: 'Tags', href: '/admin/tags', icon: Tag, adminOnly: true },
+      { label: 'Media', href: '/admin/media', icon: ImageIcon },
     ],
   },
   {
@@ -50,22 +50,22 @@ const baseNavGroups = [
   {
     label: 'Engagement',
     items: [
-      { label: 'Questions',   href: '/admin/questions',   icon: MessageCircle },
+      { label: 'Questions', href: '/admin/questions', icon: MessageCircle },
       { label: 'Subscribers', href: '/admin/subscribers', icon: Inbox, adminOnly: true },
     ],
   },
   {
     label: 'System',
     items: [
-      { label: 'Settings',      href: '/admin/settings', icon: Settings, adminOnly: true },
-      { label: 'Activity Log',  href: '/admin/activity', icon: Activity, adminOnly: true },
+      { label: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: true },
+      { label: 'Activity Log', href: '/admin/activity', icon: Activity, adminOnly: true },
     ],
   },
   {
     label: 'Account',
     items: [
-      { label: 'My Profile',       href: '/admin/profile', icon: Users },
-      { label: 'Help / Guidelines', href: '/admin/help',   icon: ExternalLink },
+      { label: 'My Profile', href: '/admin/profile', icon: Users },
+      { label: 'Help / Guidelines', href: '/admin/help', icon: ExternalLink },
     ],
   },
 ];
@@ -86,6 +86,10 @@ const authorNavGroups = [
       { label: 'Submitted', href: '/admin/articles?status=submitted', icon: Inbox },
       { label: 'Returned', href: '/admin/articles?status=returned', icon: MessageCircle },
     ],
+  },
+  {
+    label: 'Engagement',
+    items: [{ label: 'My Questions', href: '/admin/questions', icon: MessageCircle }],
   },
   {
     label: 'Account',

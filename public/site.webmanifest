@@ -1,0 +1,22 @@
+{
+  "name": "ILM — Islamic League of Murabbiyūn",
+  "short_name": "ILM",
+  "description": "A considered library of Islamic thought, practice, and renewal.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F1657",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}

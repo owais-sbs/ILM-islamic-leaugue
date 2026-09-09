@@ -5,6 +5,7 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { CategoryPageContent } from '@/components/CategoryPageContent';
 import { PageHero } from '@/components/PageHero';
 import { fetchPublishedArticles, fetchPublicCategories } from '@/lib/public-content';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const revalidate = 60;
 
@@ -20,12 +21,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const categories = await fetchPublicCategories();
   const category = categories.find((c) => c.slug === params.slug);
-  if (!category) return {};
-  return {
-    title: `${category.name} — ILM`,
-    description: category.description,
-    openGraph: { title: `${category.name} — ILM`, description: category.description },
-  };
+  if (!category) return { title: 'Category not found' };
+  return buildPageMetadata({
+    title: category.name,
+    description: category.description || `Essays in ${category.name} from the ILM library.`,
+    path: `/categories/${category.slug}`,
+  });
 }
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {

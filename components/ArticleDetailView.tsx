@@ -28,7 +28,7 @@ export function ArticleDetailView({
   return (
     <>
       {/* ── Article header ─────────────────────────────── */}
-      <article className="bg-white px-6 pb-16 pt-[var(--site-header-offset)] md:px-12 md:pt-[calc(var(--site-header-offset)+1rem)]">
+      <article className="bg-white px-6 pb-16 pt-[calc(var(--site-header-offset)+var(--site-header-gap))] md:px-12 md:pt-[calc(var(--site-header-offset)+var(--site-header-gap)+0.5rem)]">
         <div className="mx-auto max-w-7xl">
 
           {/* Back link */}

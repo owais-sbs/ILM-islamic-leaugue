@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   // Always revalidate the core public routes on any publish/unpublish
   const defaultPaths = ['/', '/articles', '/categories'];
 
-  const allPaths = [...new Set([...defaultPaths, ...paths])];
+  const allPaths = Array.from(new Set([...defaultPaths, ...paths]));
 
   for (const path of allPaths) {
     revalidatePath(path);

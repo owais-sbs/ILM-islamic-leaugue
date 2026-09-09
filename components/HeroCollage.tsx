@@ -1,60 +1,77 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { images } from '@/lib/data';
 import type { Article } from '@/lib/data';
 
+/**
+ * Compact Netlify-style hero collage (matches reference dump):
+ * large Quran left + tall arches top-right + overlapping reading shot + floating card
+ */
 export function HeroCollage({ featuredArticles }: { featuredArticles: Article[] }) {
   const featured = featuredArticles[0];
 
   return (
-    <div className="hero-rise delay-2 relative mx-auto w-full max-w-md lg:max-w-none">
-      {/* Outer height — intentionally shorter so images don't bleed into header */}
-      <div className="relative h-[360px] md:h-[400px] lg:h-[440px]">
+    <div className="relative mx-auto w-full max-w-[420px] lg:ml-auto lg:mr-0 lg:max-w-[460px] xl:max-w-[500px]">
+      <div
+        className="pointer-events-none absolute -inset-3 rounded-[2rem] border border-slate-200/70 sm:-inset-4 sm:rounded-[2.25rem]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-6 top-8 h-40 w-40 rounded-full border border-slate-200/50 sm:-right-10 sm:h-52 sm:w-52"
+        aria-hidden
+      />
 
-        {/* Main image — starts with a top offset so it doesn't touch the header */}
-        <div className="absolute left-0 top-6 z-10 h-[88%] w-[60%] overflow-hidden rounded-2xl shadow-[0_12px_36px_rgba(15,22,87,0.12)]">
-          <img
-            src={images.arches2}
-            alt="Ornate Islamic arches"
-            className="h-full w-full object-cover"
-          />
-        </div>
-
-        {/* Small image — Quran — anchored to bottom-right */}
-        <div className="absolute bottom-0 right-0 z-20 h-[50%] w-[42%] overflow-hidden rounded-xl border-[3px] border-white shadow-[0_8px_28px_rgba(15,22,87,0.16)]">
-          <img
+      <div className="relative aspect-[5/6] w-full">
+        <div className="hero-tile hero-tile-1 absolute left-0 top-0 z-10 h-[78%] w-[58%] overflow-hidden rounded-[1.65rem] shadow-[0_18px_40px_rgba(15,22,87,0.14)]">
+          <Image
             src={images.quranWarm}
             alt="Open Quran in warm light"
-            className="h-full w-full object-cover"
+            fill
+            priority
+            sizes="(max-width: 1024px) 55vw, 280px"
+            className="object-cover object-[center_28%]"
           />
         </div>
 
-        {/* Floating article card — overlapping, bottom-left of main image */}
+        <div className="hero-tile hero-tile-2 absolute right-0 top-[2%] z-20 h-[48%] w-[39%] overflow-hidden rounded-[1.4rem] shadow-[0_14px_32px_rgba(15,22,87,0.14)]">
+          <Image
+            src={images.arches}
+            alt="Islamic stone arches"
+            fill
+            sizes="(max-width: 1024px) 40vw, 200px"
+            className="object-cover"
+          />
+        </div>
+
+        <div className="hero-tile hero-tile-3 absolute bottom-[10%] right-[2%] z-30 h-[36%] w-[46%] overflow-hidden rounded-[1.35rem] shadow-[0_16px_36px_rgba(15,22,87,0.16)]">
+          <Image
+            src={images.reading}
+            alt="Reading an open book"
+            fill
+            sizes="(max-width: 1024px) 45vw, 220px"
+            className="object-cover object-center"
+          />
+        </div>
+
         {featured && (
           <Link
             href={`/articles/${featured.slug}`}
-            className="absolute bottom-[8%] left-[3%] z-30 w-[42%] max-w-[190px] rounded-xl bg-white p-3 shadow-[0_6px_24px_rgba(15,22,87,0.11)] ring-1 ring-slate-100 transition hover:shadow-md"
+            className="hero-tile hero-tile-4 absolute bottom-[2%] left-[3%] z-40 w-[46%] max-w-[180px] rounded-2xl bg-white p-3.5 shadow-[0_10px_32px_rgba(15,22,87,0.12)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-lg sm:p-4"
           >
             <p className="text-[8px] font-semibold uppercase tracking-[.2em] text-ilm-gold">
               New this week
             </p>
-            <div className="mt-1 h-px w-5 bg-ilm-gold/35" />
-            <p className="mt-1.5 font-display text-[11px] leading-snug text-ilm-navy line-clamp-2">
+            <p className="mt-2 font-display text-[13px] leading-[1.3] text-ilm-navy line-clamp-3 sm:text-[14px]">
               {featured.title}
             </p>
-            <span className="mt-2 flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[.14em] text-ilm-gold">
-              Read article <ArrowRight size={9} />
+            <span className="mt-2.5 flex justify-end text-ilm-gold" aria-hidden>
+              <ArrowRight size={13} />
             </span>
           </Link>
         )}
-
-        {/* Gold accent dot — sits in the gap between images */}
-        <div
-          className="pointer-events-none absolute right-[39%] bottom-[48%] z-30 h-2 w-2 rounded-full border border-ilm-gold/60 bg-white"
-          aria-hidden
-        />
       </div>
     </div>
   );

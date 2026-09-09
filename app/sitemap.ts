@@ -1,10 +1,21 @@
 import type { MetadataRoute } from 'next';
-import { articles, categories, authors } from '@/lib/data';
 import { getSiteUrl } from '@/lib/site-url';
+import {
+  fetchPublishedArticles,
+  fetchPublicCategories,
+  fetchPublicAuthors,
+} from '@/lib/public-content';
 
-const BASE = getSiteUrl();
+export const revalidate = 3600;
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const BASE = getSiteUrl();
+  const [articles, categories, authors] = await Promise.all([
+    fetchPublishedArticles(),
+    fetchPublicCategories(),
+    fetchPublicAuthors(),
+  ]);
+
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${BASE}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
@@ -13,29 +24,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/search`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/ask`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/disclaimer`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${BASE}/disclaimer`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  const articleRoutes: MetadataRoute.Sitemap = articles
-    .filter((a) => a.status === 'published')
-    .map((a) => ({
-      url: `${BASE}/articles/${a.slug}`,
-      lastModified: new Date(a.updatedAt),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }));
+  const articleRoutes: MetadataRoute.Sitemap = articles.map((a) => ({
+    url: `${BASE}/articles/${a.slug}`,
+    lastModified: a.updatedAt ? new Date(a.updatedAt) : new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
 
   const categoryRoutes: MetadataRoute.Sitemap = categories.map((c) => ({
     url: `${BASE}/categories/${c.slug}`,
     lastModified: new Date(),
-    changeFrequency: 'weekly',
+    changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
   const authorRoutes: MetadataRoute.Sitemap = authors.map((a) => ({
     url: `${BASE}/murabbiyun/${a.slug}`,
-    lastModified: new Date(a.joinedAt),
-    changeFrequency: 'weekly',
+    lastModified: a.joinedAt ? new Date(a.joinedAt) : new Date(),
+    changeFrequency: 'weekly' as const,
     priority: 0.6,
   }));
 

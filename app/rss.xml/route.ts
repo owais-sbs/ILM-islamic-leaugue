@@ -1,12 +1,17 @@
-import { articles } from '@/lib/data';
+import { fetchPublishedArticles } from '@/lib/public-content';
 import { getSiteUrl } from '@/lib/site-url';
 
-const BASE = getSiteUrl();
+export const revalidate = 3600;
 
-export function GET() {
+export async function GET() {
+  const BASE = getSiteUrl();
+  const articles = await fetchPublishedArticles();
   const published = articles
-    .filter((a) => a.status === 'published' && a.publishedAt)
-    .sort((a, b) => new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime());
+    .filter((a) => a.publishedAt)
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime(),
+    );
 
   const items = published
     .map(
@@ -38,8 +43,8 @@ export function GET() {
 
   return new Response(xml, {
     headers: {
-      'Content-Type': 'application/xml',
-      'Cache-Control': 's-maxage=3600, stale-while-revalidate',
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
     },
   });
 }

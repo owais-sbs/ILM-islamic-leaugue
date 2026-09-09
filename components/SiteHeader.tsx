@@ -79,7 +79,7 @@ export function SiteHeader() {
       <div
         className={cn(
           'px-4 transition-all duration-300 md:px-6',
-          scrolled ? 'pt-1.5' : 'pt-2',
+          scrolled ? 'pb-1 pt-1.5' : 'pb-1.5 pt-2',
         )}
       >
         <div
@@ -217,7 +217,7 @@ export function SiteHeader() {
             </Link>
             <Link
               href="/admin"
-              className="hidden min-h-[36px] items-center rounded-lg border border-ilm-gold/60 bg-ilm-gold/10 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-ilm-gold transition hover:bg-ilm-gold hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/40 sm:inline-flex"
+              className="hidden min-h-[36px] items-center rounded-full bg-ilm-gold px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-ilm-navy transition hover:bg-ilm-gold-dark hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/40 sm:inline-flex"
             >
               Admin
             </Link>

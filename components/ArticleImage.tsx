@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -6,13 +7,25 @@ export function ArticleImage({
   src,
   alt,
   className,
+  priority = false,
 }: {
   src?: string | null;
   alt: string;
   className?: string;
+  priority?: boolean;
 }) {
   if (src) {
-    return <img src={src} alt={alt} className={cn('h-full w-full object-cover', className)} />;
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className={cn('object-cover', className)}
+        priority={priority}
+        loading={priority ? 'eager' : 'lazy'}
+      />
+    );
   }
 
   return (

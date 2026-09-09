@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -9,7 +10,6 @@ import {
   Scale,
   Shield,
   Sparkles,
-  Users,
   type LucideIcon,
 } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -18,11 +18,22 @@ import { Reveal } from '@/components/Reveal';
 import { HeroCollage } from '@/components/HeroCollage';
 import { ArticleCard } from '@/components/ArticleCard';
 import { NewsletterSubscribe } from '@/components/NewsletterSubscribe';
-import { SectionLabel, GoldDivider } from '@/components/PageHero';
+import { SectionLabel } from '@/components/PageHero';
 import { fetchPublishedArticles, fetchPublicCategories } from '@/lib/public-content';
-import { authors } from '@/lib/data';
+import { articles as demoArticles, authors, categories as demoCategories, images } from '@/lib/data';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  ...buildPageMetadata({
+    title: 'ILM — Islamic League of Murabbiyūn',
+    description:
+      'A considered space for the questions, practices, and ideas that help us live with more meaning. Explore the ILM library of thoughtful Islamic writing.',
+    path: '/',
+  }),
+  title: { absolute: 'ILM — Islamic League of Murabbiyūn' },
+};
 
 const categoryIcons: Record<string, LucideIcon> = {
   "Qur'an & Tafsir": BookOpen,
@@ -34,216 +45,171 @@ const categoryIcons: Record<string, LucideIcon> = {
 };
 
 export default async function Home() {
-  const [published, categories] = await Promise.all([
+  const [dbArticles, dbCategories] = await Promise.all([
     fetchPublishedArticles(),
     fetchPublicCategories(),
   ]);
 
+  const published =
+    dbArticles.length > 0
+      ? dbArticles
+      : demoArticles.filter((a) => a.status === 'published');
+  const categories = dbCategories.length > 0 ? dbCategories : demoCategories;
+
   return (
-    <main className="overflow-hidden bg-white">
+    <main className="overflow-x-hidden bg-white">
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-[#F9F8F5] px-6 pb-12 pt-[calc(var(--site-header-offset)+0.5rem)] md:px-12 md:pb-16 md:pt-[calc(var(--site-header-offset)+1rem)]">
-        <div className="pattern-geo pointer-events-none absolute inset-0 opacity-60" aria-hidden />
-        <div
-          className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-ilm-gold/40 via-ilm-gold/15 to-transparent"
-          aria-hidden
-        />
+      <section className="relative overflow-hidden bg-[#FBFBFA] px-6 pb-14 pt-[calc(var(--site-header-offset)+var(--site-header-gap))] md:px-12 md:pb-20 md:pt-[calc(var(--site-header-offset)+var(--site-header-gap)+0.5rem)]">
+        <div className="pattern-geo pointer-events-none absolute inset-0 opacity-55" aria-hidden />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          <div>
-            <div className="hero-rise mb-5 flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-[.28em] text-ilm-gold">
-              <span className="h-px w-7 bg-ilm-gold" />
-              Knowledge · Understanding · Application
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 xl:gap-12">
+          <div className="max-w-xl">
+            <div className="hero-rise mb-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[.28em] text-ilm-gold">
+              <span className="h-px w-8 bg-ilm-gold" />
+              Islamic League of Murabbiyūn
             </div>
 
-            <h1 className="hero-rise delay-1 font-display text-[2.6rem] leading-[1.06] tracking-[-0.025em] text-ilm-navy md:text-[3.1rem] lg:text-[3.4rem]">
-              The work of <em className="not-italic text-ilm-gold">becoming.</em>
+            <h1 className="hero-rise delay-1 font-display text-[3rem] leading-[1.02] tracking-[-0.03em] text-ilm-navy sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.75rem]">
+              The work of <em className="font-normal italic text-ilm-gold">becoming.</em>
             </h1>
 
-            <p className="hero-rise delay-2 mt-4 max-w-[380px] text-[14.5px] leading-[1.8] text-slate-500">
+            <p className="hero-rise delay-2 mt-6 max-w-md text-[15px] leading-[1.9] text-slate-500 md:text-base">
               A considered space for the questions, practices, and ideas that help us live with more meaning.
             </p>
 
-            <div className="hero-rise delay-3 mt-7 flex flex-wrap items-center gap-3">
-              <Link href="/articles" className="ilm-btn-primary group">
-                Explore the Library
-                <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+            <div className="hero-rise delay-3 mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                href="/articles"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-ilm-gold px-6 py-2.5 text-[10.5px] font-semibold uppercase tracking-[.14em] text-white transition hover:bg-ilm-gold-dark"
+              >
+                Explore the library
+                <ArrowRight size={14} />
               </Link>
-              <Link href="/about" className="ilm-btn-secondary">
+              <Link
+                href="/about"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-2.5 text-[10.5px] font-semibold uppercase tracking-[.14em] text-ilm-navy transition hover:border-ilm-gold hover:text-ilm-gold"
+              >
                 Why ILM
               </Link>
             </div>
 
-            <div className="hero-rise delay-4 mt-9 grid grid-cols-3 gap-4 border-t border-ilm-navy/[0.07] pt-6">
-              {[
-                { icon: BookOpen, label: 'Authentic Sources', sub: "Rooted in Qur'ān & Sunnah" },
-                { icon: Users, label: 'Qualified Voices', sub: 'Scholars and teachers' },
-                { icon: Shield, label: 'Beneficial Impact', sub: 'Knowledge that transforms' },
-              ].map(({ icon: Icon, label, sub }) => (
-                <div key={label} className="flex items-start gap-2">
-                  <Icon size={15} strokeWidth={1.5} className="mt-0.5 shrink-0 text-ilm-gold" />
-                  <div>
-                    <p className="text-[10px] font-semibold leading-tight text-ilm-navy">{label}</p>
-                    <p className="mt-0.5 text-[9px] leading-snug text-slate-400">{sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="hero-rise delay-4 mt-12 flex items-center gap-3 text-[10px] font-medium uppercase tracking-[.2em] text-slate-400">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-400">
+                <ArrowRight size={12} className="rotate-90" />
+              </span>
+              Scroll to explore
+            </p>
           </div>
 
           <HeroCollage featuredArticles={published.slice(0, 3)} />
         </div>
       </section>
 
-      {/* Mission statement */}
-      <section className="relative overflow-hidden border-b border-ilm-navy/[0.06] bg-white px-6 py-14 md:px-12 md:py-16">
-        <div className="pointer-events-none absolute left-0 top-0 h-px w-full bg-gradient-to-r from-ilm-gold/40 via-ilm-gold/10 to-transparent" aria-hidden />
+      {/* Mission */}
+      <section className="relative overflow-hidden border-y border-ilm-navy/[0.06] bg-[#F9F8F5] px-6 py-20 md:px-12 md:py-28">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-20">
-            {/* Left — heading */}
-            <Reveal>
-              <SectionLabel>Our mission</SectionLabel>
-              <h2 className="font-display text-[2rem] leading-[1.1] tracking-[-0.015em] text-ilm-navy md:text-[2.5rem]">
-                Mentors.{' '}
-                <em className="not-italic text-ilm-gold">Educators.</em>{' '}
-                Cultivators.
+          <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-20">
+            <Reveal from="left">
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[.25em] text-ilm-gold">
+                A place to return to
+              </p>
+              <h2 className="font-display text-[2.5rem] leading-[1.08] tracking-[-0.02em] text-ilm-navy md:text-[3.25rem]">
+                Learning is a form of <em className="font-normal italic text-ilm-gold">devotion.</em>
               </h2>
-              <div className="mt-5 h-px w-12 bg-ilm-gold/50" />
-              <p className="mt-5 max-w-md text-[14.5px] leading-[1.85] text-slate-500">
-                ILM is a public library of thoughtful Islamic writing — a
-                considered space for those who seek depth over noise. We bring
-                together qualified voices, careful editorial work, and the
-                conviction that good knowledge should feel both rigorous and
-                alive.
+            </Reveal>
+            <Reveal from="right" delay="delay-1">
+              <p className="max-w-xl text-[15px] leading-[1.9] text-slate-600">
+                ILM is a public library of thoughtful Islamic writing — made for the person who wants to go a
+                little deeper. We bring together qualified voices, careful editorial work, and a belief that
+                good knowledge should feel both rigorous and alive.
               </p>
               <Link
                 href="/about"
-                className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.15em] text-ilm-navy transition hover:gap-3 hover:text-ilm-gold"
+                className="mt-7 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.16em] text-ilm-navy transition hover:gap-3 hover:text-ilm-gold"
               >
-                Learn about ILM <ArrowRight size={13} />
+                Find your way in <ArrowRight size={14} />
               </Link>
             </Reveal>
-            {/* Right — three pillars */}
-            <Reveal delay="delay-1">
-              <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                {[
-                  { icon: BookOpen, title: 'Authentic Sources', body: "Every essay is grounded in the Qur'ān, Sunnah, and the recognised schools of Islamic thought." },
-                  { icon: Users,    title: 'Qualified Voices',  body: 'Contributors are vetted teachers, researchers, and scholars — not anonymous commentators.' },
-                  { icon: Sparkles, title: 'Beneficial Impact', body: 'We write for formation, not performance — knowledge that changes how we meet the world.' },
-                ].map(({ icon: Icon, title, body }) => (
-                  <div key={title} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-[#F9F8F5] p-5">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-ilm-gold shadow-sm">
-                      <Icon size={18} strokeWidth={1.5} />
-                    </span>
-                    <div>
-                      <p className="text-[12px] font-semibold text-ilm-navy">{title}</p>
-                      <p className="mt-1 text-[12px] leading-relaxed text-slate-500">{body}</p>
-                    </div>
-                  </div>
-                ))}
+          </div>
+        </div>
+      </section>
+
+      {/* From the library */}
+      <section className="bg-white px-6 py-20 md:px-12 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <Reveal from="left">
+            <div className="mb-12 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+              <div>
+                <SectionLabel>From the library</SectionLabel>
+                <h2 className="font-display text-[2.1rem] text-ilm-navy md:text-[2.6rem]">
+                  Ideas for the road ahead
+                </h2>
               </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured article */}
-      <section className="bg-white px-6 py-14 md:px-12 md:py-16">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <SectionLabel>From the library</SectionLabel>
-            <h2 className="font-display text-[1.85rem] text-ilm-navy md:text-[2.25rem]">
-              Ideas for the road ahead
-            </h2>
-          </Reveal>
-          <div className="mt-8">
-            <Reveal delay="delay-1">
-              {published[0] ? (
-                <ArticleCard article={published[0]} featured />
-              ) : (
-                <div className="ilm-empty">
-                  <p className="font-display text-lg text-ilm-navy">No published essays yet</p>
-                  <p className="mt-2 text-sm text-slate-500">Check back soon — new writing is on its way.</p>
-                </div>
-              )}
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      <GoldDivider className="mx-auto max-w-7xl px-6 md:px-12" />
-
-      {/* Latest articles */}
-      <section className="bg-white px-6 pb-14 pt-12 md:px-12 md:pb-16 md:pt-14">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <div className="mb-7 flex items-end justify-between">
-              <SectionLabel>Latest essays</SectionLabel>
               <Link
                 href="/articles"
-                className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.14em] text-ilm-navy transition hover:text-ilm-gold"
+                className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.14em] text-ilm-navy transition hover:text-ilm-gold"
               >
-                View all <ArrowRight size={13} />
+                View all articles <ArrowRight size={14} />
               </Link>
             </div>
           </Reveal>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {published.length > 1 ? (
-              published.slice(1, 9).map((article, i) => (
-                <Reveal key={article.id} delay={`delay-${(i % 4) + 1}`}>
-                  <ArticleCard article={article} compact />
-                </Reveal>
-              ))
-            ) : (
-              <div className="ilm-empty sm:col-span-2 lg:col-span-3">
-                <p className="text-sm text-slate-500">More essays will appear here as they are published.</p>
-              </div>
-            )}
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {published.slice(0, 12).map((article, i) => (
+              <Reveal
+                key={article.id}
+                from="scale"
+                delay={`delay-${(i % 6) + 1}`}
+                className="h-full"
+              >
+                <ArticleCard article={article} />
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Categories */}
-      <section className="bg-[#F9F8F5] px-6 py-14 md:px-12 md:py-16">
+      <section className="bg-[#F9F8F5] px-6 py-16 md:px-12 md:py-20">
         <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <div className="mb-8 flex items-end justify-between">
+          <Reveal from="left">
+            <div className="mb-10 flex items-end justify-between gap-4">
               <div>
                 <SectionLabel>Browse by subject</SectionLabel>
-                <h2 className="font-display text-[1.85rem] text-ilm-navy md:text-[2.25rem]">
+                <h2 className="font-display text-[2rem] text-ilm-navy md:text-[2.4rem]">
                   Where would you like to begin?
                 </h2>
               </div>
-              <span className="hidden font-display text-4xl text-ilm-gold/20 md:block" dir="rtl">
+              <span className="hidden font-display text-5xl text-ilm-gold/25 md:block" dir="rtl">
                 بسم الله
               </span>
             </div>
           </Reveal>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map(({ name, description, articleCount, slug }, i) => {
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.slice(0, 4).map(({ name, description, articleCount, slug }, i) => {
               const Icon = categoryIcons[name] || BookOpen;
               return (
-                <Reveal key={slug} delay={`delay-${(i % 3) + 1}`}>
+                <Reveal key={slug} from="up" delay={`delay-${(i % 4) + 1}`}>
                   <Link
                     href={`/categories/${slug}`}
-                    className="group flex items-start gap-4 rounded-xl border border-slate-100 bg-white p-5 shadow-[0_1px_12px_rgba(15,22,87,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-ilm-gold/30 hover:shadow-[0_8px_28px_rgba(15,22,87,0.08)]"
+                    className="group flex h-full flex-col gap-4 rounded-2xl border border-slate-100/80 bg-white p-6 shadow-[0_1px_16px_rgba(15,22,87,0.04)] transition duration-300 hover:-translate-y-1 hover:border-ilm-gold/30 hover:shadow-[0_12px_32px_rgba(15,22,87,0.09)]"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#F9F8F5] text-ilm-gold">
-                      <Icon size={19} strokeWidth={1.5} />
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F9F8F5] text-ilm-gold">
+                      <Icon size={20} strokeWidth={1.5} />
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div>
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-display text-[1.05rem] leading-snug text-ilm-navy">{name}</h3>
+                        <h3 className="font-display text-[1.2rem] leading-snug text-ilm-navy">{name}</h3>
                         <ArrowUpRight
-                          size={15}
-                          className="mt-0.5 shrink-0 text-ilm-gold/30 transition-all group-hover:text-ilm-gold"
+                          size={16}
+                          className="mt-1 shrink-0 text-ilm-gold/30 transition-all group-hover:text-ilm-gold"
                         />
                       </div>
-                      <p className="mt-1 text-[11.5px] leading-5 text-slate-500">{description}</p>
-                      <p className="mt-2.5 text-[9px] font-semibold uppercase tracking-[.16em] text-ilm-gold/70">
+                      <p className="mt-2 text-[13px] leading-6 text-slate-500">{description}</p>
+                      <p className="mt-4 text-[9px] font-semibold uppercase tracking-[.16em] text-ilm-gold/70">
                         {articleCount} articles
                       </p>
                     </div>
@@ -256,97 +222,85 @@ export default async function Home() {
       </section>
 
       {/* Murabbiyūn */}
-      <section className="bg-white px-6 py-14 md:px-12 md:py-16">
+      <section className="bg-white px-6 py-16 md:px-12 md:py-24">
         <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-              <div>
-                <SectionLabel>Meet the Murabbiyūn</SectionLabel>
-                <h2 className="font-display text-[1.85rem] leading-tight text-ilm-navy md:text-[2.25rem]">
-                  Good questions need <em className="not-italic text-ilm-gold">good company.</em>
-                </h2>
+          <div className="mb-12 grid items-end gap-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+            <Reveal from="left">
+              <div className="relative overflow-hidden rounded-2xl shadow-[0_16px_40px_rgba(15,22,87,0.12)]">
+                <img
+                  src={images.scholar2}
+                  alt="A scholar sitting among bookshelves"
+                  className="aspect-[4/5] w-full object-cover sm:aspect-[5/4] lg:aspect-[4/5]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ilm-navy/50 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 text-white">
+                  <p className="font-display text-3xl" dir="rtl">
+                    تعارفوا
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[.2em] text-white/80">
+                    Know one another
+                  </p>
+                </div>
               </div>
+            </Reveal>
+
+            <Reveal from="right" delay="delay-1">
+              <SectionLabel>Meet the Murabbiyūn</SectionLabel>
+              <h2 className="font-display text-[2.1rem] leading-[1.15] text-ilm-navy md:text-[2.75rem]">
+                Good questions need <em className="font-normal italic text-ilm-gold">good company.</em>
+              </h2>
+              <p className="mt-5 max-w-lg text-[15px] leading-[1.85] text-slate-600">
+                Our contributors are teachers, researchers, and lifelong students. They write from within the
+                tradition, with humility, clarity, and a generous sense of responsibility.
+              </p>
               <Link
                 href="/murabbiyun"
-                className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.14em] text-ilm-navy transition hover:gap-2.5 hover:text-ilm-gold"
+                className="mt-7 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.16em] text-ilm-navy transition hover:gap-3 hover:text-ilm-gold"
               >
-                All contributors <ArrowRight size={13} />
+                Meet the contributors <ArrowRight size={14} />
               </Link>
-            </div>
-          </Reveal>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {authors
-              .filter((a) => a.active)
-              .slice(0, 4)
-              .map((a, i) => (
-                <Reveal key={a.id} delay={`delay-${i + 1}`}>
-                  <Link
-                    href={`/murabbiyun/${a.slug}`}
-                    className="group relative overflow-hidden rounded-xl bg-ilm-navy shadow-[0_4px_20px_rgba(15,22,87,0.15)] transition duration-300 hover:shadow-[0_12px_36px_rgba(15,22,87,0.22)]"
-                  >
-                    <div className="aspect-[3/4] overflow-hidden">
-                      <img
-                        src={a.avatar}
-                        alt={a.name}
-                        className="h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-[1.04] group-hover:opacity-90"
-                      />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-ilm-navy via-ilm-navy/60 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <p className="text-[8px] font-semibold uppercase tracking-[.18em] text-ilm-gold/80">
-                        {a.madhhab}
-                      </p>
-                      <h3 className="mt-1 font-display text-[15px] leading-snug text-white">{a.name}</h3>
-                      <p className="mt-0.5 text-[11px] leading-tight text-white/60">{a.credentials}</p>
-                      <p className="mt-2.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ilm-gold/70">
-                        {a.articleCount} articles
-                      </p>
-                    </div>
-                    <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:opacity-100">
-                      <ArrowRight size={12} className="text-white" />
-                    </div>
-                  </Link>
-                </Reveal>
-              ))}
+              <div className="mt-10 grid gap-3 sm:grid-cols-2">
+                {authors
+                  .filter((a) => a.active)
+                  .slice(0, 4)
+                  .map((a, i) => (
+                    <Reveal key={a.id} from="up" delay={`delay-${(i % 4) + 1}`}>
+                      <Link
+                        href={`/murabbiyun/${a.slug}`}
+                        className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-[#F9F8F5] p-3 transition hover:border-ilm-gold/30 hover:bg-white"
+                      >
+                        <img
+                          src={a.avatar}
+                          alt={a.name}
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-white"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate font-display text-[15px] text-ilm-navy group-hover:text-ilm-gold">
+                            {a.name}
+                          </p>
+                          <p className="truncate text-[11px] text-slate-500">{a.credentials}</p>
+                        </div>
+                      </Link>
+                    </Reveal>
+                  ))}
+              </div>
+            </Reveal>
           </div>
-
-          <Reveal>
-            <p className="mt-6 max-w-xl text-[13.5px] leading-7 text-slate-500">
-              Our contributors are teachers, researchers, and lifelong students — writing from within the
-              tradition with humility, clarity, and responsibility.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Quranic quote */}
-      <section className="relative overflow-hidden border-y border-ilm-navy/[0.06] bg-ilm-navy px-6 py-14 md:px-12 md:py-16">
-        <div className="pattern-geo-gold pointer-events-none absolute inset-0" aria-hidden />
-        <div className="relative mx-auto max-w-3xl text-center">
-          <Reveal>
-            <span className="mb-3 block font-display text-5xl leading-none text-ilm-gold/30">&ldquo;</span>
-            <p className="font-display text-2xl leading-relaxed text-white/90 md:text-3xl">
-              And say, &lsquo;My Lord, increase me in knowledge.&rsquo;
-            </p>
-            <p className="mt-4 text-[11px] font-medium uppercase tracking-[.2em] text-ilm-gold/70">
-              Qur&rsquo;ān 20:114
-            </p>
-          </Reveal>
         </div>
       </section>
 
       {/* Newsletter */}
-      <section className="relative overflow-hidden bg-[#F9F8F5] px-6 py-14 md:px-12 md:py-16">
-        <div className="pattern-geo pointer-events-none absolute inset-0 opacity-50" aria-hidden />
+      <section className="relative overflow-hidden border-y border-ilm-navy/[0.06] bg-[#F9F8F5] px-6 py-16 md:px-12 md:py-20">
+        <div className="pattern-geo pointer-events-none absolute inset-0 opacity-40" aria-hidden />
         <div className="relative mx-auto max-w-xl text-center">
-          <Reveal>
-            <SectionLabel className="justify-center">Stay connected</SectionLabel>
-            <h2 className="font-display text-[1.85rem] text-ilm-navy md:text-[2.1rem]">
-              A thoughtful note, occasionally.
+          <Reveal from="up">
+            <SectionLabel className="justify-center">A thoughtful note, occasionally</SectionLabel>
+            <h2 className="font-display text-[2rem] text-ilm-navy md:text-[2.4rem]">
+              Make some room for <em className="font-normal italic text-ilm-gold">good things.</em>
             </h2>
-            <p className="mx-auto mt-3 max-w-sm text-[13.5px] leading-7 text-slate-500">
-              New essays, quiet provocations, and things worth carrying with you.
+            <p className="mx-auto mt-4 max-w-md text-[14px] leading-7 text-slate-500">
+              A short letter from ILM with new essays, quiet provocations, and things worth carrying with you.
             </p>
             <NewsletterSubscribe />
           </Reveal>
@@ -354,20 +308,20 @@ export default async function Home() {
       </section>
 
       {/* Ask CTA */}
-      <section className="bg-white px-6 py-10 md:px-12 md:py-12">
+      <section className="bg-white px-6 py-12 md:px-12 md:py-14">
         <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <div className="flex flex-col items-start justify-between gap-5 rounded-xl border border-slate-100 bg-[#F9F8F5] p-6 md:flex-row md:items-center md:p-8">
+          <Reveal from="scale">
+            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-ilm-navy px-7 py-8 md:flex-row md:items-center md:px-10 md:py-10">
               <div className="flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-ilm-gold shadow-sm">
-                  <CircleHelp size={20} strokeWidth={1.5} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-ilm-gold">
+                  <CircleHelp size={22} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <p className="font-display text-xl text-ilm-navy">Carrying a question?</p>
-                  <p className="mt-0.5 text-[13px] text-slate-500">Bring it to the conversation.</p>
+                  <p className="font-display text-2xl text-white">Carrying a question?</p>
+                  <p className="mt-1 text-[14px] text-white/65">Bring it to the conversation.</p>
                 </div>
               </div>
-              <Link href="/ask" className="ilm-btn-navy group shrink-0">
+              <Link href="/ask" className="ilm-btn-primary group shrink-0 rounded-full">
                 Ask a question <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>

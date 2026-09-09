@@ -75,16 +75,16 @@ export function ArticleCard({
   return (
     <Link
       href={`/articles/${article.slug}`}
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_1px_12px_rgba(15,22,87,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-ilm-gold/25 hover:shadow-[0_8px_28px_rgba(15,22,87,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/30"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_2px_16px_rgba(15,22,87,0.05)] transition duration-300 hover:-translate-y-1.5 hover:border-ilm-gold/25 hover:shadow-[0_16px_40px_rgba(15,22,87,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-gold/30"
     >
       <div className={`relative overflow-hidden ${compact ? 'aspect-[16/9]' : 'aspect-[3/2]'}`}>
         <ArticleImage
           src={article.featuredImage}
           alt={imageAlt}
-          className="transition duration-500 group-hover:scale-[1.04]"
+          className="transition duration-700 group-hover:scale-[1.06]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-ilm-navy/20 to-transparent" aria-hidden />
-        <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-sm bg-white/95 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.14em] text-ilm-navy shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-t from-ilm-navy/25 via-transparent to-transparent" aria-hidden />
+        <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-md bg-white/95 px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[.14em] text-ilm-navy shadow-sm">
           {article.category}
         </span>
       </div>
@@ -97,11 +97,11 @@ export function ArticleCard({
             <span>{article.readTime}</span>
           </div>
           <h3
-            className={`font-display leading-[1.25] tracking-[-0.01em] text-ilm-navy transition-colors group-hover:text-ilm-gold line-clamp-2 ${compact ? 'text-[1.05rem]' : 'text-[1.15rem]'}`}
+            className={`font-display leading-[1.25] tracking-[-0.01em] text-ilm-navy transition-colors group-hover:text-ilm-gold line-clamp-2 ${compact ? 'text-[1.05rem]' : 'text-[1.2rem]'}`}
           >
             {article.title}
           </h3>
-          <p className="mt-1.5 text-[12px] leading-6 text-slate-500 line-clamp-2">
+          <p className="mt-1.5 text-[12.5px] leading-6 text-slate-500 line-clamp-2">
             {article.excerpt}
           </p>
         </div>

@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* globals.css — merge conflict resolved: kept both HEAD admin scrollbar styles AND the other branch's reveal/animation/scrollbar/article-body styles */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
+/* Fonts load via next/font in app/layout.tsx (no render-blocking Google CSS @import) */
 
 /* ─── Design tokens ─────────────────────────────── */
 :root {
@@ -12,16 +11,16 @@
   --gold-dark:  #a87820;
   --cream:      #F9F8F5;
   --ink-soft:   #3D3D3D;
-  --font-display: 'Cormorant Garamond';
-  --font-body:    'Inter';
-  --site-header-offset: 5rem; /* fixed header height only — announcement bar is separate */
+  /* Announcement (~2rem) + floating nav pill (~3.75rem) + thin content gap */
+  --site-header-offset: 7.25rem;
+  --site-header-gap: 0.75rem;
 }
 
 /* ─── Base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   color: var(--ink-soft);
   background: #fff;
   -webkit-font-smoothing: antialiased;
@@ -86,6 +85,18 @@ body {
 @keyframes rise     { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fade-in  { from { opacity: 0; }                              to { opacity: 1; } }
 @keyframes slide-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes hero-in-left {
+  from { opacity: 0; transform: translateX(-28px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes hero-in-right {
+  from { opacity: 0; transform: translateX(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes hero-in-up {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* Hide admin sidebar scrollbar while keeping scroll */
 .admin-sidebar-scroll {
@@ -101,19 +112,39 @@ body {
 .reveal {
   opacity: 1;
   transform: none;
-  transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .reveal {
+  .reveal.reveal-up {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(28px);
+  }
+  .reveal.reveal-left {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
+  .reveal.reveal-right {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+  .reveal.reveal-scale {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
   }
 }
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal.delay-1 { transition-delay: .07s; }
-.reveal.delay-2 { transition-delay: .14s; }
-.reveal.delay-3 { transition-delay: .21s; }
-.reveal.delay-4 { transition-delay: .28s; }
+.reveal.visible {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.reveal.delay-1 { transition-delay: 0.08s; }
+.reveal.delay-2 { transition-delay: 0.16s; }
+.reveal.delay-3 { transition-delay: 0.24s; }
+.reveal.delay-4 { transition-delay: 0.32s; }
+.reveal.delay-5 { transition-delay: 0.4s; }
+.reveal.delay-6 { transition-delay: 0.48s; }
 
 .hero-rise          { animation: rise .85s cubic-bezier(.22,1,.36,1) both; }
 .delay-1            { animation-delay: .10s; }
@@ -122,6 +153,17 @@ body {
 .delay-4            { animation-delay: .40s; }
 .animate-fade-in    { animation: fade-in .4s ease both; }
 .animate-slide-in   { animation: slide-in .35s ease both; }
+
+/* Hero collage tiles — staggered entrance */
+.hero-tile {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-tile-1 { animation: hero-in-left 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
+  .hero-tile-2 { animation: hero-in-right 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; }
+  .hero-tile-3 { animation: hero-in-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.48s both; }
+  .hero-tile-4 { animation: hero-in-up 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.62s both; }
+}
 
 /* ─── Scrollbar ─────────────────────────────────── */
 .scrollbar-thin::-webkit-scrollbar        { width: 5px; height: 5px; }

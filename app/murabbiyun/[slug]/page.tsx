@@ -7,6 +7,7 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { Reveal } from '@/components/Reveal';
 import { ArticleCard } from '@/components/ArticleCard';
 import { authors, articles } from '@/lib/data';
+import { buildPageMetadata } from '@/lib/seo';
 
 export function generateStaticParams() {
   return authors.map((a) => ({ slug: a.slug }));
@@ -18,16 +19,13 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const author = authors.find((a) => a.slug === params.slug);
-  if (!author) return {};
-  return {
-    title: `${author.name} — ILM`,
-    description: author.bio,
-    openGraph: {
-      title: `${author.name} — Islamic League of Murabbiyūn`,
-      description: author.bio,
-      images: [{ url: author.avatar, alt: author.name }],
-    },
-  };
+  if (!author) return { title: 'Contributor not found' };
+  return buildPageMetadata({
+    title: author.name,
+    description: author.bio || `Published writing by ${author.name} on ILM.`,
+    path: `/murabbiyun/${author.slug}`,
+    image: author.avatar || undefined,
+  });
 }
 
 export default function AuthorProfilePage({
@@ -47,7 +45,7 @@ export default function AuthorProfilePage({
       <SiteHeader />
 
       {/* Profile hero */}
-      <section className="px-6 pb-0 pt-[var(--site-header-offset)] md:px-12 md:pt-[calc(var(--site-header-offset)+1rem)]">
+      <section className="px-6 pb-0 pt-[calc(var(--site-header-offset)+var(--site-header-gap))] md:px-12 md:pt-[calc(var(--site-header-offset)+var(--site-header-gap)+0.5rem)]">
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <Link

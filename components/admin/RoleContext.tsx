@@ -1,36 +1,28 @@
 'use client';
 
-import { createContext, useContext, useMemo, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { Role } from '@/lib/data';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getTempRole } from '@/lib/roles';
 
 interface RoleContextValue {
   role: Role;
   setRole: (r: Role) => void;
 }
 
-const RoleContext = createContext<RoleContextValue>({ role: 'admin', setRole: () => {} });
+const RoleContext = createContext<RoleContextValue>({ role: 'author', setRole: () => {} });
 
-/** Role comes from the signed-in Supabase profile (RLS-backed), but overridden by temporary role for Step 2 UI development. */
+/**
+ * Role comes ONLY from the signed-in Supabase profile.
+ * PDF §7: permissions must be enforced in UI and RLS — never trust a client "view as" switch.
+ */
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const { role: authRole } = useAuth();
-  const [role, setRole] = useState<Role>(authRole as Role);
-
-  useEffect(() => {
-    // Override with the temporary role for Step 2 testing if available
-    const tempRole = getTempRole();
-    if (tempRole) {
-      setRole(tempRole as Role);
-    } else {
-      setRole(authRole as Role);
-    }
-  }, [authRole]);
-
+  const { role } = useAuth();
   const value = useMemo(
     () => ({
-      role,
-      setRole: (newRole: Role) => setRole(newRole),
+      role: (role as Role) || 'author',
+      setRole: () => {
+        /* Role changes happen in DB via Admin → Authors, not in the UI switcher */
+      },
     }),
     [role],
   );
@@ -41,6 +33,7 @@ export function useRole() {
   return useContext(RoleContext);
 }
 
+/** Exact matrix from Developer Spec §7 / attached screenshot */
 const rolePermissions: Record<Role, {
   canPublish: boolean;
   canApprove: boolean;
@@ -51,6 +44,7 @@ const rolePermissions: Record<Role, {
   canExport: boolean;
   canViewActivity: boolean;
   canAssignQuestions: boolean;
+  questionsAssignedOnly: boolean;
 }> = {
   author: {
     canPublish: false,
@@ -62,9 +56,10 @@ const rolePermissions: Record<Role, {
     canExport: false,
     canViewActivity: false,
     canAssignQuestions: false,
+    questionsAssignedOnly: true,
   },
   editor: {
-    canPublish: false,
+    canPublish: false, // PDF: Editor cannot publish — Admin has final authority
     canApprove: true,
     canManageSettings: false,
     canManageUsers: false,
@@ -73,6 +68,7 @@ const rolePermissions: Record<Role, {
     canExport: false,
     canViewActivity: false,
     canAssignQuestions: true,
+    questionsAssignedOnly: false,
   },
   admin: {
     canPublish: true,
@@ -84,12 +80,13 @@ const rolePermissions: Record<Role, {
     canExport: true,
     canViewActivity: true,
     canAssignQuestions: true,
+    questionsAssignedOnly: false,
   },
 };
 
 export function usePermissions() {
   const { role } = useRole();
-  return rolePermissions[role];
+  return rolePermissions[role] || rolePermissions.author;
 }
 
 export const roleLabels: Record<Role, string> = {
