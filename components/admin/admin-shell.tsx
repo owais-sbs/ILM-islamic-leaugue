@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Bell, ChevronLeft, ChevronRight, LogOut, Plus } from 'lucide-react';
+import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Plus } from 'lucide-react';
 import { navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
 import { clearAdminRole, readAdminRole } from '@/lib/admin-session';
 import { canPublish, emptyArticle, useIlm } from '@/lib/ilm-store';
+import { tryCreateClient } from '@/lib/supabase/client';
 import { AdminBrand } from '@/components/admin/admin-brand';
 import { NavIcon } from '@/components/admin/nav-icon';
 import { RoleBadge } from '@/components/admin/status-pill';
@@ -92,7 +93,15 @@ export function AdminShell() {
     setTimeout(() => setFlash(''), 3200);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const supabase = tryCreateClient();
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        /* ignore */
+      }
+    }
     clearAdminRole();
     router.push('/login');
   };
@@ -144,11 +153,15 @@ export function AdminShell() {
             onEdit={openEdit}
             onApprove={(a) => {
               approveArticle(a.id, user.name);
-              ping(`Approved. ${a.author} has been notified.`);
+              ping(`Approved. Ready for you to publish — or use Approve & Publish next time.`);
+            }}
+            onApproveAndPublish={(a) => {
+              publishArticle(a.id, user.name);
+              ping(`Published. “${a.title}” is live on the public website cards.`);
             }}
             onReturn={(a, notes) => {
               returnArticle(a.id, user.name, notes);
-              ping(`Returned to ${a.author} with notes.`);
+              ping(`Rejected. Returned to ${a.author} with notes.`);
             }}
             onPublish={(a) => {
               publishArticle(a.id, user.name);
@@ -221,6 +234,19 @@ export function AdminShell() {
           ))}
         </nav>
         <div className="border-t border-white/10 p-3">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'mb-2 flex w-full items-center gap-3 rounded-xl bg-ilm-gold/15 px-3 py-2.5 text-[13px] font-semibold text-ilm-gold-light transition hover:bg-ilm-gold/25',
+              collapsed && 'justify-center px-0',
+            )}
+            title="Visit main site"
+          >
+            <ExternalLink size={16} />
+            {!collapsed && 'Visit main site'}
+          </a>
           <div className={cn('flex items-center gap-3 rounded-2xl bg-white/5 p-3', collapsed && 'justify-center p-2')}>
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ilm-gold/20 font-serif text-xs text-ilm-gold-light">{user.initials}</div>
             {!collapsed && (

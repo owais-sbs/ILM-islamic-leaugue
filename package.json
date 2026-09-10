@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:demo-users": "node scripts/ensure-demo-users.mjs",
+    "db:test": "node scripts/test-connection.mjs",
+    "smoke": "node scripts/smoke-flow.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -40,7 +43,8 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
-    "@supabase/supabase-js": "^2.58.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
     "@types/node": "20.6.2",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
@@ -71,5 +75,8 @@
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2"
   }
 }

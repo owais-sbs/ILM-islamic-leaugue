@@ -30,7 +30,7 @@ export function LibraryExplorer({
       {heading && (
         <div className="relative mx-auto max-w-[1280px] px-6 pt-8 lg:px-8">
           <GeometricOrnament className="absolute right-8 top-0 hidden h-56 w-40 lg:block" />
-          <ScrollReveal>
+          <ScrollReveal from="left">
             <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
               <span className="h-px w-8 bg-ilm-gold" /> Article library
             </p>
@@ -63,8 +63,8 @@ export function LibraryExplorer({
         </ScrollReveal>
 
         <StaggerIn className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((article) => (
-            <StaggerChild key={article.slug}>
+          {filtered.map((article, i) => (
+            <StaggerChild key={article.slug} from={i % 2 === 0 ? 'left' : 'right'}>
               <ArticleCard article={article} />
             </StaggerChild>
           ))}

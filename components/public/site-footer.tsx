@@ -19,7 +19,7 @@ export function SiteFooter() {
         <div className="flex gap-16">
           <div className="flex flex-col gap-3 text-sm text-white/60">
             <span className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ilm-gold-light">Explore</span>
-            <Link href="/about" className="hover:text-ilm-gold-light">Our why</Link>
+            <Link href="/about" className="hover:text-ilm-gold-light">About Us</Link>
             <Link href="/articles" className="hover:text-ilm-gold-light">Articles</Link>
             <Link href="/murabbiyun" className="hover:text-ilm-gold-light">Murabbiyūn</Link>
           </div>
@@ -33,7 +33,18 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4 border-t border-white/10 px-6 py-6 text-[11px] text-white/35 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-        <span>© 2026 Islamic League of Murabbiyūn</span>
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+          <span>© 2026 Islamic League of Murabbiyūn</span>
+          <span className="hidden text-white/20 sm:inline">·</span>
+          <a
+            href="https://onepathsolutions.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/45 transition hover:text-ilm-gold-light"
+          >
+            Website made by OnePath Solutions
+          </a>
+        </div>
         <div className="flex items-center gap-5">
           <Link href="/#top" className="hover:text-ilm-gold-light">Privacy</Link>
           <Link href="/disclaimer" className="hover:text-ilm-gold-light">Disclaimer</Link>

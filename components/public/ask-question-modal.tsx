@@ -2,10 +2,24 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Send, X } from 'lucide-react';
+import { Send, X } from 'lucide-react';
+import { useIlm } from '@/lib/ilm-store';
 
 export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { addQuestion } = useIlm();
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [name, setName] = useState('');
+  const [question, setQuestion] = useState('');
+
+  const reset = () => {
+    setSent(false);
+    setBusy(false);
+    setError('');
+    setName('');
+    setQuestion('');
+  };
 
   return (
     <AnimatePresence>
@@ -15,7 +29,10 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={() => {
+            onClose();
+            reset();
+          }}
         >
           <motion.div
             initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -26,7 +43,10 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
             className="relative w-full max-w-lg rounded-[28px] border border-ilm-navy/8 bg-white p-8 shadow-2xl"
           >
             <button
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                reset();
+              }}
               className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full text-ilm-navy/40 hover:bg-ilm-cream"
               aria-label="Close"
             >
@@ -46,24 +66,45 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
             ) : (
               <form
                 className="mt-6 space-y-3"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  setSent(true);
+                  setBusy(true);
+                  setError('');
+                  try {
+                    addQuestion({
+                      asker: name.trim() || 'Anonymous',
+                      email: 'visitor@ilm.local',
+                      question: question.trim(),
+                      subject: 'Question from the site',
+                    });
+                    setSent(true);
+                  } catch {
+                    setError('Could not send. Please try again.');
+                  } finally {
+                    setBusy(false);
+                  }
                 }}
               >
                 <input
-                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="Your name (optional to stay anonymous)"
                   className="w-full rounded-2xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm outline-none focus:border-ilm-gold"
                 />
                 <textarea
                   required
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
                   rows={5}
                   placeholder="Your question…"
                   className="w-full resize-none rounded-2xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm outline-none focus:border-ilm-gold"
                 />
-                <button className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-3 text-sm font-semibold text-white">
-                  Send question <Send size={14} />
+                {error && <p className="text-xs text-red-600">{error}</p>}
+                <button
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {busy ? 'Sending…' : 'Send question'} {busy ? null : <Send size={14} />}
                 </button>
               </form>
             )}

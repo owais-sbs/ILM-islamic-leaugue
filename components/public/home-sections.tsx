@@ -27,10 +27,10 @@ export function HomeSections() {
 
 function OurWhy() {
   return (
-    <section id="our-why" className="mx-auto grid max-w-[1280px] gap-12 px-6 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
-      <ScrollReveal>
+    <section id="about-us" className="mx-auto grid max-w-[1280px] gap-12 px-6 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
+      <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
-          <span className="h-px w-8 bg-ilm-gold" /> What we believe
+          <span className="h-px w-8 bg-ilm-gold" /> About Us
         </p>
         <h2 className="mt-5 text-[40px] font-semibold leading-[1.08] tracking-[-0.04em] text-ilm-navy sm:text-[52px]">
           Knowledge is not just what we <em className="font-serif italic font-normal text-ilm-gold">know.</em>
@@ -38,12 +38,12 @@ function OurWhy() {
           It is who we <em className="font-serif italic font-normal text-ilm-gold">become.</em>
         </h2>
       </ScrollReveal>
-      <ScrollReveal delay={0.12}>
+      <ScrollReveal from="right" delay={0.12}>
         <p className="max-w-sm text-[16px] leading-[1.8] text-ilm-navy/55">
           In a world full of noise, we create room for the questions that matter. ILM brings together mentors, educators, and cultivators to nurture a more intentional way of living.
         </p>
-        <Link href="/murabbiyun" className="mt-7 inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy">
-          Meet the murabbiyūn <MoveUpRight size={14} />
+        <Link href="/about" className="mt-7 inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy">
+          Learn more about ILM <MoveUpRight size={14} />
         </Link>
       </ScrollReveal>
     </section>
@@ -55,7 +55,7 @@ function Pillars() {
     <section className="mx-auto max-w-[1280px] px-6 pb-8 lg:px-8">
       <StaggerIn className="grid gap-5 md:grid-cols-3">
         {pillars.map((pillar, i) => (
-          <StaggerChild key={pillar.title}>
+          <StaggerChild key={pillar.title} from={i % 2 === 0 ? 'left' : 'right'}>
             <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-8 shadow-[0_8px_30px_rgba(11,17,82,0.04)]">
               <span className="font-serif text-3xl text-ilm-gold/70">0{i + 1}</span>
               <h3 className="mt-4 text-xl font-semibold text-ilm-navy">{pillar.title}</h3>
@@ -74,7 +74,7 @@ function FeaturedAndSubjects() {
   if (!featured) return null;
   return (
     <section className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
-      <ScrollReveal>
+      <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> Featured
         </p>
@@ -91,8 +91,8 @@ function FeaturedAndSubjects() {
         </Link>
       </ScrollReveal>
       <StaggerIn className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {categories.map((cat) => (
-          <StaggerChild key={cat.id}>
+        {categories.map((cat, i) => (
+          <StaggerChild key={cat.id} from={i % 2 === 0 ? 'up' : 'down'}>
             <Link href={`/articles?category=${cat.slug}`} className="block rounded-2xl border border-ilm-navy/8 bg-white p-5 transition hover:-translate-y-1 hover:border-ilm-gold">
               <p className="text-sm font-semibold text-ilm-navy">{cat.name}</p>
               <p className="mt-1 text-xs text-ilm-navy/40">{publishedArticles.filter((a) => a.category === cat.name).length} published</p>
@@ -143,7 +143,7 @@ function MurabbiPreview() {
 function HowItWorks() {
   return (
     <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8">
-      <ScrollReveal>
+      <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> A way of learning
         </p>
@@ -152,8 +152,8 @@ function HowItWorks() {
         </h2>
       </ScrollReveal>
       <StaggerIn className="mt-12 grid gap-8 md:grid-cols-3">
-        {steps.map((step) => (
-          <StaggerChild key={step.n}>
+        {steps.map((step, i) => (
+          <StaggerChild key={step.n} from={i % 2 === 0 ? 'left' : 'right'}>
             <p className="font-serif text-4xl text-ilm-gold">{step.n}</p>
             <h3 className="mt-4 text-xl font-semibold text-ilm-navy">{step.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">{step.body}</p>
@@ -172,7 +172,7 @@ function ConnectSection() {
     <section id="connect" className="relative overflow-hidden bg-ilm-navy text-white">
       <div className="pointer-events-none absolute -right-40 -top-40 h-[670px] w-[670px] rounded-full border border-ilm-gold/20 shadow-[0_0_0_80px_rgba(199,154,61,0.04)]" />
       <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
-        <ScrollReveal>
+        <ScrollReveal from="left">
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-light">
             <span className="h-px w-8 bg-ilm-gold" /> Stay in the circle
           </p>
@@ -185,7 +185,7 @@ function ConnectSection() {
             Monthly reflections, new conversations, and gentle reminders for the road ahead.
           </p>
         </ScrollReveal>
-        <ScrollReveal delay={0.1} className="rounded-3xl border border-white/15 bg-white/8 p-8">
+        <ScrollReveal from="right" delay={0.1} className="rounded-3xl border border-white/15 bg-white/8 p-8">
           {subscribed ? (
             <div className="flex flex-col gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-ilm-gold-light text-ilm-navy">

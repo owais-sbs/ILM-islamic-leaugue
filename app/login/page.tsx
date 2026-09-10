@@ -9,23 +9,92 @@ import { Brand, GeometricOrnament } from '@/components/public/brand';
 import { writeAdminRole } from '@/lib/admin-session';
 import type { Role } from '@/lib/admin-data';
 import { roleLabels } from '@/lib/admin-data';
+import { DEMO_ACCOUNTS } from '@/types/database';
+import { tryCreateClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
-const roles: { key: Role; icon: typeof ShieldCheck; hint: string }[] = [
-  { key: 'author', icon: UserRound, hint: 'Draft & submit' },
-  { key: 'editor', icon: PencilLine, hint: 'Review & shape' },
-  { key: 'administrator', icon: ShieldCheck, hint: 'Full publishing' },
+const roles: { key: Role; icon: typeof ShieldCheck; hint: string; demoKey: keyof typeof DEMO_ACCOUNTS }[] = [
+  { key: 'author', icon: UserRound, hint: 'Draft & submit', demoKey: 'author' },
+  { key: 'editor', icon: PencilLine, hint: 'Review & shape', demoKey: 'editor' },
+  { key: 'administrator', icon: ShieldCheck, hint: 'Full publishing', demoKey: 'admin' },
 ];
+
+function demoForRole(role: Role) {
+  if (role === 'administrator') return DEMO_ACCOUNTS.admin;
+  if (role === 'editor') return DEMO_ACCOUNTS.editor;
+  return DEMO_ACCOUNTS.author;
+}
+
+function mapDbRole(role: string | null | undefined): Role | null {
+  if (role === 'admin') return 'administrator';
+  if (role === 'editor') return 'editor';
+  if (role === 'author') return 'author';
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState<Role>('author');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<Role>('administrator');
+  const initial = demoForRole('administrator');
+  const [email, setEmail] = useState<string>(initial.email);
+  const [password, setPassword] = useState<string>(initial.password);
   const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  const signIn = (e: React.FormEvent) => {
+  const applyRole = (next: Role) => {
+    setRole(next);
+    const demo = demoForRole(next);
+    setEmail(demo.email);
+    setPassword(demo.password);
+    setError('');
+  };
+
+  const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBusy(true);
+    setError('');
+
+    const supabase = tryCreateClient();
+    if (supabase) {
+      try {
+        const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+        if (authError) throw authError;
+
+        const uid = data.user?.id;
+        let nextRole: Role = role;
+        if (uid) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, is_active')
+            .eq('id', uid)
+            .maybeSingle();
+          const mapped = mapDbRole(profile?.role);
+          if (profile && !profile.is_active) {
+            throw new Error('This account is inactive. Contact an administrator.');
+          }
+          if (mapped) nextRole = mapped;
+        }
+
+        writeAdminRole(nextRole);
+        router.push('/admin');
+        return;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Sign-in failed';
+        // Fall through to local demo if credentials match demo accounts
+        const demo = demoForRole(role);
+        if (email === demo.email && password === demo.password) {
+          writeAdminRole(role);
+          router.push('/admin');
+          return;
+        }
+        setError(message);
+        setBusy(false);
+        return;
+      }
+    }
+
+    // No Supabase env — local demo portal (also works if Vercel env is incomplete)
     writeAdminRole(role);
     router.push('/admin');
   };
@@ -55,7 +124,9 @@ export default function LoginPage() {
             </div>
             <span className="mx-auto mt-4 block h-px w-12 bg-ilm-gold" />
             <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ilm-navy">Sign in to ILM Admin</h1>
-            <p className="mt-2 text-sm text-ilm-navy/50">Choose a role to preview that portal. No password check in this demo.</p>
+            <p className="mt-2 text-sm text-ilm-navy/50">
+              Choose a role — demo email & password fill automatically for the client walkthrough.
+            </p>
           </div>
 
           <form onSubmit={signIn} className="space-y-5">
@@ -69,7 +140,7 @@ export default function LoginPage() {
                     <button
                       key={r.key}
                       type="button"
-                      onClick={() => setRole(r.key)}
+                      onClick={() => applyRole(r.key)}
                       className={cn(
                         'flex flex-col items-center gap-1 rounded-full px-2 py-2.5 text-[11px] font-semibold transition-all',
                         active ? 'bg-ilm-gold text-ilm-navy-deep shadow-sm' : 'text-ilm-navy/50 hover:text-ilm-navy'
@@ -90,7 +161,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@ilm.org"
+                autoComplete="username"
                 className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
               />
             </div>
@@ -101,7 +172,7 @@ export default function LoginPage() {
                   type={show ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  autoComplete="current-password"
                   className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 pr-11 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
                 />
                 <button
@@ -115,6 +186,19 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="rounded-2xl border border-ilm-navy/8 bg-ilm-cream/80 px-4 py-3 text-left text-[11px] leading-relaxed text-ilm-navy/70">
+              <p className="mb-1.5 font-bold uppercase tracking-[0.12em] text-ilm-navy/50">Demo credentials</p>
+              <ul className="space-y-1 font-mono text-[11px]">
+                <li>Admin · {DEMO_ACCOUNTS.admin.email} / {DEMO_ACCOUNTS.admin.password}</li>
+                <li>Editor · {DEMO_ACCOUNTS.editor.email} / {DEMO_ACCOUNTS.editor.password}</li>
+                <li>Author · {DEMO_ACCOUNTS.author.email} / {DEMO_ACCOUNTS.author.password}</li>
+              </ul>
+            </div>
+
+            {error && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+            )}
+
             <div className="flex justify-end">
               <Link href="/reset-password" className="text-xs font-semibold text-ilm-gold-deep hover:text-ilm-gold">
                 Forgot password?
@@ -123,9 +207,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-ilm-navy py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5"
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-ilm-navy py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5 disabled:opacity-60"
             >
-              Sign in as {roleLabels[role]} <ArrowRight size={16} />
+              {busy ? 'Signing in…' : `Sign in as ${roleLabels[role]}`} <ArrowRight size={16} />
             </button>
           </form>
         </motion.div>

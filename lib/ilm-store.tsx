@@ -19,6 +19,7 @@ import {
 import { images } from '@/lib/images';
 
 const KEY = 'ilm-demo-state-v1';
+export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
 
 interface Store {
   articles: Article[];
@@ -40,9 +41,24 @@ const IlmContext = createContext<Store | null>(null);
 
 function persist(data: { articles: Article[]; questions: Question[]; notices: Notice[]; activity: ActivityEntry[] }) {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
     /* ignore */
+  }
+}
+
+function readPersisted(): {
+  articles?: Article[];
+  questions?: Question[];
+  notices?: Notice[];
+  activity?: ActivityEntry[];
+} | null {
+  try {
+    const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
 }
 
@@ -54,19 +70,34 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.articles)) setArticles(parsed.articles);
-        if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
-        if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
-        if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
-      }
-    } catch {
-      /* keep seed */
+    const parsed = readPersisted();
+    if (parsed) {
+      if (Array.isArray(parsed.articles)) setArticles(parsed.articles);
+      if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
+      if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
+      if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
     }
     setReady(true);
+
+    // Live / Vercel: merge published articles from Supabase so cards work for every visitor
+    void (async () => {
+      try {
+        const res = await fetch('/api/articles/published', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = (await res.json()) as { ok?: boolean; articles?: Article[] };
+        if (!json.ok || !Array.isArray(json.articles) || json.articles.length === 0) return;
+        setArticles((prev) => {
+          const bySlug = new Map(prev.map((a) => [a.slug, a]));
+          for (const remote of json.articles!) {
+            const local = bySlug.get(remote.slug);
+            bySlug.set(remote.slug, local ? { ...local, ...remote, status: 'published' } : remote);
+          }
+          return Array.from(bySlug.values());
+        });
+      } catch {
+        /* offline / misconfigured — keep local demo */
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -90,7 +121,14 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     questions,
     notices,
     activity,
-    publishedArticles: articles.filter((a) => a.status === 'published'),
+    publishedArticles: articles
+      .filter((a) => a.status === 'published')
+      .slice()
+      .sort((a, b) => {
+        const ta = a.publishedAt || a.date || '';
+        const tb = b.publishedAt || b.date || '';
+        return tb.localeCompare(ta);
+      }),
     saveArticle: (article, actor, asSubmit) => {
       const status: ArticleStatus = asSubmit ? 'submitted' : article.status === 'published' ? 'published' : article.id.startsWith('new') || !articles.find((a) => a.id === article.id) ? (asSubmit ? 'submitted' : 'draft') : article.status === 'returned' && !asSubmit ? 'returned' : article.status;
       const next: Article = {
@@ -147,12 +185,53 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     publishArticle: (id, actor) => {
       const article = articles.find((a) => a.id === id);
       if (!article) return;
-      patch(id, (a) => ({
-        ...a,
-        status: 'published',
-        publishedAt: a.publishedAt || shortDate(),
-        date: a.publishedAt || shortDate(),
-      }));
+      const publishedStamp = shortDate();
+      setArticles((prev) =>
+        prev.map((a) => {
+          if (a.id === id) {
+            return {
+              ...a,
+              status: 'published' as const,
+              publishedAt: publishedStamp,
+              date: publishedStamp,
+              featured: true,
+            };
+          }
+          if (a.status === 'published' && a.featured) {
+            return { ...a, featured: false };
+          }
+          return a;
+        }),
+      );
+      try {
+        localStorage.setItem(LATEST_PUBLISH_KEY, article.slug);
+      } catch {
+        /* ignore */
+      }
+      // Sync to Supabase so the live site shows the article for all users
+      void (async () => {
+        try {
+          const minutes = Number.parseInt(String(article.readTime), 10) || 5;
+          await fetch('/api/articles/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: article.title,
+              slug: article.slug,
+              excerpt: article.excerpt,
+              body: article.body,
+              footnotes: article.footnotes,
+              seoTitle: article.seoTitle,
+              seoDescription: article.seoDescription,
+              category: article.category,
+              image: article.image,
+              readingMinutes: minutes,
+            }),
+          });
+        } catch {
+          /* local publish still works */
+        }
+      })();
       log('Published', actor, article.title);
       notify({
         title: 'Your article is live',
@@ -164,7 +243,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     unpublishArticle: (id, actor) => {
       const article = articles.find((a) => a.id === id);
       if (!article) return;
-      patch(id, (a) => ({ ...a, status: 'approved' }));
+      patch(id, (a) => ({ ...a, status: 'approved', featured: false }));
       log('Unpublished', actor, article.title);
     },
     addQuestion: (q) => {
@@ -172,6 +251,23 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         { ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' },
         ...prev,
       ]);
+      void (async () => {
+        try {
+          await fetch('/api/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: q.asker,
+              email: q.email,
+              subject: q.subject || 'Question from the site',
+              body: q.question,
+              category: q.category,
+            }),
+          });
+        } catch {
+          /* local queue still works */
+        }
+      })();
       notify({ title: 'New question', body: q.question, role: 'editor' });
       notify({ title: 'New question', body: q.question, role: 'administrator' });
     },

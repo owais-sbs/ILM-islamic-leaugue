@@ -7,10 +7,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, ChevronDown, Menu, Search, X } from 'lucide-react';
 import { Brand } from './brand';
 import { AskQuestionModal } from './ask-question-modal';
+import { NewArticleBanner } from './new-article-banner';
 import { cn } from '@/lib/utils';
 
 const nav = [
-  { href: '/about', label: 'Our Why', id: 'about' },
+  { href: '/about', label: 'About Us', id: 'about' },
   {
     href: '/articles',
     label: 'Articles',
@@ -65,6 +66,7 @@ export function SiteHeader({ active }: { active?: 'about' | 'articles' | 'murabb
   return (
     <>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
+        <NewArticleBanner />
         <motion.div
           className="pointer-events-auto mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8"
           animate={{ paddingTop: scrolled ? 10 : 18 }}
