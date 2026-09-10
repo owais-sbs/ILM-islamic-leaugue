@@ -2,112 +2,59 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, CheckCircle2, Mail, Loader2 } from 'lucide-react';
-import { SiteLogo } from '@/components/Logo';
-import { createClient } from '@/lib/supabase/client';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
+import { Brand, GeometricOrnament } from '@/components/public/brand';
 
 export default function ResetPasswordPage() {
-  const [sent, setSent] = useState(false);
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
-    });
-    setLoading(false);
-    if (resetError) {
-      setError(resetError.message);
-      return;
-    }
-    setSent(true);
-  };
+  const [sent, setSent] = useState(false);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F4F7FB] px-6 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-12 flex justify-center">
-          <Link href="/">
-            <SiteLogo size="sm" />
-          </Link>
-        </div>
-        <div className="rounded-2xl border border-ilm-navy/10 bg-white p-7 shadow-[0_20px_60px_rgba(15,22,87,.08)] sm:p-9">
+    <main className="relative min-h-screen overflow-hidden bg-ilm-cream">
+      <GeometricOrnament className="absolute -right-8 top-16 hidden h-[380px] w-[240px] lg:block" />
+      <header className="relative z-10 flex items-center justify-between px-6 py-7 lg:px-12">
+        <Brand />
+        <Link href="/login" className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ilm-navy/50 hover:text-ilm-navy">
+          ← Back to sign in
+        </Link>
+      </header>
+      <div className="relative z-10 mx-auto max-w-md px-5 pt-10">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[28px] border border-ilm-navy/8 bg-white p-8 shadow-[0_24px_70px_rgba(11,17,82,0.08)]"
+        >
+          <span className="mx-auto block h-px w-12 bg-ilm-gold" />
+          <h1 className="mt-5 text-center text-2xl font-semibold text-ilm-navy">Reset password</h1>
+          <p className="mt-2 text-center text-sm text-ilm-navy/50">
+            Enter your email and we&apos;ll send a reset link. This screen is UI only.
+          </p>
           {sent ? (
-            <div className="text-center">
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sky-50 text-ilm-navy">
-                <CheckCircle2 size={27} />
-              </span>
-              <h1 className="mt-5 font-display text-3xl font-semibold text-ilm-navy">Check your inbox</h1>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                If an account exists for that email address, you&apos;ll receive a password reset link shortly.
-              </p>
-              <Link
-                href="/login"
-                className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-ilm-navy hover:underline"
-              >
-                <ArrowLeft size={15} /> Back to sign in
-              </Link>
-            </div>
+            <p className="mt-8 rounded-2xl bg-ilm-cream px-4 py-5 text-center text-sm text-ilm-navy">
+              If this were wired up, a reset link would be on its way to {email || 'your inbox'}.
+            </p>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="mb-7 inline-flex items-center gap-2 text-xs font-medium text-slate-400 transition hover:text-ilm-navy"
-              >
-                <ArrowLeft size={14} /> Back to sign in
-              </Link>
-              <h1 className="font-display text-3xl font-semibold text-ilm-navy">Reset your password</h1>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                Enter the email address associated with your account and we&apos;ll send you a secure reset link.
-              </p>
-              <form onSubmit={handleSubmit} className="mt-7">
-                {error && (
-                  <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    {error}
-                  </div>
-                )}
-                <label htmlFor="reset-email" className="mb-2 block text-xs font-semibold text-ilm-navy">
-                  Email address
-                </label>
-                <div className="relative">
-                  <Mail size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    id="reset-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-ilm-navy focus:ring-2 focus:ring-ilm-navy/15"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ilm-navy text-sm font-semibold text-white transition hover:bg-ilm-navy-light disabled:opacity-60"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" /> Sending…
-                    </>
-                  ) : (
-                    <>
-                      Send reset link <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
-              </form>
-            </>
+            <form
+              className="mt-8 space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSent(true);
+              }}
+            >
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@ilm.org"
+                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm outline-none focus:border-ilm-gold"
+              />
+              <button className="flex w-full items-center justify-center gap-2 rounded-full bg-ilm-navy py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-white">
+                Send reset link <ArrowRight size={16} />
+              </button>
+            </form>
           )}
-        </div>
-        <p className="mt-7 text-center text-[10px] uppercase tracking-[.2em] text-slate-400">
-          Mentors · Educators · Cultivators
-        </p>
+        </motion.div>
       </div>
     </main>
   );

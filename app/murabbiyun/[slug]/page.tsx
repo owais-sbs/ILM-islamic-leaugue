@@ -1,140 +1,60 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useMemo } from 'react';
 import Link from 'next/link';
-import type { Metadata } from 'next';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
-import { SiteFooter } from '@/components/SiteFooter';
-import { Reveal } from '@/components/Reveal';
-import { ArticleCard } from '@/components/ArticleCard';
-import { authors, articles } from '@/lib/data';
-import { buildPageMetadata } from '@/lib/seo';
+import { ArrowLeft } from 'lucide-react';
+import { murabbiyūn } from '@/lib/public-data';
+import { useIlm } from '@/lib/ilm-store';
+import { ArticleCard } from '@/components/public/article-card';
+import { SiteFooter } from '@/components/public/site-footer';
+import { SiteHeader } from '@/components/public/site-header';
 
-export function generateStaticParams() {
-  return authors.map((a) => ({ slug: a.slug }));
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const author = authors.find((a) => a.slug === params.slug);
-  if (!author) return { title: 'Contributor not found' };
-  return buildPageMetadata({
-    title: author.name,
-    description: author.bio || `Published writing by ${author.name} on ILM.`,
-    path: `/murabbiyun/${author.slug}`,
-    image: author.avatar || undefined,
-  });
-}
-
-export default function AuthorProfilePage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const author = authors.find((a) => a.slug === params.slug);
-  if (!author) notFound();
-
-  const authorArticles = articles.filter(
-    (a) => a.authorId === author.id && a.status === 'published',
+export default function MurabbiProfilePage({ params }: { params: { slug: string } }) {
+  const person = murabbiyūn.find((m) => m.id === params.slug);
+  const { publishedArticles } = useIlm();
+  const works = useMemo(
+    () => publishedArticles.filter((a) => a.authorSlug === params.slug || a.author === person?.name),
+    [publishedArticles, params.slug, person?.name]
   );
 
+  if (!person) {
+    return (
+      <main className="grid min-h-screen place-items-center pt-28">
+        <SiteHeader active="murabbiyun" />
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-ilm-navy">Profile not found</h1>
+          <Link href="/murabbiyun" className="mt-4 inline-flex items-center gap-2 text-ilm-gold-deep">
+            <ArrowLeft size={14} /> Directory
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="bg-white">
-      <SiteHeader />
-
-      {/* Profile hero */}
-      <section className="px-6 pb-0 pt-[calc(var(--site-header-offset)+var(--site-header-gap))] md:px-12 md:pt-[calc(var(--site-header-offset)+var(--site-header-gap)+0.5rem)]">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <Link
-              href="/murabbiyun"
-              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.15em] text-ilm-gold transition hover:gap-3"
-            >
-              <ArrowLeft size={14} /> All Murabbiyūn
-            </Link>
-          </Reveal>
-
-          <div className="mt-8 grid gap-10 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-16">
-            {/* Avatar */}
-            <Reveal>
-              <div className="relative mx-auto w-40 shrink-0 lg:mx-0 lg:w-48">
-                <div className="absolute -bottom-3 -right-3 h-full w-full rounded-3xl border border-ilm-gold/25" />
-                <img
-                  src={author.avatar}
-                  alt={author.name}
-                  className="relative aspect-square w-full rounded-3xl object-cover shadow-[0_16px_40px_rgba(15,22,87,0.14)]"
-                />
-              </div>
-            </Reveal>
-
-            {/* Bio */}
-            <Reveal delay="delay-1">
-              <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-[.18em]">
-                <span className="rounded-full bg-ilm-cream px-3 py-1 text-ilm-gold">
-                  {author.madhhab}
-                </span>
-                <span className="text-slate-400">{author.credentials}</span>
-              </div>
-              <h1 className="mt-4 font-display text-4xl leading-tight text-ilm-navy md:text-5xl">
-                {author.name}
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
-                {author.bio}
-              </p>
-              <p className="mt-4 text-sm text-slate-400">
-                {authorArticles.length} published{' '}
-                {authorArticles.length === 1 ? 'essay' : 'essays'} · Contributing since{' '}
-                {new Date(author.joinedAt).getFullYear()}
-              </p>
-            </Reveal>
+    <main className="min-h-screen pt-28">
+      <SiteHeader active="murabbiyun" />
+      <section className="mx-auto grid max-w-[1100px] gap-10 px-6 py-16 md:grid-cols-[280px_1fr]">
+        <div className="text-center md:text-left">
+          <div className="mx-auto h-40 w-40 overflow-hidden rounded-full ring-4 ring-ilm-cream md:mx-0">
+            <img src={person.image} alt={person.name} className="h-full w-full object-cover" />
           </div>
-
-          {/* Divider */}
-          <div className="mt-14 h-px bg-slate-100" />
+          <h1 className="mt-5 text-2xl font-semibold text-ilm-navy">{person.name}</h1>
+          <p className="mt-1 text-ilm-gold-deep">{person.role}</p>
+          <p className="mt-2 text-sm text-ilm-navy/45">{person.credentials}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Biography</p>
+          <p className="mt-4 text-lg leading-relaxed text-ilm-navy/70">{person.bio}</p>
+          <h2 className="mt-12 text-xl font-semibold text-ilm-navy">Published articles</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {works.map((a) => (
+              <ArticleCard key={a.id} article={a} />
+            ))}
+            {works.length === 0 && <p className="text-sm text-ilm-navy/40">No published articles yet.</p>}
+          </div>
         </div>
       </section>
-
-      {/* Articles */}
-      <section className="ilm-section">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[.2em] text-ilm-gold">
-              Published essays
-            </p>
-            <h2 className="font-display text-3xl text-ilm-navy">
-              Writing by {author.name.split(' ').pop()}
-            </h2>
-          </Reveal>
-
-          {authorArticles.length > 0 ? (
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {authorArticles.map((article, i) => (
-                <Reveal key={article.id} delay={`delay-${(i % 3) + 1}`}>
-                  <ArticleCard article={article} compact />
-                </Reveal>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 rounded-2xl border border-dashed border-slate-200 bg-ilm-cream/30 p-10 text-center">
-              <p className="text-slate-500">Essays from this contributor are coming soon.</p>
-            </div>
-          )}
-
-          <Reveal>
-            <div className="mt-12 text-center">
-              <Link
-                href="/articles"
-                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.15em] text-ilm-navy transition hover:gap-3 hover:text-ilm-gold"
-              >
-                Browse the full library <ArrowRight size={14} />
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       <SiteFooter />
     </main>
   );

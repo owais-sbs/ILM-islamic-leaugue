@@ -1,263 +1,135 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Loader2 } from 'lucide-react';
-import { SiteLogo } from '@/components/Logo';
-import { createClient } from '@/lib/supabase/client';
-import {
-  AdminRole,
-  ALL_ROLES,
-  DEMO_ACCOUNTS,
-  ROLE_LABELS,
-  roleHomePath,
-  setTempRole,
-  type AdminRole as RoleKey,
-} from '@/lib/roles';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { ArrowRight, Eye, EyeOff, ShieldCheck, PencilLine, UserRound } from 'lucide-react';
+import { Brand, GeometricOrnament } from '@/components/public/brand';
+import { writeAdminRole } from '@/lib/admin-session';
+import type { Role } from '@/lib/admin-data';
+import { roleLabels } from '@/lib/admin-data';
+import { cn } from '@/lib/utils';
 
-interface RoleSelectorProps {
-  selected: RoleKey;
-  onChange: (role: RoleKey) => void;
-}
-
-function RoleSelector({ selected, onChange }: RoleSelectorProps) {
-  return (
-    <div>
-      <p className="mb-2 text-xs font-semibold text-ilm-navy" id="role-selector-label">
-        Sign in as
-      </p>
-      <div
-        role="radiogroup"
-        aria-labelledby="role-selector-label"
-        className="flex w-full gap-1 rounded-xl border border-slate-200 bg-white p-1"
-      >
-        {ALL_ROLES.map((role) => {
-          const isSelected = selected === role;
-          return (
-            <button
-              key={role}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              onClick={() => onChange(role)}
-              className={[
-                'flex-1 rounded-lg px-2 py-2.5 text-xs font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ilm-navy/40',
-                isSelected
-                  ? 'bg-ilm-navy text-white shadow-sm'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-ilm-navy',
-              ].join(' ')}
-            >
-              {ROLE_LABELS[role]}
-            </button>
-          );
-        })}
-      </div>
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
-        Toggle fills the demo email & password for that portal. Sign in with those credentials to
-        open the matching workspace.
-      </p>
-    </div>
-  );
-}
-
-function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const nextParam = searchParams.get('next');
-
-  const [selectedRole, setSelectedRole] = useState<RoleKey>(AdminRole.ADMIN);
-  const [email, setEmail] = useState(DEMO_ACCOUNTS[AdminRole.ADMIN].email);
-  const [password, setPassword] = useState(DEMO_ACCOUNTS[AdminRole.ADMIN].password);
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const applyRole = (role: RoleKey) => {
-    setSelectedRole(role);
-    const demo = DEMO_ACCOUNTS[role];
-    setEmail(demo.email);
-    setPassword(demo.password);
-    setError('');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) {
-        setError(
-          `${signInError.message} — If demo accounts are missing, run: node scripts/smoke-roles.mjs`,
-        );
-        setLoading(false);
-        return;
-      }
-      // Keep UI portal preference + URL role segment in sync
-      setTempRole(selectedRole);
-      const destination =
-        nextParam && nextParam.startsWith('/')
-          ? nextParam.includes('/admin/as/')
-            ? nextParam
-            : nextParam.startsWith('/admin')
-              ? nextParam.replace(/^\/admin/, `/admin/as/${selectedRole}`)
-              : nextParam
-          : roleHomePath(selectedRole);
-      router.push(destination);
-      router.refresh();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-      setError(message);
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </div>
-      )}
-
-      <RoleSelector selected={selectedRole} onChange={applyRole} />
-
-      <div>
-        <label htmlFor="email" className="mb-2 block text-xs font-semibold text-ilm-navy">
-          Email address
-        </label>
-        <div className="relative">
-          <Mail size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-ilm-navy focus:ring-2 focus:ring-ilm-navy/15"
-          />
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <label htmlFor="password" className="block text-xs font-semibold text-ilm-navy">
-            Password
-          </label>
-          <Link href="/reset-password" className="text-xs font-medium text-ilm-navy hover:underline">
-            Forgot password?
-          </Link>
-        </div>
-        <div className="relative">
-          <LockKeyhole size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            id="password"
-            type={showPassword ? 'text' : 'password'}
-            required
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 text-sm outline-none transition focus:border-ilm-navy focus:ring-2 focus:ring-ilm-navy/15"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-ilm-navy"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-          >
-            {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[11px] leading-relaxed text-slate-600">
-        <p className="font-semibold text-ilm-navy">Demo credentials</p>
-        <ul className="mt-1 space-y-0.5 font-mono">
-          <li>Admin — {DEMO_ACCOUNTS.admin.email} / {DEMO_ACCOUNTS.admin.password}</li>
-          <li>Editor — {DEMO_ACCOUNTS.editor.email} / {DEMO_ACCOUNTS.editor.password}</li>
-          <li>Author — {DEMO_ACCOUNTS.author.email} / {DEMO_ACCOUNTS.author.password}</li>
-        </ul>
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ilm-navy text-sm font-semibold text-white transition hover:bg-ilm-navy-light disabled:opacity-60"
-      >
-        {loading ? (
-          <>
-            <Loader2 size={16} className="animate-spin" /> Signing in…
-          </>
-        ) : (
-          <>
-            Sign in <ArrowRight size={16} />
-          </>
-        )}
-      </button>
-    </form>
-  );
-}
+const roles: { key: Role; icon: typeof ShieldCheck; hint: string }[] = [
+  { key: 'author', icon: UserRound, hint: 'Draft & submit' },
+  { key: 'editor', icon: PencilLine, hint: 'Review & shape' },
+  { key: 'administrator', icon: ShieldCheck, hint: 'Full publishing' },
+];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [role, setRole] = useState<Role>('author');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
+
+  const signIn = (e: React.FormEvent) => {
+    e.preventDefault();
+    writeAdminRole(role);
+    router.push('/admin');
+  };
+
   return (
-    <main className="grid min-h-screen bg-[#F4F7FB] lg:grid-cols-[.85fr_1.15fr]">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-[#0B1248] via-[#0F1657] to-[#1a2380] p-10 lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full border border-sky-300/20" />
-        <div className="absolute -bottom-32 -left-20 h-[420px] w-[420px] rounded-full border border-white/10" />
-        <Link href="/" className="relative">
-          <SiteLogo size="sm" onDark className="brightness-110" />
+    <main className="relative min-h-screen overflow-hidden bg-ilm-cream">
+      <GeometricOrnament className="absolute -right-8 top-16 hidden h-[420px] w-[280px] lg:block" />
+      <div className="pointer-events-none absolute -left-40 top-20 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(199,154,61,0.12),transparent_60%)]" />
+
+      <header className="relative z-10 flex items-center justify-between px-6 py-7 lg:px-12">
+        <Brand />
+        <Link href="/" className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ilm-navy/50 hover:text-ilm-navy">
+          ← Back to ILM
         </Link>
-        <div className="relative max-w-md">
-          <span className="mb-6 block h-px w-16 bg-sky-300/60" />
-          <h1 className="font-display text-5xl leading-tight text-white">
-            A considered space for the work of becoming.
-          </h1>
-          <p className="mt-6 max-w-sm text-sm leading-7 text-sky-100/70">
-            Welcome back to the ILM editorial workspace. Write with care. Publish with purpose.
-          </p>
-        </div>
-        <p className="relative text-[10px] uppercase tracking-[.2em] text-sky-200/40">
-          Mentors · Educators · Cultivators
-        </p>
-      </section>
+      </header>
 
-      <section className="flex items-center justify-center px-6 py-12 sm:px-10">
-        <div className="w-full max-w-md">
-          <div className="mb-10 lg:hidden">
-            <Link href="/">
-              <SiteLogo size="sm" />
-            </Link>
-          </div>
-          <div className="mb-8">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[.25em] text-ilm-navy">
-              Editorial workspace
-            </p>
-            <h2 className="font-display text-4xl font-semibold text-ilm-navy">Welcome back</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Choose Author, Editor, or Administrator, then sign in to open that portal.
-            </p>
+      <div className="relative z-10 mx-auto flex max-w-md flex-col justify-center px-5 pb-20 pt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+          className="rounded-[28px] border border-ilm-navy/8 bg-white p-8 shadow-[0_24px_70px_rgba(11,17,82,0.08)]"
+        >
+          <div className="mb-6 text-center">
+            <div className="flex justify-center">
+              <Brand compact />
+            </div>
+            <span className="mx-auto mt-4 block h-px w-12 bg-ilm-gold" />
+            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ilm-navy">Sign in to ILM Admin</h1>
+            <p className="mt-2 text-sm text-ilm-navy/50">Choose a role to preview that portal. No password check in this demo.</p>
           </div>
 
-          <Suspense fallback={<div className="h-48 animate-pulse rounded-xl bg-slate-100" />}>
-            <LoginForm />
-          </Suspense>
+          <form onSubmit={signIn} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-ilm-navy/40">Workspace</label>
+              <div className="grid grid-cols-3 rounded-full bg-ilm-cream p-1">
+                {roles.map((r) => {
+                  const Icon = r.icon;
+                  const active = role === r.key;
+                  return (
+                    <button
+                      key={r.key}
+                      type="button"
+                      onClick={() => setRole(r.key)}
+                      className={cn(
+                        'flex flex-col items-center gap-1 rounded-full px-2 py-2.5 text-[11px] font-semibold transition-all',
+                        active ? 'bg-ilm-gold text-ilm-navy-deep shadow-sm' : 'text-ilm-navy/50 hover:text-ilm-navy'
+                      )}
+                    >
+                      <Icon size={15} />
+                      {roleLabels[r.key] === 'Administrator' ? 'Admin' : roleLabels[r.key]}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-center text-[11px] text-ilm-navy/40">{roles.find((r) => r.key === role)?.hint}</p>
+            </div>
 
-          <p className="mt-8 text-center text-xs text-slate-400">
-            Need an invitation?{' '}
-            <Link href="/contact" className="font-medium text-ilm-navy hover:underline">
-              Contact the ILM team
-            </Link>
-          </p>
-        </div>
-      </section>
+            <div>
+              <label className="mb-1.5 block text-sm text-ilm-navy/60">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@ilm.org"
+                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm text-ilm-navy/60">Password</label>
+              <div className="relative">
+                <input
+                  type={show ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 pr-11 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ilm-navy/35"
+                  aria-label="Toggle password"
+                >
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Link href="/reset-password" className="text-xs font-semibold text-ilm-gold-deep hover:text-ilm-gold">
+                Forgot password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-ilm-navy py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5"
+            >
+              Sign in as {roleLabels[role]} <ArrowRight size={16} />
+            </button>
+          </form>
+        </motion.div>
+      </div>
     </main>
   );
 }

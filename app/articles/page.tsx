@@ -1,33 +1,15 @@
-import {
-  fetchPublishedArticles,
-  fetchPublicAuthors,
-  fetchPublicCategories,
-} from '@/lib/public-content';
-import {
-  articles as demoArticles,
-  authors as demoAuthors,
-  categories as demoCategories,
-} from '@/lib/data';
-import { ArticlesLibraryClient } from '@/components/ArticlesLibraryClient';
+'use client';
 
-export const revalidate = 60;
+import { LibraryExplorer } from '@/components/public/library-explorer';
+import { SiteFooter } from '@/components/public/site-footer';
+import { SiteHeader } from '@/components/public/site-header';
 
-export default async function ArticlesPage() {
-  const [dbArticles, dbCategories, dbAuthors] = await Promise.all([
-    fetchPublishedArticles(),
-    fetchPublicCategories(),
-    fetchPublicAuthors(),
-  ]);
-
-  const articles =
-    dbArticles.length > 0
-      ? dbArticles
-      : demoArticles.filter((a) => a.status === 'published');
-  const categories = dbCategories.length > 0 ? dbCategories : demoCategories;
-  const authors =
-    dbAuthors.length > 0 ? dbAuthors.filter((a) => a.active) : demoAuthors.filter((a) => a.active);
-
+export default function ArticlesPage() {
   return (
-    <ArticlesLibraryClient articles={articles} categories={categories} authors={authors} />
+    <main className="min-h-screen overflow-x-hidden pb-20 pt-28">
+      <SiteHeader active="articles" />
+      <LibraryExplorer />
+      <SiteFooter />
+    </main>
   );
 }

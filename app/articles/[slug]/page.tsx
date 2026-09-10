@@ -1,116 +1,58 @@
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
-import { SiteHeader } from '@/components/SiteHeader';
-import { SiteFooter } from '@/components/SiteFooter';
-import { ArticleDetailView } from '@/components/ArticleDetailView';
-import { JsonLd } from '@/components/JsonLd';
-import { fetchArticleBySlug, fetchPublishedArticles } from '@/lib/public-content';
-import { authors } from '@/lib/data';
-import { getSiteUrl } from '@/lib/site-url';
-import { buildPageMetadata } from '@/lib/seo';
+'use client';
 
-export const revalidate = 60;
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { useIlm } from '@/lib/ilm-store';
+import { ArticlePreview } from '@/components/admin/article-preview';
+import { ArticleCard } from '@/components/public/article-card';
+import { SiteFooter } from '@/components/public/site-footer';
+import { SiteHeader } from '@/components/public/site-header';
 
-export async function generateStaticParams() {
-  const articles = await fetchPublishedArticles();
-  return articles.map((a) => ({ slug: a.slug }));
-}
+export default function ArticleDetailPage({ params }: { params: { slug: string } }) {
+  const { publishedArticles } = useIlm();
+  const article = useMemo(
+    () => publishedArticles.find((a) => a.slug === params.slug),
+    [publishedArticles, params.slug]
+  );
+  const related = publishedArticles.filter((a) => a.slug !== params.slug && a.category === article?.category).slice(0, 3);
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const article = await fetchArticleBySlug(params.slug);
-  if (!article) return { title: 'Article not found' };
-
-  const title = article.title;
-  const description = article.excerpt || `Read “${article.title}” on ILM.`;
-  const path = `/articles/${article.slug}`;
-  const image = article.featuredImage || undefined;
-
-  return {
-    ...buildPageMetadata({
-      title,
-      description,
-      path,
-      image,
-      type: 'article',
-    }),
-    title,
-    openGraph: {
-      type: 'article',
-      title,
-      description,
-      url: `${getSiteUrl()}${path}`,
-      publishedTime: article.publishedAt ?? undefined,
-      modifiedTime: article.updatedAt || undefined,
-      authors: [article.authorName],
-      tags: article.tags,
-      images: image
-        ? [{ url: image, alt: article.title }]
-        : [{ url: '/og-image.png', alt: title }],
-    },
-  };
-}
-
-export default async function ArticlePage({ params }: { params: { slug: string } }) {
-  const article = await fetchArticleBySlug(params.slug);
-  if (!article) notFound();
-
-  const author = authors.find((a) => a.id === article.authorId);
-  const allPublished = await fetchPublishedArticles();
-  const related = allPublished
-    .filter((a) => a.category === article.category && a.id !== article.id)
-    .slice(0, 4);
-
-  const base = getSiteUrl();
-  const articleLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: article.title,
-    description: article.excerpt,
-    image: article.featuredImage || `${base}/og-image.png`,
-    datePublished: article.publishedAt || undefined,
-    dateModified: article.updatedAt || article.publishedAt || undefined,
-    author: {
-      '@type': 'Person',
-      name: article.authorName,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Islamic League of Murabbiyūn',
-      logo: {
-        '@type': 'ImageObject',
-        url: `${base}/ILM_Final_Logo_Icon.png`,
-      },
-    },
-    mainEntityOfPage: `${base}/articles/${article.slug}`,
-    articleSection: article.category,
-    keywords: article.tags?.join(', '),
-  };
-
-  const breadcrumbLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: base },
-      { '@type': 'ListItem', position: 2, name: 'Articles', item: `${base}/articles` },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: article.title,
-        item: `${base}/articles/${article.slug}`,
-      },
-    ],
-  };
+  if (!article) {
+    return (
+      <main className="grid min-h-screen place-items-center pt-28">
+        <SiteHeader active="articles" />
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-ilm-navy">This article is not published</h1>
+          <p className="mt-2 text-sm text-ilm-navy/50">Visitors only see articles with status = published.</p>
+          <Link href="/articles" className="mt-4 inline-flex items-center gap-2 text-sm text-ilm-gold-deep">
+            <ArrowLeft size={14} /> Back to articles
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="bg-white">
-      <JsonLd data={articleLd} />
-      <JsonLd data={breadcrumbLd} />
-      <SiteHeader />
-      <ArticleDetailView article={article} author={author} related={related} />
+    <main className="min-h-screen pt-28">
+      <SiteHeader active="articles" />
+      <div className="mx-auto max-w-3xl px-6 py-12">
+        <Link href="/articles" className="inline-flex items-center gap-2 text-sm text-ilm-navy/50 hover:text-ilm-navy">
+          <ArrowLeft size={14} /> Article library
+        </Link>
+        <div className="mt-6">
+          <ArticlePreview article={article} />
+        </div>
+      </div>
+      {related.length > 0 && (
+        <section className="mx-auto max-w-[1280px] px-6 pb-20">
+          <h2 className="mb-6 text-2xl font-semibold text-ilm-navy">Related articles</h2>
+          <div className="grid gap-6 md:grid-cols-3">
+            {related.map((a) => (
+              <ArticleCard key={a.id} article={a} />
+            ))}
+          </div>
+        </section>
+      )}
       <SiteFooter />
     </main>
   );
