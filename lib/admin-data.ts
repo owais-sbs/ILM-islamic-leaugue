@@ -91,11 +91,11 @@ export interface Notice {
 const sampleBody = (lead: string) =>
   `${lead}
 
-Sacred knowledge was never meant to be gathered the way one gathers possessions. The early teachers of this ummah treated learning as an act of worship — begun in sincerity, held with humility, and completed in character.
+Sacred knowledge was never meant to be gathered the way one gathers possessions. The early teachers of this ummah treated learning as an act of worship: begun in sincerity, held with humility, and completed in character.
 
 The first adab is intention. A student asks: am I seeking this to be seen as learned, or to become more pleasing to Allah? That question is itself a lesson.
 
-The second is respect for the teacher and the text. We sit with a book the way we sit with a person of knowledge — attentive, unhurried, and ready to be changed.
+The second is respect for the teacher and the text. We sit with a book the way we sit with a person of knowledge: attentive, unhurried, and ready to be changed.
 
 May Allah make what we write a means of light, not a means of pride.`;
 
@@ -147,8 +147,8 @@ export const articles: Article[] = [
     id: 'a3',
     title: 'Cultivating the Heart in an Age of Noise',
     slug: 'cultivating-the-heart-in-an-age-of-noise',
-    excerpt: 'Practical reflections on tazkiyah — purification of the self — drawn from classical sources.',
-    body: sampleBody('Practical reflections on tazkiyah — purification of the self — drawn from classical sources.'),
+    excerpt: 'Practical reflections on tazkiyah, purification of the self, drawn from classical sources.',
+    body: sampleBody('Practical reflections on tazkiyah, purification of the self, drawn from classical sources.'),
     footnotes: '1. Imam al-Ghazali, Ihya ‘Ulum al-Din.',
     seoTitle: 'Cultivating the Heart in an Age of Noise | ILM',
     seoDescription: 'Tazkiyah for a noisy age.',
@@ -240,7 +240,7 @@ export const articles: Article[] = [
     status: 'returned',
     date: 'Sep 7, 2026',
     readTime: '7 min',
-    reviewNotes: 'The third paragraph could use a concrete example from a classroom or majlis. Otherwise strong work — please resubmit.',
+    reviewNotes: 'The third paragraph could use a concrete example from a classroom or majlis. Otherwise strong work; please resubmit.',
     tags: ['leadership', 'listening'],
     image: images.quranHands,
     revisions: [{ version: 1, savedAt: 'Sep 7, 2026', title: 'Leading with a Softer Voice' }],

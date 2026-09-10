@@ -33,7 +33,23 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4 border-t border-white/10 px-6 py-6 text-[11px] text-white/35 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-        <span>© 2026 Islamic League of Murabbiyūn</span>
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+          <span>© 2026 Islamic League of Murabbiyūn</span>
+          <span className="hidden text-white/20 sm:inline" aria-hidden>
+            ·
+          </span>
+          <span>
+            Website by{' '}
+            <a
+              href="https://onepathsolutions.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/55 underline-offset-2 transition-colors hover:text-ilm-gold-light hover:underline"
+            >
+              One Path Solutions
+            </a>
+          </span>
+        </div>
         <div className="flex items-center gap-5">
           <Link href="/#top" className="hover:text-ilm-gold-light">Privacy</Link>
           <Link href="/disclaimer" className="hover:text-ilm-gold-light">Disclaimer</Link>

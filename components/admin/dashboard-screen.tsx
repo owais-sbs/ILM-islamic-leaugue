@@ -56,7 +56,7 @@ export function DashboardScreen({
         <h2 className="text-3xl font-semibold tracking-tight text-ilm-navy">Welcome back, {user.name.split(' ')[0]}.</h2>
         <p className="mt-2 text-ilm-navy/50">
           {role === 'author' && 'Create, edit, and submit your own work. You cannot publish.'}
-          {role === 'editor' && 'Review, edit, approve or return. You cannot publish — the Director has final authority.'}
+          {role === 'editor' && 'Review, edit, approve or return. You cannot publish; the Director has final authority.'}
           {role === 'administrator' && 'Final publishing authority. Live articles appear on the public website.'}
         </p>
       </Reveal>

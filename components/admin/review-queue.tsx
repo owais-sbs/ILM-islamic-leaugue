@@ -33,10 +33,11 @@ export function ReviewQueue({
       <p className="mb-5 text-sm text-ilm-navy/50">
         {canPublish(role)
           ? 'Approve, return, or publish. Publishing places the article on the public website.'
-          : 'Read, edit if needed, then approve or return with notes. You cannot publish — the Administrator has final authority.'}
+          : 'Read, edit if needed, then approve or return with notes. You cannot publish; the Administrator has final authority.'}
       </p>
 
-      <div className="overflow-hidden rounded-2xl border border-ilm-navy/8 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-ilm-navy/10 bg-white">
+        <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left">
           <thead>
             <tr className="border-b border-ilm-navy/8 bg-ilm-cream/60">
@@ -125,6 +126,7 @@ export function ReviewQueue({
             ))}
           </tbody>
         </table>
+        </div>
         {reviewItems.length === 0 && (
           <div className="py-16 text-center text-sm text-ilm-navy/30">Nothing in the review queue.</div>
         )}

@@ -41,14 +41,14 @@ export function ArticleTable({
   return (
     <div>
       {title && <h2 className="mb-5 text-2xl font-semibold tracking-tight text-ilm-navy">{title}</h2>}
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-2 overflow-x-auto">
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none md:flex-wrap md:overflow-visible">
           {statusFilters.map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                'whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize',
+                'shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize',
                 filter === f ? 'bg-ilm-navy text-white' : 'border border-ilm-navy/10 bg-white text-ilm-navy/50 hover:text-ilm-navy'
               )}
             >
@@ -56,13 +56,13 @@ export function ArticleTable({
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 rounded-full border border-ilm-navy/10 bg-white px-3 py-2 text-ilm-navy/35">
+        <label className="flex items-center gap-2 rounded-full border border-ilm-navy/10 bg-white px-3 py-2 text-ilm-navy/35 md:self-start">
           <Search size={14} />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search title, author…"
-            className="w-44 bg-transparent text-sm text-ilm-navy outline-none"
+            className="w-full min-w-0 bg-transparent text-sm text-ilm-navy outline-none sm:w-44"
           />
         </label>
       </div>

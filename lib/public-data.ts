@@ -33,7 +33,7 @@ export const murabbiyūn: Murabbi[] = [
     credentials: 'Director · Traditional studies · Hanafi',
     madhhab: 'Hanafi',
     focus: 'Studies',
-    image: images.scholarKufi,
+    image: images.mosqueDome,
     accent: 'bg-sky-100 text-sky-700',
     button: 'gold',
   },
@@ -46,7 +46,7 @@ export const murabbiyūn: Murabbi[] = [
     credentials: 'PhD Islamic Studies · Maliki fiqh',
     madhhab: 'Maliki',
     focus: 'Fiqh',
-    image: images.scholarHijab,
+    image: images.quranClose,
     accent: 'bg-emerald-100 text-emerald-700',
     button: 'ghost',
   },
@@ -59,7 +59,7 @@ export const murabbiyūn: Murabbi[] = [
     credentials: 'Spiritual counsel · Shafi‘i',
     madhhab: "Shafi'i",
     focus: 'Spiritual',
-    image: images.scholarBeard,
+    image: images.mosqueInterior,
     accent: 'bg-indigo-100 text-indigo-700',
     button: 'ghost',
   },
@@ -72,20 +72,20 @@ export const murabbiyūn: Murabbi[] = [
     credentials: 'Arabic & nass studies · Hanbali',
     madhhab: 'Hanbali',
     focus: 'Arabic',
-    image: images.scholarQuran,
+    image: images.blueMosque,
     accent: 'bg-orange-100 text-orange-700',
     button: 'sand',
   },
 ];
 
 export const pillars = [
-  { title: 'Thoughtful learning', body: 'Knowledge that is paced, rooted, and meant to be lived — not rushed through.' },
+  { title: 'Thoughtful learning', body: 'Knowledge that is paced, rooted, and meant to be lived, not rushed through.' },
   { title: 'Soulful conversation', body: 'Questions that matter, held with dignity, between seekers and those who guide.' },
   { title: 'Character first', body: 'We measure growth not by how much we know, but by how we become.' },
 ];
 
 export const steps = [
-  { n: '01', title: 'Read with presence', body: 'Sit with an article the way one sits with a teacher — slowly, and with the heart open.' },
+  { n: '01', title: 'Read with presence', body: 'Sit with an article the way one sits with a teacher: slowly, and with the heart open.' },
   { n: '02', title: 'Ask with adab', body: 'Bring your questions. Our murabbiyūn answer with care, not haste.' },
   { n: '03', title: 'Live what you learn', body: 'Let knowledge settle into habit, character, and the way you meet the world.' },
 ];

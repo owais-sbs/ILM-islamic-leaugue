@@ -14,11 +14,11 @@ export default function AboutPage() {
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
             <span className="h-px w-8 bg-ilm-gold" /> About ILM
           </p>
-          <h1 className="mt-4 text-[44px] font-semibold tracking-tight text-ilm-navy">
+          <h1 className="mt-4 text-[34px] font-semibold tracking-tight text-ilm-navy sm:text-[44px]">
             A living tradition of <em className="font-serif italic font-normal text-ilm-gold">guidance</em>
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-ilm-navy/65">
-            The Islamic League of Murabbiyūn is a home for thoughtful learning, soulful conversation, and the people who help us become more fully human. Knowledge here is not gathered as a possession — it is cultivated until it becomes character.
+            The Islamic League of Murabbiyūn is a home for thoughtful learning, soulful conversation, and the people who help us become more fully human. Knowledge here is not gathered as a possession; it is cultivated until it becomes character.
           </p>
           <p className="mt-4 leading-relaxed text-ilm-navy/60">
             Visitors read published articles. Murabbiyūn write. Editors review. The Director publishes. That is the whole circle.

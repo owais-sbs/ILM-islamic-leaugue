@@ -1,6 +1,7 @@
+/** Islamic-themed imagery only: mosques, Qur’an, Kaaba. No portraits of women. */
 export const images = {
   quranSunrise:
-    'https://images.pexels.com/photos/28823663/pexels-photo-28823663.jpeg?auto=compress&cs=tinysrgb&h=900&w=1200',
+    'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1200&q=80',
   mosqueInterior:
     'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1200&q=80',
   mosqueDome:
@@ -9,18 +10,17 @@ export const images = {
     'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80',
   quranOpen:
     'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1200&q=80',
-  quranHands:
+  quranClose:
     'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=1200&q=80',
   kaaba:
     'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1200&q=80',
   prayerHall:
-    'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1400&q=80',
-  scholarQuran:
-    'https://images.pexels.com/photos/810775/pexels-photo-810775.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
-  scholarKufi:
-    'https://images.pexels.com/photos/5273717/pexels-photo-5273717.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
-  scholarHijab:
-    'https://images.pexels.com/photos/7242908/pexels-photo-7242908.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
-  scholarBeard:
-    'https://images.pexels.com/photos/4126807/pexels-photo-4126807.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
-};
+    'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1400&q=80',
+  blueMosque:
+    'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=1200&q=80',
+  mosqueCourtyard:
+    'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
+  // Alias used by articles / editor
+  quranHands:
+    'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=1200&q=80',
+} as const;

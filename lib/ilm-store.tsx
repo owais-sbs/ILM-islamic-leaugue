@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   articles as seedArticles,
   questions as seedQuestions,
@@ -18,7 +18,9 @@ import {
 } from '@/lib/admin-data';
 import { images } from '@/lib/images';
 
-const KEY = 'ilm-demo-state-v1';
+/** Bump when seed media/content changes so stale session cache cannot keep old images. */
+const KEY = 'ilm-demo-state-v2';
+const LEGACY_KEYS = ['ilm-demo-state-v1'];
 
 interface Store {
   articles: Article[];
@@ -55,10 +57,25 @@ export function IlmProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      LEGACY_KEYS.forEach((k) => sessionStorage.removeItem(k));
       const raw = sessionStorage.getItem(KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.articles)) setArticles(parsed.articles);
+        if (Array.isArray(parsed.articles)) {
+          const seedById = new Map(seedArticles.map((a) => [a.id, a]));
+          setArticles(
+            parsed.articles.map((article: Article) => {
+              const seed = seedById.get(article.id);
+              if (!seed) return article;
+              // Refresh known seed media so cached portraits / URLs cannot stick around
+              return {
+                ...article,
+                image: seed.image,
+                excerpt: seed.excerpt || article.excerpt,
+              };
+            })
+          );
+        }
         if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
         if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
         if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
@@ -73,110 +90,207 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     if (ready) persist({ articles, questions, notices, activity });
   }, [articles, questions, notices, activity, ready]);
 
-  const log = (action: string, user: string, target: string) => {
+  const log = useCallback((action: string, user: string, target: string) => {
     setActivity((prev) => [{ id: `l${Date.now()}`, action, user, target, timestamp: nowStamp() }, ...prev]);
-  };
+  }, []);
 
-  const notify = (n: Omit<Notice, 'id'>) => {
+  const notify = useCallback((n: Omit<Notice, 'id'>) => {
     setNotices((prev) => [{ ...n, id: `n${Date.now()}`, read: false }, ...prev]);
-  };
+  }, []);
 
-  const patch = (id: string, fn: (a: Article) => Article) => {
-    setArticles((prev) => prev.map((a) => (a.id === id ? fn(a) : a)));
-  };
-
-  const value = useMemo<Store>(() => ({
-    articles,
-    questions,
-    notices,
-    activity,
-    publishedArticles: articles.filter((a) => a.status === 'published'),
-    saveArticle: (article, actor, asSubmit) => {
-      const status: ArticleStatus = asSubmit ? 'submitted' : article.status === 'published' ? 'published' : article.id.startsWith('new') || !articles.find((a) => a.id === article.id) ? (asSubmit ? 'submitted' : 'draft') : article.status === 'returned' && !asSubmit ? 'returned' : article.status;
-      const next: Article = {
-        ...article,
-        status: asSubmit ? 'submitted' : status,
-        reviewNotes: asSubmit ? undefined : article.reviewNotes,
-        revisions: [
-          ...article.revisions,
-          { version: article.revisions.length + 1, savedAt: nowStamp(), title: article.title },
-        ],
-      };
+  const saveArticle = useCallback(
+    (article: Article, actor: string, asSubmit?: boolean) => {
       setArticles((prev) => {
-        const exists = prev.some((a) => a.id === next.id);
+        const exists = prev.some((a) => a.id === article.id);
+        const status: ArticleStatus = asSubmit
+          ? 'submitted'
+          : article.status === 'published'
+            ? 'published'
+            : !exists
+              ? 'draft'
+              : article.status === 'returned' && !asSubmit
+                ? 'returned'
+                : article.status;
+        const next: Article = {
+          ...article,
+          status: asSubmit ? 'submitted' : status,
+          reviewNotes: asSubmit ? undefined : article.reviewNotes,
+          revisions: [
+            ...article.revisions,
+            { version: article.revisions.length + 1, savedAt: nowStamp(), title: article.title },
+          ],
+        };
         return exists ? prev.map((a) => (a.id === next.id ? next : a)) : [next, ...prev];
       });
-      log(asSubmit ? 'Submitted' : 'Saved', actor, next.title);
+      log(asSubmit ? 'Submitted' : 'Saved', actor, article.title || 'Untitled');
       if (asSubmit) {
-        notify({ title: 'Article submitted', body: `${next.title} is in the review queue.`, role: 'editor' });
-        notify({ title: 'Submitted for review', body: `You submitted “${next.title}”. An editor will review it.`, role: 'author', authorName: next.author });
+        notify({ title: 'Article submitted', body: `${article.title} is in the review queue.`, role: 'editor' });
+        notify({
+          title: 'Submitted for review',
+          body: `You submitted “${article.title}”. An editor will review it.`,
+          role: 'author',
+          authorName: article.author,
+        });
       }
     },
-    submitArticle: (id, actor) => {
-      const article = articles.find((a) => a.id === id);
-      if (!article) return;
-      patch(id, (a) => ({ ...a, status: 'submitted', reviewNotes: undefined }));
-      log('Submitted', actor, article.title);
-      notify({ title: 'Article submitted', body: `${article.title} is waiting for review.`, role: 'editor' });
+    [log, notify]
+  );
+
+  const submitArticle = useCallback(
+    (id: string, actor: string) => {
+      let title = '';
+      setArticles((prev) => {
+        const article = prev.find((a) => a.id === id);
+        if (!article) return prev;
+        title = article.title;
+        return prev.map((a) => (a.id === id ? { ...a, status: 'submitted' as const, reviewNotes: undefined } : a));
+      });
+      if (!title) return;
+      log('Submitted', actor, title);
+      notify({ title: 'Article submitted', body: `${title} is waiting for review.`, role: 'editor' });
     },
-    approveArticle: (id, actor) => {
-      const article = articles.find((a) => a.id === id);
-      if (!article) return;
-      patch(id, (a) => ({ ...a, status: 'approved' }));
-      log('Approved', actor, article.title);
+    [log, notify]
+  );
+
+  const approveArticle = useCallback(
+    (id: string, actor: string) => {
+      let title = '';
+      let author = '';
+      setArticles((prev) => {
+        const article = prev.find((a) => a.id === id);
+        if (!article) return prev;
+        title = article.title;
+        author = article.author;
+        return prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const } : a));
+      });
+      if (!title) return;
+      log('Approved', actor, title);
       notify({
         title: 'Your article was approved',
-        body: `“${article.title}” was approved by the editor and is awaiting the Administrator’s publish.`,
+        body: `“${title}” was approved by the editor and is awaiting the Administrator’s publish.`,
         role: 'author',
-        authorName: article.author,
+        authorName: author,
       });
-      notify({ title: 'Ready to publish', body: `“${article.title}” is approved and waiting for publication.`, role: 'administrator' });
+      notify({ title: 'Ready to publish', body: `“${title}” is approved and waiting for publication.`, role: 'administrator' });
     },
-    returnArticle: (id, actor, notes) => {
-      const article = articles.find((a) => a.id === id);
-      if (!article) return;
-      patch(id, (a) => ({ ...a, status: 'returned', reviewNotes: notes }));
-      log('Returned', actor, article.title);
+    [log, notify]
+  );
+
+  const returnArticle = useCallback(
+    (id: string, actor: string, notes: string) => {
+      let title = '';
+      let author = '';
+      setArticles((prev) => {
+        const article = prev.find((a) => a.id === id);
+        if (!article) return prev;
+        title = article.title;
+        author = article.author;
+        return prev.map((a) => (a.id === id ? { ...a, status: 'returned' as const, reviewNotes: notes } : a));
+      });
+      if (!title) return;
+      log('Returned', actor, title);
       notify({
         title: 'Article returned',
-        body: `“${article.title}” was returned. Notes: ${notes}`,
+        body: `“${title}” was returned. Notes: ${notes}`,
         role: 'author',
-        authorName: article.author,
+        authorName: author,
       });
     },
-    publishArticle: (id, actor) => {
-      const article = articles.find((a) => a.id === id);
-      if (!article) return;
-      patch(id, (a) => ({
-        ...a,
-        status: 'published',
-        publishedAt: a.publishedAt || shortDate(),
-        date: a.publishedAt || shortDate(),
-      }));
-      log('Published', actor, article.title);
+    [log, notify]
+  );
+
+  const publishArticle = useCallback(
+    (id: string, actor: string) => {
+      let title = '';
+      let author = '';
+      setArticles((prev) => {
+        const article = prev.find((a) => a.id === id);
+        if (!article) return prev;
+        title = article.title;
+        author = article.author;
+        const stamped = article.publishedAt || shortDate();
+        return prev.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                status: 'published' as const,
+                publishedAt: stamped,
+                date: stamped,
+              }
+            : a
+        );
+      });
+      if (!title) return;
+      log('Published', actor, title);
       notify({
         title: 'Your article is live',
-        body: `“${article.title}” is now published on the ILM website.`,
+        body: `“${title}” is now published on the ILM website.`,
         role: 'author',
-        authorName: article.author,
+        authorName: author,
       });
     },
-    unpublishArticle: (id, actor) => {
-      const article = articles.find((a) => a.id === id);
-      if (!article) return;
-      patch(id, (a) => ({ ...a, status: 'approved' }));
-      log('Unpublished', actor, article.title);
+    [log, notify]
+  );
+
+  const unpublishArticle = useCallback(
+    (id: string, actor: string) => {
+      let title = '';
+      setArticles((prev) => {
+        const article = prev.find((a) => a.id === id);
+        if (!article) return prev;
+        title = article.title;
+        return prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const } : a));
+      });
+      if (!title) return;
+      log('Unpublished', actor, title);
     },
-    addQuestion: (q) => {
-      setQuestions((prev) => [
-        { ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' },
-        ...prev,
-      ]);
+    [log]
+  );
+
+  const addQuestion = useCallback(
+    (q: Omit<Question, 'id' | 'date' | 'status'>) => {
+      setQuestions((prev) => [{ ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' }, ...prev]);
       notify({ title: 'New question', body: q.question, role: 'editor' });
       notify({ title: 'New question', body: q.question, role: 'administrator' });
     },
-    markNoticeRead: (id) => setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n))),
-  }), [articles, questions, notices, activity]);
+    [notify]
+  );
+
+  const markNoticeRead = useCallback((id: string) => {
+    setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  }, []);
+
+  const value = useMemo<Store>(
+    () => ({
+      articles,
+      questions,
+      notices,
+      activity,
+      publishedArticles: articles.filter((a) => a.status === 'published'),
+      saveArticle,
+      submitArticle,
+      approveArticle,
+      returnArticle,
+      publishArticle,
+      unpublishArticle,
+      addQuestion,
+      markNoticeRead,
+    }),
+    [
+      articles,
+      questions,
+      notices,
+      activity,
+      saveArticle,
+      submitArticle,
+      approveArticle,
+      returnArticle,
+      publishArticle,
+      unpublishArticle,
+      addQuestion,
+      markNoticeRead,
+    ]
+  );
 
   return <IlmContext.Provider value={value}>{children}</IlmContext.Provider>;
 }
