@@ -2,13 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-<<<<<<< HEAD
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Plus } from 'lucide-react';
-=======
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, Bell, ChevronLeft, ChevronRight, LogOut, Menu, Plus, X } from 'lucide-react';
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
+import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu, Plus, X } from 'lucide-react';
 import { navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
 import { clearAdminRole, readAdminRole } from '@/lib/admin-session';
 import { canPublish, emptyArticle, useIlm } from '@/lib/ilm-store';
@@ -279,6 +274,19 @@ export function AdminShell() {
         ))}
       </nav>
       <div className="border-t border-white/10 p-3">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            'mb-2 flex w-full items-center gap-3 rounded-xl bg-ilm-gold/15 px-3 py-2.5 text-[13px] font-semibold text-ilm-gold-light transition hover:bg-ilm-gold/25',
+            collapsed && !mobileNav && 'justify-center px-0',
+          )}
+          title="Visit main site"
+        >
+          <ExternalLink size={16} />
+          {(!collapsed || mobileNav) && 'Visit main site'}
+        </a>
         <div className={cn('flex items-center gap-3 rounded-2xl bg-white/5 p-3', collapsed && !mobileNav && 'justify-center p-2')}>
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ilm-gold/20 font-serif text-xs text-ilm-gold-light">{user.initials}</div>
           {(!collapsed || mobileNav) && (
@@ -304,75 +312,7 @@ export function AdminShell() {
         transition={{ duration: reduce ? 0 : 0.45, ease }}
         className="sticky top-0 z-30 hidden h-screen shrink-0 flex-col overflow-hidden bg-ilm-navy-deep text-white lg:flex"
       >
-<<<<<<< HEAD
-        <div className="flex items-center justify-between px-4 py-6">
-          <AdminBrand collapsed={collapsed} />
-          <button onClick={() => setCollapsed((v) => !v)} className="grid h-8 w-8 place-items-center rounded-lg text-white/50 hover:bg-white/10" aria-label="Collapse sidebar">
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-        </div>
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {groups.map((group) => (
-            <div key={group.label || 'main'} className="mb-4">
-              {group.label && !collapsed && (
-                <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">{group.label}</p>
-              )}
-              {group.items.map((item) => {
-                const isActive = tab === item.key && screen === 'tab';
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => {
-                      setTab(item.key);
-                      setScreen('tab');
-                      setActive(null);
-                      if (item.key === 'create-article') goCreate();
-                    }}
-                    className={cn(
-                      'mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors',
-                      isActive ? 'bg-ilm-gold/15 text-ilm-gold-light' : 'text-white/60 hover:bg-white/8 hover:text-white',
-                      collapsed && 'justify-center px-0'
-                    )}
-                  >
-                    <NavIcon name={item.icon} size={18} />
-                    {!collapsed && <span>{item.label}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
-        <div className="border-t border-white/10 p-3">
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              'mb-2 flex w-full items-center gap-3 rounded-xl bg-ilm-gold/15 px-3 py-2.5 text-[13px] font-semibold text-ilm-gold-light transition hover:bg-ilm-gold/25',
-              collapsed && 'justify-center px-0',
-            )}
-            title="Visit main site"
-          >
-            <ExternalLink size={16} />
-            {!collapsed && 'Visit main site'}
-          </a>
-          <div className={cn('flex items-center gap-3 rounded-2xl bg-white/5 p-3', collapsed && 'justify-center p-2')}>
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ilm-gold/20 font-serif text-xs text-ilm-gold-light">{user.initials}</div>
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{user.name}</p>
-                <RoleBadge role={role} />
-              </div>
-            )}
-          </div>
-          <button onClick={logout} className={cn('mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-white/45 hover:text-red-300', collapsed && 'justify-center')}>
-            <LogOut size={16} />
-            {!collapsed && 'Log out'}
-          </button>
-        </div>
-=======
         {navContent}
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
       </motion.aside>
 
       <AnimatePresence>

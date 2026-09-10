@@ -27,13 +27,8 @@ export function HomeSections() {
 
 function OurWhy() {
   return (
-<<<<<<< HEAD
     <section id="about-us" className="mx-auto grid max-w-[1280px] gap-12 px-6 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
       <ScrollReveal from="left">
-=======
-    <section id="our-why" className="mx-auto grid max-w-[1280px] gap-8 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
-      <ScrollReveal>
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> About Us
         </p>
@@ -57,16 +52,11 @@ function OurWhy() {
 
 function Pillars() {
   return (
-    <section className="mx-auto max-w-[1280px] px-4 pb-8 sm:px-6 lg:px-8">
-      <StaggerIn className="grid gap-4 sm:gap-5 md:grid-cols-3">
+    <section className="mx-auto max-w-[1280px] px-6 pb-8 lg:px-8">
+      <StaggerIn className="grid gap-5 md:grid-cols-3">
         {pillars.map((pillar, i) => (
-<<<<<<< HEAD
           <StaggerChild key={pillar.title} from={i % 2 === 0 ? 'left' : 'right'}>
             <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-8 shadow-[0_8px_30px_rgba(11,17,82,0.04)]">
-=======
-          <StaggerChild key={pillar.title}>
-            <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(11,17,82,0.04)] sm:p-8">
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
               <span className="font-serif text-3xl text-ilm-gold/70">0{i + 1}</span>
               <h3 className="mt-4 text-xl font-semibold text-ilm-navy">{pillar.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">{pillar.body}</p>
@@ -83,13 +73,8 @@ function FeaturedAndSubjects() {
   const featured = publishedArticles.find((a) => a.featured) || publishedArticles[0];
   if (!featured) return null;
   return (
-<<<<<<< HEAD
     <section className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
       <ScrollReveal from="left">
-=======
-    <section className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-      <ScrollReveal>
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> Featured
         </p>
@@ -157,13 +142,8 @@ function MurabbiPreview() {
 
 function HowItWorks() {
   return (
-<<<<<<< HEAD
     <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8">
       <ScrollReveal from="left">
-=======
-    <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-      <ScrollReveal>
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> A way of learning
         </p>
@@ -191,13 +171,8 @@ function ConnectSection() {
   return (
     <section id="connect" className="relative overflow-hidden bg-ilm-navy text-white">
       <div className="pointer-events-none absolute -right-40 -top-40 h-[670px] w-[670px] rounded-full border border-ilm-gold/20 shadow-[0_0_0_80px_rgba(199,154,61,0.04)]" />
-<<<<<<< HEAD
       <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
         <ScrollReveal from="left">
-=======
-      <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
-        <ScrollReveal>
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-light">
             <span className="h-px w-8 bg-ilm-gold" /> Stay in the circle
           </p>
@@ -210,11 +185,7 @@ function ConnectSection() {
             Monthly reflections, new conversations, and gentle reminders for the road ahead.
           </p>
         </ScrollReveal>
-<<<<<<< HEAD
         <ScrollReveal from="right" delay={0.1} className="rounded-3xl border border-white/15 bg-white/8 p-8">
-=======
-        <ScrollReveal delay={0.1} className="rounded-3xl border border-white/15 bg-white/10 p-6 sm:p-8">
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
           {subscribed ? (
             <div className="flex flex-col gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-ilm-gold-light text-ilm-navy">

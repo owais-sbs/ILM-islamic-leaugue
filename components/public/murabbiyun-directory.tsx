@@ -100,7 +100,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
                   )}
                 </div>
                 <div className={cn('mx-auto my-5 h-[118px] w-[118px] overflow-hidden rounded-full ring-4 ring-ilm-cream', view === 'list' && 'mx-0 my-0 h-20 w-20 shrink-0')}>
-                  <img src={person.image} alt={person.name} className="h-full w-full object-cover" />
+                  <img src={person.image} alt={person.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 </div>
                 <div className={cn(view === 'grid' ? 'text-center' : 'flex-1')}>
                   <h3 className="text-[18px] font-semibold text-ilm-navy">{person.name}</h3>

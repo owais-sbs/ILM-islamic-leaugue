@@ -6,9 +6,11 @@ import { SiteHeader } from '@/components/public/site-header';
 
 export default function MurabbiyunPage() {
   return (
-    <main id="directory" className="min-h-screen overflow-x-hidden pb-16 pt-28">
+    <main id="directory" className="flex min-h-[100svh] flex-col overflow-x-hidden pt-28">
       <SiteHeader active="murabbiyun" />
-      <MurabbiyunDirectory />
+      <div className="flex-1 pb-8">
+        <MurabbiyunDirectory />
+      </div>
       <SiteFooter />
     </main>
   );

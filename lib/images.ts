@@ -1,4 +1,4 @@
-/** Islamic-themed imagery only: mosques, Qur’an, Kaaba. No portraits of women. */
+/** Islamic imagery: mosques, Qur’an, Kaaba, and male scholars only. */
 export const images = {
   quranSunrise:
     'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1200&q=80',
@@ -20,7 +20,34 @@ export const images = {
     'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=1200&q=80',
   mosqueCourtyard:
     'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-  // Alias used by articles / editor
   quranHands:
     'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=1200&q=80',
+  /** Male Islamic scholars / teachers for murabbiyun & authors */
+  scholarQuran:
+    'https://images.pexels.com/photos/810775/pexels-photo-810775.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
+  scholarKufi:
+    'https://images.pexels.com/photos/5273717/pexels-photo-5273717.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
+  scholarBeard:
+    'https://images.pexels.com/photos/4126807/pexels-photo-4126807.jpeg?auto=compress&cs=tinysrgb&h=800&w=800',
+  scholarPrayer:
+    'https://images.unsplash.com/photo-1564769625905-50e93615e769?auto=format&fit=crop&w=800&q=80',
 } as const;
+
+/** Blocked portrait URLs (women / unsuitable for this site). */
+export const BLOCKED_IMAGE_SUBSTRINGS = [
+  '7242908', // hijab portrait previously used
+  'photos/7242908',
+] as const;
+
+export function isAllowedSiteImage(url: string | undefined | null) {
+  if (!url) return false;
+  return !BLOCKED_IMAGE_SUBSTRINGS.some((s) => url.includes(s));
+}
+
+export function safeArticleImage(url: string | undefined | null) {
+  return isAllowedSiteImage(url) ? url! : images.quranSunrise;
+}
+
+export function safeScholarImage(url: string | undefined | null, fallback = images.scholarKufi) {
+  return isAllowedSiteImage(url) ? url! : fallback;
+}

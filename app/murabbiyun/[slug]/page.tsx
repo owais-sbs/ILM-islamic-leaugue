@@ -10,11 +10,12 @@ import { SiteFooter } from '@/components/public/site-footer';
 import { SiteHeader } from '@/components/public/site-header';
 
 export default function MurabbiProfilePage({ params }: { params: { slug: string } }) {
-  const person = murabbiyūn.find((m) => m.id === params.slug);
+  const slug = params.slug === 'maryam-yusuf' ? 'bilal-rahman' : params.slug;
+  const person = murabbiyūn.find((m) => m.id === slug);
   const { publishedArticles } = useIlm();
   const works = useMemo(
-    () => publishedArticles.filter((a) => a.authorSlug === params.slug || a.author === person?.name),
-    [publishedArticles, params.slug, person?.name]
+    () => publishedArticles.filter((a) => a.authorSlug === slug || a.author === person?.name),
+    [publishedArticles, slug, person?.name]
   );
 
   if (!person) {
@@ -32,12 +33,12 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
   }
 
   return (
-    <main className="min-h-screen pt-28">
+    <main className="flex min-h-[100svh] flex-col pt-28">
       <SiteHeader active="murabbiyun" />
-      <section className="mx-auto grid max-w-[1100px] gap-10 px-6 py-16 md:grid-cols-[280px_1fr]">
+      <section className="mx-auto grid w-full max-w-[1100px] flex-1 gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-[280px_1fr]">
         <div className="text-center md:text-left">
           <div className="mx-auto h-40 w-40 overflow-hidden rounded-full ring-4 ring-ilm-cream md:mx-0">
-            <img src={person.image} alt={person.name} className="h-full w-full object-cover" />
+            <img src={person.image} alt={person.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
           </div>
           <h1 className="mt-5 text-2xl font-semibold text-ilm-navy">{person.name}</h1>
           <p className="mt-1 text-ilm-gold-deep">{person.role}</p>

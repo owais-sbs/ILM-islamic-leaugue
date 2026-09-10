@@ -16,16 +16,11 @@ import {
   type ActivityEntry,
   type Role,
 } from '@/lib/admin-data';
-import { images } from '@/lib/images';
+import { images, safeArticleImage } from '@/lib/images';
 
-<<<<<<< HEAD
-const KEY = 'ilm-demo-state-v1';
+const KEY = 'ilm-demo-state-v3';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
-=======
-/** Bump when seed media/content changes so stale session cache cannot keep old images. */
-const KEY = 'ilm-demo-state-v2';
-const LEGACY_KEYS = ['ilm-demo-state-v1'];
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
+const LEGACY_KEYS = ['ilm-demo-state-v1', 'ilm-demo-state-v2'];
 
 interface Store {
   articles: Article[];
@@ -76,41 +71,27 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-<<<<<<< HEAD
+    try {
+      LEGACY_KEYS.forEach((k) => {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+      });
+    } catch {
+      /* ignore */
+    }
     const parsed = readPersisted();
     if (parsed) {
-      if (Array.isArray(parsed.articles)) setArticles(parsed.articles);
+      if (Array.isArray(parsed.articles)) {
+        setArticles(
+          parsed.articles.map((a) => ({
+            ...a,
+            image: safeArticleImage(a.image),
+          })),
+        );
+      }
       if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
       if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
       if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
-=======
-    try {
-      LEGACY_KEYS.forEach((k) => sessionStorage.removeItem(k));
-      const raw = sessionStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.articles)) {
-          const seedById = new Map(seedArticles.map((a) => [a.id, a]));
-          setArticles(
-            parsed.articles.map((article: Article) => {
-              const seed = seedById.get(article.id);
-              if (!seed) return article;
-              // Refresh known seed media so cached portraits / URLs cannot stick around
-              return {
-                ...article,
-                image: seed.image,
-                excerpt: seed.excerpt || article.excerpt,
-              };
-            })
-          );
-        }
-        if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
-        if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
-        if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
-      }
-    } catch {
-      /* keep seed */
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
     }
     setReady(true);
 
@@ -147,39 +128,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     setNotices((prev) => [{ ...n, id: `n${Date.now()}`, read: false }, ...prev]);
   }, []);
 
-<<<<<<< HEAD
-  const patch = (id: string, fn: (a: Article) => Article) => {
-    setArticles((prev) => prev.map((a) => (a.id === id ? fn(a) : a)));
-  };
-
-  const value = useMemo<Store>(() => ({
-    articles,
-    questions,
-    notices,
-    activity,
-    publishedArticles: articles
-      .filter((a) => a.status === 'published')
-      .slice()
-      .sort((a, b) => {
-        const ta = a.publishedAt || a.date || '';
-        const tb = b.publishedAt || b.date || '';
-        return tb.localeCompare(ta);
-      }),
-    saveArticle: (article, actor, asSubmit) => {
-      const status: ArticleStatus = asSubmit ? 'submitted' : article.status === 'published' ? 'published' : article.id.startsWith('new') || !articles.find((a) => a.id === article.id) ? (asSubmit ? 'submitted' : 'draft') : article.status === 'returned' && !asSubmit ? 'returned' : article.status;
-      const next: Article = {
-        ...article,
-        status: asSubmit ? 'submitted' : status,
-        reviewNotes: asSubmit ? undefined : article.reviewNotes,
-        revisions: [
-          ...article.revisions,
-          { version: article.revisions.length + 1, savedAt: nowStamp(), title: article.title },
-        ],
-      };
-=======
   const saveArticle = useCallback(
     (article: Article, actor: string, asSubmit?: boolean) => {
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
       setArticles((prev) => {
         const exists = prev.some((a) => a.id === article.id);
         const status: ArticleStatus = asSubmit
@@ -213,7 +163,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [log, notify]
+    [log, notify],
   );
 
   const submitArticle = useCallback(
@@ -229,7 +179,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       log('Submitted', actor, title);
       notify({ title: 'Article submitted', body: `${title} is waiting for review.`, role: 'editor' });
     },
-    [log, notify]
+    [log, notify],
   );
 
   const approveArticle = useCallback(
@@ -253,7 +203,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       });
       notify({ title: 'Ready to publish', body: `“${title}” is approved and waiting for publication.`, role: 'administrator' });
     },
-    [log, notify]
+    [log, notify],
   );
 
   const returnArticle = useCallback(
@@ -276,8 +226,11 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         authorName: author,
       });
     },
-<<<<<<< HEAD
-    publishArticle: (id, actor) => {
+    [log, notify],
+  );
+
+  const publishArticle = useCallback(
+    (id: string, actor: string) => {
       const article = articles.find((a) => a.id === id);
       if (!article) return;
       const publishedStamp = shortDate();
@@ -328,53 +281,34 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         }
       })();
       log('Published', actor, article.title);
-=======
-    [log, notify]
+      notify({
+        title: 'Your article is live',
+        body: `“${article.title}” is now published on the ILM website.`,
+        role: 'author',
+        authorName: article.author,
+      });
+    },
+    [articles, log, notify],
   );
 
-  const publishArticle = useCallback(
+  const unpublishArticle = useCallback(
     (id: string, actor: string) => {
       let title = '';
-      let author = '';
       setArticles((prev) => {
         const article = prev.find((a) => a.id === id);
         if (!article) return prev;
         title = article.title;
-        author = article.author;
-        const stamped = article.publishedAt || shortDate();
-        return prev.map((a) =>
-          a.id === id
-            ? {
-                ...a,
-                status: 'published' as const,
-                publishedAt: stamped,
-                date: stamped,
-              }
-            : a
-        );
+        return prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const, featured: false } : a));
       });
       if (!title) return;
-      log('Published', actor, title);
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
-      notify({
-        title: 'Your article is live',
-        body: `“${title}” is now published on the ILM website.`,
-        role: 'author',
-        authorName: author,
-      });
+      log('Unpublished', actor, title);
     },
-<<<<<<< HEAD
-    unpublishArticle: (id, actor) => {
-      const article = articles.find((a) => a.id === id);
-      if (!article) return;
-      patch(id, (a) => ({ ...a, status: 'approved', featured: false }));
-      log('Unpublished', actor, article.title);
-    },
-    addQuestion: (q) => {
-      setQuestions((prev) => [
-        { ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' },
-        ...prev,
-      ]);
+    [log],
+  );
+
+  const addQuestion = useCallback(
+    (q: Omit<Question, 'id' | 'date' | 'status'>) => {
+      setQuestions((prev) => [{ ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' }, ...prev]);
       void (async () => {
         try {
           await fetch('/api/questions', {
@@ -392,33 +326,10 @@ export function IlmProvider({ children }: { children: ReactNode }) {
           /* local queue still works */
         }
       })();
-=======
-    [log, notify]
-  );
-
-  const unpublishArticle = useCallback(
-    (id: string, actor: string) => {
-      let title = '';
-      setArticles((prev) => {
-        const article = prev.find((a) => a.id === id);
-        if (!article) return prev;
-        title = article.title;
-        return prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const } : a));
-      });
-      if (!title) return;
-      log('Unpublished', actor, title);
-    },
-    [log]
-  );
-
-  const addQuestion = useCallback(
-    (q: Omit<Question, 'id' | 'date' | 'status'>) => {
-      setQuestions((prev) => [{ ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' }, ...prev]);
->>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
       notify({ title: 'New question', body: q.question, role: 'editor' });
       notify({ title: 'New question', body: q.question, role: 'administrator' });
     },
-    [notify]
+    [notify],
   );
 
   const markNoticeRead = useCallback((id: string) => {
@@ -431,7 +342,14 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       questions,
       notices,
       activity,
-      publishedArticles: articles.filter((a) => a.status === 'published'),
+      publishedArticles: articles
+        .filter((a) => a.status === 'published')
+        .slice()
+        .sort((a, b) => {
+          const ta = a.publishedAt || a.date || '';
+          const tb = b.publishedAt || b.date || '';
+          return tb.localeCompare(ta);
+        }),
       saveArticle,
       submitArticle,
       approveArticle,
@@ -454,7 +372,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       unpublishArticle,
       addQuestion,
       markNoticeRead,
-    ]
+    ],
   );
 
   return <IlmContext.Provider value={value}>{children}</IlmContext.Provider>;

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { safeArticleImage } from '@/lib/images';
 
 export interface CardArticle {
   slug: string;
@@ -15,6 +16,7 @@ export interface CardArticle {
 }
 
 export function ArticleCard({ article, className }: { article: CardArticle; className?: string }) {
+  const src = safeArticleImage(article.image);
   return (
     <article
       className={cn(
@@ -22,20 +24,26 @@ export function ArticleCard({ article, className }: { article: CardArticle; clas
         className
       )}
     >
-      <div className="relative h-[210px] overflow-hidden">
-        <img src={article.image} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <div className="relative h-[180px] overflow-hidden sm:h-[210px]">
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
         <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
           {article.category}
         </span>
       </div>
-      <div className="px-6 pb-6 pt-5">
+      <div className="px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         <p className="flex items-center gap-2 text-[12px] text-ilm-navy/40">
           <Clock size={13} className="text-ilm-gold-deep" />
           {article.readTime}
           <span className="text-ilm-navy/20">·</span>
           {article.date}
         </p>
-        <h3 className="mt-3 text-[22px] font-semibold leading-snug tracking-tight text-ilm-navy">{article.title}</h3>
+        <h3 className="mt-3 text-[20px] font-semibold leading-snug tracking-tight text-ilm-navy sm:text-[22px]">{article.title}</h3>
         <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">{article.excerpt}</p>
         <Link
           href={`/articles/${article.slug}`}

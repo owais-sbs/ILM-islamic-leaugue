@@ -110,9 +110,9 @@ export const articles: Article[] = [
     seoTitle: 'The Etiquette of Seeking Sacred Knowledge | ILM',
     seoDescription: 'Adab of seeking knowledge from the early teachers of this ummah.',
     category: 'Tarbiyah',
-    author: 'Ustadha Maryam Yusuf',
-    authorSlug: 'maryam-yusuf',
-    authorInitials: 'MY',
+    author: 'Ustadh Bilal Rahman',
+    authorSlug: 'bilal-rahman',
+    authorInitials: 'BR',
     status: 'published',
     date: 'Sep 2, 2026',
     publishedAt: 'Sep 2, 2026',
@@ -132,9 +132,9 @@ export const articles: Article[] = [
     seoTitle: 'Understanding Ikhtilaf with Grace | ILM',
     seoDescription: 'How to hold scholarly difference without losing brotherhood.',
     category: 'Fiqh',
-    author: 'Ustadha Maryam Yusuf',
-    authorSlug: 'maryam-yusuf',
-    authorInitials: 'MY',
+    author: 'Ustadh Bilal Rahman',
+    authorSlug: 'bilal-rahman',
+    authorInitials: 'BR',
     status: 'published',
     date: 'Aug 28, 2026',
     publishedAt: 'Aug 28, 2026',
@@ -214,9 +214,9 @@ export const articles: Article[] = [
     seoTitle: 'On Mercy and Its Demands | ILM',
     seoDescription: 'Rahmah as a way of living.',
     category: 'Spirituality',
-    author: 'Ustadha Maryam Yusuf',
-    authorSlug: 'maryam-yusuf',
-    authorInitials: 'MY',
+    author: 'Ustadh Bilal Rahman',
+    authorSlug: 'bilal-rahman',
+    authorInitials: 'BR',
     status: 'approved',
     date: 'Sep 6, 2026',
     readTime: '12 min',
@@ -234,9 +234,9 @@ export const articles: Article[] = [
     seoTitle: 'Leading with a Softer Voice | ILM',
     seoDescription: 'Leadership as listening.',
     category: 'Tarbiyah',
-    author: 'Ustadha Maryam Yusuf',
-    authorSlug: 'maryam-yusuf',
-    authorInitials: 'MY',
+    author: 'Ustadh Bilal Rahman',
+    authorSlug: 'bilal-rahman',
+    authorInitials: 'BR',
     status: 'returned',
     date: 'Sep 7, 2026',
     readTime: '7 min',
@@ -255,9 +255,9 @@ export const articles: Article[] = [
     seoTitle: 'The Art of Asking Better Questions | ILM',
     seoDescription: 'Curiosity as worship.',
     category: 'Tarbiyah',
-    author: 'Ustadha Maryam Yusuf',
-    authorSlug: 'maryam-yusuf',
-    authorInitials: 'MY',
+    author: 'Ustadh Bilal Rahman',
+    authorSlug: 'bilal-rahman',
+    authorInitials: 'BR',
     status: 'draft',
     date: 'Sep 10, 2026',
     readTime: '4 min',
@@ -269,18 +269,18 @@ export const articles: Article[] = [
 
 export const questions: Question[] = [
   { id: 'q1', question: 'How do I find a mentor for my teenage son?', asker: 'Anonymous', email: 'seeker@example.com', subject: 'Mentorship', category: 'Tarbiyah', date: 'Sep 10, 2026', status: 'new' },
-  { id: 'q2', question: 'What books do you recommend for new Muslims?', asker: 'Aisha M.', email: 'aisha@example.com', subject: 'Books', category: 'Aqidah', date: 'Sep 9, 2026', status: 'assigned', assignedTo: 'Ustadha Maryam Yusuf' },
+  { id: 'q2', question: 'What books do you recommend for new Muslims?', asker: 'Aisha M.', email: 'aisha@example.com', subject: 'Books', category: 'Aqidah', date: 'Sep 9, 2026', status: 'assigned', assignedTo: 'Ustadh Bilal Rahman' },
   { id: 'q3', question: 'Can you write about balancing work and spiritual practice?', asker: 'Yusuf K.', subject: 'Practice', category: 'Spirituality', date: 'Sep 8, 2026', status: 'new' },
   { id: 'q4', question: 'How do I deal with a community conflict?', asker: 'Hassan A.', date: 'Sep 7, 2026', status: 'answered', assignedTo: 'Shaykh Hamza Idris', answerNotes: 'Begin with husn al-zann and a trusted elder.' },
   { id: 'q5', question: 'What is the role of art in Islamic education?', asker: 'Anonymous', date: 'Sep 6, 2026', status: 'assigned', assignedTo: 'Ustadh Yusuf Karim' },
 ];
 
 export const contributors: Contributor[] = [
-  { id: 'c1', name: 'Ustadha Maryam Yusuf', email: 'maryam@ilm.org', role: 'author', initials: 'MY', madhhab: 'Maliki', articles: 4, active: true },
+  { id: 'c1', name: 'Ustadh Bilal Rahman', email: 'bilal@ilm.org', role: 'author', initials: 'BR', madhhab: 'Maliki', articles: 4, active: true },
   { id: 'c2', name: 'Shaykh Hamza Idris', email: 'hamza@ilm.org', role: 'author', initials: 'HI', madhhab: "Shafi'i", articles: 2, active: true },
   { id: 'c3', name: 'Ustadh Yusuf Karim', email: 'yusuf@ilm.org', role: 'author', initials: 'YK', madhhab: 'Hanbali', articles: 1, active: true },
   { id: 'c4', name: 'Shaykh Ibrahim Al-Fadl', email: 'ibrahim@ilm.org', role: 'administrator', initials: 'IF', madhhab: 'Hanafi', articles: 1, active: true },
-  { id: 'c5', name: 'Fatima Noor', email: 'fatima@ilm.org', role: 'editor', initials: 'FN', madhhab: 'Hanafi', articles: 0, active: true },
+  { id: 'c5', name: 'Ustadh Omar Khalid', email: 'omar@ilm.org', role: 'editor', initials: 'OK', madhhab: 'Hanafi', articles: 0, active: true },
 ];
 
 export const subscribers: Subscriber[] = [
@@ -293,14 +293,14 @@ export const subscribers: Subscriber[] = [
 
 export const activityLog: ActivityEntry[] = [
   { id: 'l1', action: 'Published', user: 'Shaykh Ibrahim Al-Fadl', target: 'The Etiquette of Seeking Sacred Knowledge', timestamp: 'Sep 2, 2026 · 2:14 PM' },
-  { id: 'l2', action: 'Approved', user: 'Fatima Noor', target: 'On Mercy and Its Demands', timestamp: 'Sep 8, 2026 · 10:30 AM' },
-  { id: 'l3', action: 'Returned', user: 'Fatima Noor', target: 'Leading with a Softer Voice', timestamp: 'Sep 7, 2026 · 4:45 PM' },
+  { id: 'l2', action: 'Approved', user: 'Ustadh Omar Khalid', target: 'On Mercy and Its Demands', timestamp: 'Sep 8, 2026 · 10:30 AM' },
+  { id: 'l3', action: 'Returned', user: 'Ustadh Omar Khalid', target: 'Leading with a Softer Voice', timestamp: 'Sep 7, 2026 · 4:45 PM' },
   { id: 'l4', action: 'Submitted', user: 'Ustadh Yusuf Karim', target: 'Foundations of Aqidah for Seekers', timestamp: 'Sep 9, 2026 · 9:00 AM' },
 ];
 
 export const notices: Notice[] = [
-  { id: 'n1', title: 'Article returned', body: 'Leading with a Softer Voice was returned with review notes.', role: 'author', authorName: 'Ustadha Maryam Yusuf' },
-  { id: 'n2', title: 'New question assigned', body: 'What books do you recommend for new Muslims?', role: 'author', authorName: 'Ustadha Maryam Yusuf' },
+  { id: 'n1', title: 'Article returned', body: 'Leading with a Softer Voice was returned with review notes.', role: 'author', authorName: 'Ustadh Bilal Rahman' },
+  { id: 'n2', title: 'New question assigned', body: 'What books do you recommend for new Muslims?', role: 'author', authorName: 'Ustadh Bilal Rahman' },
   { id: 'n3', title: 'Review queue', body: 'Two articles are waiting for editorial review.', role: 'editor' },
   { id: 'n4', title: 'Ready to publish', body: 'On Mercy and Its Demands is approved and awaiting publication.', role: 'administrator' },
 ];
@@ -320,8 +320,8 @@ export const roleLabels: Record<Role, string> = {
 };
 
 export const roleUsers: Record<Role, { name: string; initials: string; slug: string }> = {
-  author: { name: 'Ustadha Maryam Yusuf', initials: 'MY', slug: 'maryam-yusuf' },
-  editor: { name: 'Fatima Noor', initials: 'FN', slug: 'fatima-noor' },
+  author: { name: 'Ustadh Bilal Rahman', initials: 'BR', slug: 'bilal-rahman' },
+  editor: { name: 'Ustadh Omar Khalid', initials: 'OK', slug: 'omar-khalid' },
   administrator: { name: 'Shaykh Ibrahim Al-Fadl', initials: 'IF', slug: 'ibrahim-al-fadl' },
 };
 

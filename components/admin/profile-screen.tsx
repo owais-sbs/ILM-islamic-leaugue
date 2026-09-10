@@ -6,8 +6,8 @@ import type { Role } from '@/lib/admin-data';
 import { roleLabels, roleUsers } from '@/lib/admin-data';
 
 const bios: Record<Role, { email: string; bio: string; madhhab: string; credentials: string; articles: number }> = {
-  author: { email: 'maryam@ilm.org', bio: 'Educator and writer focused on spiritual growth and community building. PhD in Islamic Studies.', madhhab: 'Hanafi', credentials: 'PhD Islamic Studies', articles: 18 },
-  editor: { email: 'fatima@ilm.org', bio: 'Editor shaping the ILM library with care for language, sources, and the reader’s heart.', madhhab: 'Hanafi', credentials: 'MA Arabic & Islamic Studies', articles: 4 },
+  author: { email: 'bilal@ilm.org', bio: 'Educator and writer focused on spiritual growth and community building. Traditional Islamic studies.', madhhab: 'Maliki', credentials: 'Traditional studies · Fiqh', articles: 18 },
+  editor: { email: 'omar@ilm.org', bio: 'Editor shaping the ILM library with care for language, sources, and the reader’s heart.', madhhab: 'Hanafi', credentials: 'MA Arabic & Islamic Studies', articles: 4 },
   administrator: { email: 'dawud@ilm.org', bio: 'Director of the league, stewarding publishing, people, and the public voice of ILM.', madhhab: 'Maliki', credentials: 'Imam & Educator', articles: 2 },
 };
 

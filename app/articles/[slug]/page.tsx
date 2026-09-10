@@ -33,9 +33,9 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
   }
 
   return (
-    <main className="min-h-screen pt-28">
+    <main className="flex min-h-[100svh] flex-col pt-28">
       <SiteHeader active="articles" />
-      <div className="mx-auto max-w-3xl px-6 py-12">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-12">
         <Link href="/articles" className="inline-flex items-center gap-2 text-sm text-ilm-navy/50 hover:text-ilm-navy">
           <ArrowLeft size={14} /> Article library
         </Link>
@@ -44,7 +44,7 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
         </div>
       </div>
       {related.length > 0 && (
-        <section className="mx-auto max-w-[1280px] px-6 pb-20">
+        <section className="mx-auto w-full max-w-[1280px] px-4 pb-16 sm:px-6 sm:pb-20">
           <h2 className="mb-6 text-2xl font-semibold text-ilm-navy">Related articles</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {related.map((a) => (

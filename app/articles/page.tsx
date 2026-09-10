@@ -6,9 +6,11 @@ import { SiteHeader } from '@/components/public/site-header';
 
 export default function ArticlesPage() {
   return (
-    <main className="min-h-screen overflow-x-hidden pb-20 pt-28">
+    <main className="flex min-h-[100svh] flex-col overflow-x-hidden pt-28">
       <SiteHeader active="articles" />
-      <LibraryExplorer />
+      <div className="flex-1 pb-12">
+        <LibraryExplorer />
+      </div>
       <SiteFooter />
     </main>
   );

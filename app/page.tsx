@@ -7,10 +7,12 @@ import { SiteHeader } from '@/components/public/site-header';
 
 export default function HomePage() {
   return (
-    <main className="overflow-x-hidden">
+    <main className="flex min-h-[100svh] flex-col overflow-x-hidden">
       <SiteHeader active="about" />
-      <Hero />
-      <HomeSections />
+      <div className="flex-1">
+        <Hero />
+        <HomeSections />
+      </div>
       <SiteFooter />
     </main>
   );

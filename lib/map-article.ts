@@ -1,5 +1,5 @@
 import type { Article } from '@/lib/admin-data';
-import { images } from '@/lib/images';
+import { images, safeArticleImage } from '@/lib/images';
 import type { ArticleRow, ProfileRow, CategoryRow } from '@/types/database';
 
 type RemoteArticle = ArticleRow & {
@@ -50,7 +50,7 @@ export function mapRemoteArticle(row: RemoteArticle, featured = false): Article 
     publishedAt: published || undefined,
     readTime: `${row.reading_minutes || 5} min`,
     tags: [],
-    image: row.featured_image_url || images.quranSunrise,
+    image: safeArticleImage(row.featured_image_url || images.quranSunrise),
     featured,
     reviewNotes: row.review_notes || undefined,
     revisions: [],
