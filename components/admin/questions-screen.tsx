@@ -50,7 +50,7 @@ export function QuestionsScreen({ assignedOnly = false, assignee = '' }: { assig
                   </p>
                   <p className="mt-1 pl-6 text-xs text-ilm-navy/40">{item.asker} · {item.date}</p>
                 </td>
-                <td className="hidden px-5 py-4 text-sm text-ilm-navy/50 md:table-cell">{item.assignedTo || '—'}</td>
+                <td className="hidden px-5 py-4 text-sm text-ilm-navy/50 md:table-cell">{item.assignedTo || '-'}</td>
                 <td className="px-5 py-4">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${item.status === 'new' ? 'bg-ilm-gold/15 text-ilm-gold-deep' : item.status === 'assigned' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                     {item.status}

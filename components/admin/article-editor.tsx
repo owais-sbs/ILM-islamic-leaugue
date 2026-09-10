@@ -8,7 +8,7 @@ import { canPublish } from '@/lib/ilm-store';
 import { categories } from '@/lib/admin-data';
 import { images } from '@/lib/images';
 
-const covers = [images.quranSunrise, images.quranOpen, images.mosqueArch, images.mosqueDome, images.kaaba, images.quranHands];
+const covers = [images.quranSunrise, images.quranClose, images.mosqueArch, images.mosqueDome, images.kaaba, images.blueMosque];
 
 export function ArticleEditor({
   article,
@@ -28,7 +28,7 @@ export function ArticleEditor({
   const [draft, setDraft] = useState(article);
   const [saved, setSaved] = useState('');
 
-  useEffect(() => setDraft(article), [article.id]);
+  useEffect(() => setDraft(article), [article]);
 
   const update = (patch: Partial<Article>) => setDraft((d) => ({ ...d, ...patch }));
 
@@ -50,7 +50,7 @@ export function ArticleEditor({
 
   return (
     <Reveal>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <button onClick={onBack} className="flex items-center gap-2 text-sm text-ilm-navy/60 hover:text-ilm-navy">
           <ArrowLeft size={16} /> Back
         </button>
@@ -93,18 +93,18 @@ export function ArticleEditor({
 
       {draft.status === 'returned' && draft.reviewNotes && (
         <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-red-600">Returned — review notes</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-red-600">Returned: review notes</p>
           <p className="mt-1 text-sm italic text-red-700/80">“{draft.reviewNotes}”</p>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="rounded-2xl border border-ilm-navy/8 bg-white p-8">
+        <div className="rounded-2xl border border-ilm-navy/10 bg-white p-5 sm:p-8">
           <input
             value={draft.title}
             onChange={(e) => update({ title: e.target.value, slug: slugify(e.target.value) })}
             placeholder="Article title…"
-            className="mb-4 w-full border-0 bg-transparent text-3xl font-semibold text-ilm-navy outline-none placeholder:text-ilm-navy/20"
+            className="mb-4 w-full border-0 bg-transparent text-2xl font-semibold text-ilm-navy outline-none placeholder:text-ilm-navy/20 sm:text-3xl"
           />
           <input
             value={draft.excerpt}

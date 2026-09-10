@@ -32,12 +32,12 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
   return (
     <section className="relative overflow-hidden pb-8">
       {!compact && (
-        <div className="relative mx-auto grid max-w-[1280px] items-start gap-10 px-6 pt-4 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
+        <div className="relative mx-auto grid max-w-[1280px] items-start gap-8 px-4 pt-4 sm:gap-10 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <ScrollReveal>
             <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
               <span className="h-px w-8 bg-ilm-gold" /> Directory
             </p>
-            <h1 className="mt-4 text-[48px] font-semibold leading-[1.05] tracking-[-0.04em] text-ilm-navy sm:text-[58px]">
+            <h1 className="mt-4 text-[36px] font-semibold leading-[1.08] tracking-[-0.04em] text-ilm-navy sm:text-[48px] lg:text-[58px]">
               Meet the <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
             </h1>
             <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-ilm-navy/55">
@@ -51,10 +51,10 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
             <GeometricOrnament className="absolute -right-10 -top-6 hidden h-40 w-28 lg:block" />
             <div className="relative">
               <div className="mosque-arch overflow-hidden shadow-[0_24px_50px_rgba(11,17,82,0.14)]">
-                <img src={mosqueArchImage} alt="Mosque at sunrise" className="h-[280px] w-full object-cover" />
+                <img src={mosqueArchImage} alt="Mosque at sunrise" className="h-[200px] w-full object-cover sm:h-[280px]" />
               </div>
               <Sparkles size={14} className="absolute right-8 top-3 text-ilm-gold" />
-              <p className="absolute -right-2 bottom-8 rotate-[-12deg] font-serif italic text-[22px] leading-tight text-ilm-navy/70">
+              <p className="absolute -right-1 bottom-6 rotate-[-12deg] font-serif italic text-[18px] leading-tight text-ilm-navy/70 sm:-right-2 sm:bottom-8 sm:text-[22px]">
                 Knowledge
                 <br />
                 Builds
@@ -66,15 +66,17 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
         </div>
       )}
 
-      <div className="mx-auto mt-8 flex max-w-[1280px] items-center justify-between gap-4 px-6 lg:px-8">
-        <FilterPills items={murabbiFilters} value={filter} onChange={(v) => setFilter(v as MurabbiFilter)} />
+      <div className="mx-auto mt-8 flex max-w-[1280px] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
+        <div className="min-w-0 flex-1">
+          <FilterPills items={murabbiFilters} value={filter} onChange={(v) => setFilter(v as MurabbiFilter)} />
+        </div>
         <ViewToggle value={view} onChange={setView} />
       </div>
 
       <StaggerIn
         className={cn(
-          'mx-auto mt-8 max-w-[1280px] px-6 lg:px-8',
-          view === 'grid' ? 'grid gap-5 sm:grid-cols-2 xl:grid-cols-4' : 'flex flex-col gap-4'
+          'mx-auto mt-8 max-w-[1280px] px-4 sm:px-6 lg:px-8',
+          view === 'grid' ? 'grid gap-4 sm:gap-5 sm:grid-cols-2 xl:grid-cols-4' : 'flex flex-col gap-4'
         )}
       >
         {list.map((person) => {
@@ -83,8 +85,8 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
             <StaggerChild key={person.id}>
               <article
                 className={cn(
-                  'rounded-[24px] border border-ilm-navy/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)]',
-                  view === 'list' && 'flex items-center gap-6'
+                  'rounded-[24px] border border-ilm-navy/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)] sm:p-6',
+                  view === 'list' && 'flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:gap-6'
                 )}
               >
                 <div className={cn('flex items-start justify-between', view === 'list' && 'contents')}>
@@ -124,7 +126,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
       </StaggerIn>
 
       {!compact && (
-        <div className="mx-auto mt-14 flex max-w-[1280px] items-center justify-between px-6 text-[11px] uppercase tracking-[0.16em] text-ilm-navy/35 lg:px-8">
+        <div className="mx-auto mt-14 flex max-w-[1280px] flex-col gap-3 px-4 text-[11px] uppercase tracking-[0.16em] text-ilm-navy/35 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="flex items-center gap-3">
             <span className="font-serif text-lg text-ilm-gold">✿</span>
             <span className="h-px w-10 bg-ilm-navy/15" />

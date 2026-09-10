@@ -2,14 +2,15 @@
 
 import { Upload, Copy, Trash2 } from 'lucide-react';
 import { Reveal, StaggerContainer, StaggerItem } from './reveal';
+import { images } from '@/lib/images';
 
 const mediaItems = [
-  { id: 'm1', name: 'mosque-sunrise.jpg', size: '2.4 MB' },
-  { id: 'm2', name: 'quran-stand.png', size: '1.1 MB' },
-  { id: 'm3', name: 'community-table.jpg', size: '3.2 MB' },
-  { id: 'm4', name: 'calligraphy-art.png', size: '0.8 MB' },
-  { id: 'm5', name: 'mentor-portrait.jpg', size: '1.7 MB' },
-  { id: 'm6', name: 'library-books.jpg', size: '2.0 MB' },
+  { id: 'm1', name: 'mosque-sunrise.jpg', size: '2.4 MB', src: images.mosqueArch },
+  { id: 'm2', name: 'open-quran.jpg', size: '1.1 MB', src: images.quranOpen },
+  { id: 'm3', name: 'blue-mosque.jpg', size: '3.2 MB', src: images.blueMosque },
+  { id: 'm4', name: 'kaaba-makkah.jpg', size: '0.8 MB', src: images.kaaba },
+  { id: 'm5', name: 'mosque-interior.jpg', size: '1.7 MB', src: images.mosqueInterior },
+  { id: 'm6', name: 'mosque-dome.jpg', size: '2.0 MB', src: images.mosqueDome },
 ];
 
 export function MediaScreen() {
@@ -24,8 +25,10 @@ export function MediaScreen() {
         <StaggerContainer className="contents">
           {mediaItems.map((media) => (
             <StaggerItem key={media.id}>
-              <div className="bg-white rounded-2xl border border-ilm-navy/8 p-4 hover:border-ilm-gold hover:shadow-md transition-all">
-                <div className="w-full h-32 rounded-xl bg-gradient-to-br from-ilm-cream to-ilm-navy/5 grid place-items-center mb-3 text-ilm-navy/20 text-xs font-serif">IMG</div>
+              <div className="bg-white rounded-2xl border border-ilm-navy/10 p-4 hover:border-ilm-gold hover:shadow-md transition-all">
+                <div className="mb-3 h-32 w-full overflow-hidden rounded-xl">
+                  <img src={media.src} alt={media.name} className="h-full w-full object-cover" />
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
                     <h4 className="text-sm font-medium text-ilm-navy truncate">{media.name}</h4>

@@ -61,7 +61,17 @@ export function SiteHeader({ active }: { active?: 'about' | 'articles' | 'murabb
   useEffect(() => {
     setMenuOpen(false);
     setOpenMenu(null);
+    setSearchOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen && !searchOpen && !askOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen, searchOpen, askOpen]);
 
   return (
     <>
@@ -73,12 +83,12 @@ export function SiteHeader({ active }: { active?: 'about' | 'articles' | 'murabb
           transition={{ duration: 0.35, ease: [0.22, 0.61, 0.36, 1] }}
         >
           <motion.div
-            className="flex h-[68px] items-center justify-between gap-4 rounded-full border border-ilm-navy/[0.06] bg-white px-5 shadow-[0_10px_40px_rgba(11,17,82,0.06)] sm:px-6"
+            className="flex h-[60px] items-center justify-between gap-2 rounded-full border border-ilm-navy/[0.06] bg-white px-3 shadow-[0_10px_40px_rgba(11,17,82,0.06)] sm:h-[68px] sm:gap-4 sm:px-5 lg:px-6"
             animate={{
               boxShadow: scrolled
                 ? '0 14px 40px rgba(11,17,82,0.10)'
                 : '0 10px 40px rgba(11,17,82,0.06)',
-              height: scrolled ? 60 : 68,
+              height: scrolled ? 56 : undefined,
             }}
             transition={{ duration: 0.35, ease: [0.22, 0.61, 0.36, 1] }}
           >
@@ -167,7 +177,7 @@ export function SiteHeader({ active }: { active?: 'about' | 'articles' | 'murabb
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="fixed inset-x-4 top-[92px] z-40 rounded-3xl border border-ilm-navy/8 bg-white p-5 shadow-2xl lg:hidden"
+            className="fixed inset-x-3 top-[84px] z-40 max-h-[calc(100svh-100px)] overflow-y-auto rounded-3xl border border-ilm-navy/10 bg-white p-4 shadow-2xl sm:inset-x-4 sm:top-[92px] sm:p-5 lg:hidden"
           >
             <div className="flex flex-col gap-3">
               {nav.map((item) => (

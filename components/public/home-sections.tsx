@@ -27,12 +27,17 @@ export function HomeSections() {
 
 function OurWhy() {
   return (
+<<<<<<< HEAD
     <section id="about-us" className="mx-auto grid max-w-[1280px] gap-12 px-6 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
       <ScrollReveal from="left">
+=======
+    <section id="our-why" className="mx-auto grid max-w-[1280px] gap-8 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
+      <ScrollReveal>
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> About Us
         </p>
-        <h2 className="mt-5 text-[40px] font-semibold leading-[1.08] tracking-[-0.04em] text-ilm-navy sm:text-[52px]">
+        <h2 className="mt-5 text-[32px] font-semibold leading-[1.1] tracking-[-0.04em] text-ilm-navy sm:text-[40px] sm:leading-[1.08] md:text-[52px]">
           Knowledge is not just what we <em className="font-serif italic font-normal text-ilm-gold">know.</em>
           <br />
           It is who we <em className="font-serif italic font-normal text-ilm-gold">become.</em>
@@ -52,11 +57,16 @@ function OurWhy() {
 
 function Pillars() {
   return (
-    <section className="mx-auto max-w-[1280px] px-6 pb-8 lg:px-8">
-      <StaggerIn className="grid gap-5 md:grid-cols-3">
+    <section className="mx-auto max-w-[1280px] px-4 pb-8 sm:px-6 lg:px-8">
+      <StaggerIn className="grid gap-4 sm:gap-5 md:grid-cols-3">
         {pillars.map((pillar, i) => (
+<<<<<<< HEAD
           <StaggerChild key={pillar.title} from={i % 2 === 0 ? 'left' : 'right'}>
             <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-8 shadow-[0_8px_30px_rgba(11,17,82,0.04)]">
+=======
+          <StaggerChild key={pillar.title}>
+            <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(11,17,82,0.04)] sm:p-8">
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
               <span className="font-serif text-3xl text-ilm-gold/70">0{i + 1}</span>
               <h3 className="mt-4 text-xl font-semibold text-ilm-navy">{pillar.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">{pillar.body}</p>
@@ -73,16 +83,21 @@ function FeaturedAndSubjects() {
   const featured = publishedArticles.find((a) => a.featured) || publishedArticles[0];
   if (!featured) return null;
   return (
+<<<<<<< HEAD
     <section className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
       <ScrollReveal from="left">
+=======
+    <section className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <ScrollReveal>
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> Featured
         </p>
-        <Link href={`/articles/${featured.slug}`} className="mt-5 grid overflow-hidden rounded-[28px] border border-ilm-navy/8 bg-white md:grid-cols-2">
-          <img src={featured.image} alt="" className="h-72 w-full object-cover md:h-full" />
-          <div className="p-8 md:p-12">
+        <Link href={`/articles/${featured.slug}`} className="mt-5 grid overflow-hidden rounded-[22px] border border-ilm-navy/10 bg-white sm:rounded-[28px] md:grid-cols-2">
+          <img src={featured.image} alt="" className="h-56 w-full object-cover sm:h-72 md:h-full" />
+          <div className="p-6 sm:p-8 md:p-12">
             <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-gold-deep">{featured.category}</span>
-            <h3 className="mt-3 text-3xl font-semibold tracking-tight text-ilm-navy">{featured.title}</h3>
+            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ilm-navy sm:text-3xl">{featured.title}</h3>
             <p className="mt-3 text-sm leading-relaxed text-ilm-navy/55">{featured.excerpt}</p>
             <p className="mt-6 text-sm font-semibold text-ilm-navy">
               {featured.author} · {featured.readTime}
@@ -119,14 +134,14 @@ function LibraryPreview() {
 
 function QuoteBand() {
   return (
-    <section className="relative overflow-hidden bg-[#E8DFD1] px-6 py-24 text-center">
-      <span className="absolute left-[12%] top-10 font-serif text-[140px] leading-none text-ilm-gold/50">“</span>
+    <section className="relative overflow-hidden bg-[#E8DFD1] px-4 py-16 text-center sm:px-6 sm:py-24">
+      <span className="absolute left-[8%] top-6 font-serif text-[90px] leading-none text-ilm-gold/50 sm:left-[12%] sm:top-10 sm:text-[140px]">“</span>
       <ScrollReveal>
-        <blockquote className="mx-auto max-w-3xl font-serif text-[28px] italic leading-snug tracking-tight text-ilm-navy sm:text-[38px]">
+        <blockquote className="relative mx-auto max-w-3xl font-serif text-[22px] italic leading-snug tracking-tight text-ilm-navy sm:text-[28px] md:text-[38px]">
           We are not here simply to gather knowledge. We are here to let it change the way we see, serve, and show up in the world.
         </blockquote>
         <span className="mx-auto mt-8 block h-px w-10 bg-ilm-gold" />
-        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-navy/45">— The ILM spirit</p>
+        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-navy/45">The ILM spirit</p>
       </ScrollReveal>
     </section>
   );
@@ -142,12 +157,17 @@ function MurabbiPreview() {
 
 function HowItWorks() {
   return (
+<<<<<<< HEAD
     <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8">
       <ScrollReveal from="left">
+=======
+    <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+      <ScrollReveal>
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> A way of learning
         </p>
-        <h2 className="mt-4 max-w-xl text-[40px] font-semibold tracking-[-0.04em] text-ilm-navy">
+        <h2 className="mt-4 max-w-xl text-[32px] font-semibold tracking-[-0.04em] text-ilm-navy sm:text-[40px]">
           How seekers walk with ILM.
         </h2>
       </ScrollReveal>
@@ -171,12 +191,17 @@ function ConnectSection() {
   return (
     <section id="connect" className="relative overflow-hidden bg-ilm-navy text-white">
       <div className="pointer-events-none absolute -right-40 -top-40 h-[670px] w-[670px] rounded-full border border-ilm-gold/20 shadow-[0_0_0_80px_rgba(199,154,61,0.04)]" />
+<<<<<<< HEAD
       <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
         <ScrollReveal from="left">
+=======
+      <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
+        <ScrollReveal>
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-light">
             <span className="h-px w-8 bg-ilm-gold" /> Stay in the circle
           </p>
-          <h2 className="mt-5 text-[44px] font-semibold leading-[1.05] tracking-[-0.04em] sm:text-[58px]">
+          <h2 className="mt-5 text-[34px] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-[44px] md:text-[58px]">
             A little more
             <br />
             <em className="font-serif italic font-normal text-ilm-gold-light">meaning</em> in your inbox.
@@ -185,7 +210,11 @@ function ConnectSection() {
             Monthly reflections, new conversations, and gentle reminders for the road ahead.
           </p>
         </ScrollReveal>
+<<<<<<< HEAD
         <ScrollReveal from="right" delay={0.1} className="rounded-3xl border border-white/15 bg-white/8 p-8">
+=======
+        <ScrollReveal delay={0.1} className="rounded-3xl border border-white/15 bg-white/10 p-6 sm:p-8">
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
           {subscribed ? (
             <div className="flex flex-col gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-ilm-gold-light text-ilm-navy">

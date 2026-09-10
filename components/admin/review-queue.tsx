@@ -41,12 +41,19 @@ export function ReviewQueue({
     <div>
       <h2 className="mb-2 text-2xl font-semibold tracking-tight text-ilm-navy">Review Queue</h2>
       <p className="mb-5 text-sm text-ilm-navy/50">
+<<<<<<< HEAD
         {isAdmin
           ? 'Approve to mark ready, then Publish to the website — or Approve & Publish in one step. You can Reject (return with notes) or Edit any item.'
           : 'Read, edit if needed, then approve or reject with notes. You cannot publish — the Administrator has final authority.'}
+=======
+        {canPublish(role)
+          ? 'Approve, return, or publish. Publishing places the article on the public website.'
+          : 'Read, edit if needed, then approve or return with notes. You cannot publish; the Administrator has final authority.'}
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
       </p>
 
-      <div className="overflow-hidden rounded-2xl border border-ilm-navy/8 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-ilm-navy/10 bg-white">
+        <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left">
           <thead>
             <tr className="border-b border-ilm-navy/8 bg-ilm-cream/60">
@@ -165,6 +172,7 @@ export function ReviewQueue({
             })}
           </tbody>
         </table>
+        </div>
         {reviewItems.length === 0 && (
           <div className="py-16 text-center text-sm text-ilm-navy/30">Nothing in the review queue.</div>
         )}

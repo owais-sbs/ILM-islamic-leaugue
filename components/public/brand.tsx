@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { siteConfig } from '@/lib/site';
 
 export function Brand({
   tone = 'navy',
@@ -12,10 +13,10 @@ export function Brand({
 }) {
   const light = tone === 'light';
   return (
-    <Link href="/" className="flex items-center gap-3 shrink-0" aria-label="ILM home">
+    <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3" aria-label={`${siteConfig.name} home`}>
       <span
         className={cn(
-          'relative font-serif text-[32px] leading-none tracking-[-0.14em] pl-2.5',
+          'relative pl-2.5 font-serif text-[28px] leading-none tracking-[-0.14em] sm:text-[32px]',
           light ? 'text-ilm-gold-light' : 'text-ilm-navy'
         )}
       >
@@ -25,7 +26,7 @@ export function Brand({
       {!compact && (
         <span
           className={cn(
-            'pl-3 border-l text-[9px] leading-[1.25] uppercase tracking-[0.08em] font-semibold',
+            'hidden border-l pl-2.5 text-[8px] font-semibold uppercase leading-[1.25] tracking-[0.08em] sm:block sm:pl-3 sm:text-[9px]',
             light ? 'border-white/35 text-white/90' : 'border-ilm-navy/20 text-ilm-navy'
           )}
         >

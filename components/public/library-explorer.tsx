@@ -34,7 +34,7 @@ export function LibraryExplorer({
             <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
               <span className="h-px w-8 bg-ilm-gold" /> Article library
             </p>
-            <h1 className="mt-4 text-[48px] font-semibold tracking-[-0.04em] text-ilm-navy sm:text-[56px]">
+            <h1 className="mt-4 text-[36px] font-semibold tracking-[-0.04em] text-ilm-navy sm:text-[48px] lg:text-[56px]">
               Explore the Library
             </h1>
             <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-ilm-navy/55">
@@ -45,13 +45,13 @@ export function LibraryExplorer({
       )}
 
       <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-        <ScrollReveal delay={0.08} className="mt-8 flex flex-wrap gap-2">
+        <ScrollReveal delay={0.08} className="mt-8 -mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex-wrap sm:overflow-visible">
           {libraryCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
               className={cn(
-                'rounded-full px-4 py-2 text-[13px] font-medium transition-all',
+                'shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium transition-all sm:px-4 sm:text-[13px]',
                 filter === cat
                   ? 'bg-ilm-navy text-white shadow-sm'
                   : 'bg-white text-ilm-navy/55 ring-1 ring-ilm-navy/10 hover:text-ilm-navy'
@@ -101,14 +101,14 @@ export function FilterPills({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
       {items.map((item) => (
         <motion.button
           key={item}
           onClick={() => onChange(item)}
           whileTap={{ scale: 0.97 }}
           className={cn(
-            'rounded-full px-4 py-2 text-[13px] font-medium transition-all',
+            'shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium transition-all sm:px-4 sm:text-[13px]',
             value === item
               ? 'bg-ilm-navy text-white'
               : 'bg-white text-ilm-navy/55 ring-1 ring-ilm-navy/10 hover:text-ilm-navy'

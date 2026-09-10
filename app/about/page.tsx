@@ -31,6 +31,7 @@ export default function AboutPage() {
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
             <span className="h-px w-8 bg-ilm-gold" /> About Us
           </p>
+<<<<<<< HEAD
           <h1 className="mt-4 max-w-3xl text-[42px] font-semibold tracking-tight text-ilm-navy sm:text-[52px]">
             A living tradition of <em className="font-serif italic font-normal text-ilm-gold">guidance</em>
           </h1>
@@ -38,6 +39,13 @@ export default function AboutPage() {
         <ScrollReveal from="right" delay={0.1} className="mt-6 max-w-2xl">
           <p className="text-lg leading-relaxed text-ilm-navy/65">
             The Islamic League of Murabbiyūn is a home for thoughtful learning, soulful conversation, and the people who help us become more fully human.
+=======
+          <h1 className="mt-4 text-[34px] font-semibold tracking-tight text-ilm-navy sm:text-[44px]">
+            A living tradition of <em className="font-serif italic font-normal text-ilm-gold">guidance</em>
+          </h1>
+          <p className="mt-6 text-lg leading-relaxed text-ilm-navy/65">
+            The Islamic League of Murabbiyūn is a home for thoughtful learning, soulful conversation, and the people who help us become more fully human. Knowledge here is not gathered as a possession; it is cultivated until it becomes character.
+>>>>>>> 5101914cc611ead94a3bf675e32733332f278d46
           </p>
         </ScrollReveal>
       </section>
