@@ -20,11 +20,11 @@ export function ArticleCard({ article, className }: { article: CardArticle; clas
   return (
     <article
       className={cn(
-        'group overflow-hidden rounded-[22px] border border-ilm-navy/[0.06] bg-white shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)]',
+        'group flex h-full min-h-[420px] flex-col overflow-hidden rounded-[22px] border border-ilm-navy/[0.06] bg-white shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)]',
         className
       )}
     >
-      <div className="relative h-[180px] overflow-hidden sm:h-[210px]">
+      <div className="relative h-[180px] shrink-0 overflow-hidden sm:h-[200px]">
         <img
           src={src}
           alt=""
@@ -36,18 +36,22 @@ export function ArticleCard({ article, className }: { article: CardArticle; clas
           {article.category}
         </span>
       </div>
-      <div className="px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         <p className="flex items-center gap-2 text-[12px] text-ilm-navy/40">
           <Clock size={13} className="text-ilm-gold-deep" />
           {article.readTime}
           <span className="text-ilm-navy/20">·</span>
           {article.date}
         </p>
-        <h3 className="mt-3 text-[20px] font-semibold leading-snug tracking-tight text-ilm-navy sm:text-[22px]">{article.title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">{article.excerpt}</p>
+        <h3 className="mt-3 line-clamp-2 text-[20px] font-semibold leading-snug tracking-tight text-ilm-navy sm:text-[22px]">
+          {article.title}
+        </h3>
+        <p className="mt-2 line-clamp-3 min-h-[3.75rem] flex-1 text-sm leading-relaxed text-ilm-navy/55">
+          {article.excerpt || ' '}
+        </p>
         <Link
           href={`/articles/${article.slug}`}
-          className="mt-5 inline-flex items-center gap-1.5 border-b border-ilm-gold pb-0.5 text-[13px] font-semibold text-ilm-navy hover:text-ilm-gold-deep"
+          className="mt-5 inline-flex items-center gap-1.5 border-b border-ilm-gold pb-0.5 text-[13px] font-semibold text-ilm-navy transition-colors hover:text-ilm-gold-deep"
         >
           Read article <ArrowRight size={14} />
         </Link>

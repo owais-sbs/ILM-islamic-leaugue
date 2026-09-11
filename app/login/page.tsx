@@ -77,7 +77,7 @@ export default function LoginPage() {
         }
 
         writeAdminRole(nextRole);
-        router.push('/admin');
+        router.push('/admin/dashboard');
         return;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Sign-in failed';
@@ -85,7 +85,7 @@ export default function LoginPage() {
         const demo = demoForRole(role);
         if (email === demo.email && password === demo.password) {
           writeAdminRole(role);
-          router.push('/admin');
+          router.push('/admin/dashboard');
           return;
         }
         setError(message);
@@ -96,7 +96,7 @@ export default function LoginPage() {
 
     // No Supabase env — local demo portal (also works if Vercel env is incomplete)
     writeAdminRole(role);
-    router.push('/admin');
+    router.push('/admin/dashboard');
   };
 
   return (

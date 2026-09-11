@@ -6,6 +6,8 @@ import {
   questions as seedQuestions,
   notices as seedNotices,
   activityLog as seedLog,
+  subscribers as seedSubscribers,
+  contributors as seedContributors,
   roleUsers,
   shortDate,
   nowStamp,
@@ -14,19 +16,30 @@ import {
   type Notice,
   type Question,
   type ActivityEntry,
+  type Subscriber,
+  type Contributor,
   type Role,
 } from '@/lib/admin-data';
-import { images, safeArticleImage } from '@/lib/images';
+import { images, safeArticleImage, safeScholarImage } from '@/lib/images';
 
-const KEY = 'ilm-demo-state-v3';
+const KEY = 'ilm-demo-state-v7';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
-const LEGACY_KEYS = ['ilm-demo-state-v1', 'ilm-demo-state-v2'];
+const LEGACY_KEYS = [
+  'ilm-demo-state-v1',
+  'ilm-demo-state-v2',
+  'ilm-demo-state-v3',
+  'ilm-demo-state-v4',
+  'ilm-demo-state-v5',
+  'ilm-demo-state-v6',
+];
 
 interface Store {
   articles: Article[];
   questions: Question[];
   notices: Notice[];
   activity: ActivityEntry[];
+  subscribers: Subscriber[];
+  contributors: Contributor[];
   publishedArticles: Article[];
   saveArticle: (article: Article, actor: string, asSubmit?: boolean) => void;
   submitArticle: (id: string, actor: string) => void;
@@ -35,12 +48,23 @@ interface Store {
   publishArticle: (id: string, actor: string) => void;
   unpublishArticle: (id: string, actor: string) => void;
   addQuestion: (q: Omit<Question, 'id' | 'date' | 'status'>) => void;
+  addSubscriber: (email: string) => boolean;
+  toggleSubscriber: (id: string, active: boolean) => void;
+  addAuthor: (input: { name: string; email: string; role?: Role; madhhab?: string }) => Contributor | null;
+  toggleAuthorActive: (id: string, active: boolean) => void;
   markNoticeRead: (id: string) => void;
 }
 
 const IlmContext = createContext<Store | null>(null);
 
-function persist(data: { articles: Article[]; questions: Question[]; notices: Notice[]; activity: ActivityEntry[] }) {
+function persist(data: {
+  articles: Article[];
+  questions: Question[];
+  notices: Notice[];
+  activity: ActivityEntry[];
+  subscribers: Subscriber[];
+  contributors: Contributor[];
+}) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
@@ -53,6 +77,8 @@ function readPersisted(): {
   questions?: Question[];
   notices?: Notice[];
   activity?: ActivityEntry[];
+  subscribers?: Subscriber[];
+  contributors?: Contributor[];
 } | null {
   try {
     const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
@@ -68,6 +94,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const [questions, setQuestions] = useState<Question[]>(seedQuestions);
   const [notices, setNotices] = useState<Notice[]>(seedNotices);
   const [activity, setActivity] = useState<ActivityEntry[]>(seedLog);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>(seedSubscribers);
+  const [contributors, setContributors] = useState<Contributor[]>(seedContributors);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -79,46 +107,90 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    const OLD_ARTICLE_SLUGS = new Set([
+      'etiquette-of-seeking-sacred-knowledge',
+      'understanding-ikhtilaf-with-grace',
+      'cultivating-the-heart-in-an-age-of-noise',
+      'foundations-of-aqidah-for-seekers',
+      'the-language-of-care',
+      'on-mercy-and-its-demands',
+      'leading-with-a-softer-voice',
+      'the-art-of-asking-better-questions',
+      'the-prophet-life',
+    ]);
+    const seedBySlug = new Map(seedArticles.map((a) => [a.slug, a]));
+
     const parsed = readPersisted();
     if (parsed) {
       if (Array.isArray(parsed.articles)) {
-        setArticles(
-          parsed.articles.map((a) => ({
-            ...a,
-            image: safeArticleImage(a.image),
-          })),
-        );
+        const extras = parsed.articles
+          .filter((a) => a?.slug && !OLD_ARTICLE_SLUGS.has(a.slug) && !seedBySlug.has(a.slug))
+          .map((a) => ({ ...a, image: safeArticleImage(a.image) }));
+        setArticles([...seedArticles.map((a) => ({ ...a, image: safeArticleImage(a.image) })), ...extras]);
       }
       if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
       if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
       if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
+      if (Array.isArray(parsed.subscribers)) setSubscribers(parsed.subscribers);
+      if (Array.isArray(parsed.contributors)) {
+        setContributors(
+          parsed.contributors.map((c) => ({
+            ...c,
+            image: safeScholarImage(c.image),
+          })),
+        );
+      }
     }
     setReady(true);
 
-    // Live / Vercel: merge published articles from Supabase so cards work for every visitor
-    void (async () => {
-      try {
-        const res = await fetch('/api/articles/published', { cache: 'no-store' });
-        if (!res.ok) return;
-        const json = (await res.json()) as { ok?: boolean; articles?: Article[] };
-        if (!json.ok || !Array.isArray(json.articles) || json.articles.length === 0) return;
-        setArticles((prev) => {
-          const bySlug = new Map(prev.map((a) => [a.slug, a]));
-          for (const remote of json.articles!) {
-            const local = bySlug.get(remote.slug);
-            bySlug.set(remote.slug, local ? { ...local, ...remote, status: 'published' } : remote);
-          }
-          return Array.from(bySlug.values());
-        });
-      } catch {
-        /* offline / misconfigured — keep local demo */
-      }
-    })();
+    // After HMR / stale client state, always re-assert the current seed catalog
+    setArticles((prev) => {
+      const hasLegacy = prev.some((a) => OLD_ARTICLE_SLUGS.has(a.slug));
+      const missingSeed = seedArticles.some((s) => !prev.some((p) => p.slug === s.slug));
+      if (!hasLegacy && !missingSeed) return prev;
+      const extras = prev.filter(
+        (a) => a?.slug && !OLD_ARTICLE_SLUGS.has(a.slug) && !seedBySlug.has(a.slug),
+      );
+      return [
+        ...seedArticles.map((a) => ({ ...a, image: safeArticleImage(a.image) })),
+        ...extras.map((a) => ({ ...a, image: safeArticleImage(a.image) })),
+      ];
+    });
+
+    // Optional remote merge (disabled by default — Supabase demo rows were polluting the library)
+    if (process.env.NEXT_PUBLIC_MERGE_REMOTE === '1') {
+      void (async () => {
+        try {
+          const res = await fetch('/api/articles/published', { cache: 'no-store' });
+          if (!res.ok) return;
+          const json = (await res.json()) as { ok?: boolean; articles?: Article[] };
+          if (!json.ok || !Array.isArray(json.articles) || json.articles.length === 0) return;
+          setArticles((prev) => {
+            const bySlug = new Map(prev.map((a) => [a.slug, a]));
+            for (const remote of json.articles!) {
+              if (!remote?.slug || OLD_ARTICLE_SLUGS.has(remote.slug)) continue;
+              if (seedBySlug.has(remote.slug)) continue;
+              if (!remote.title?.trim()) continue;
+              const local = bySlug.get(remote.slug);
+              bySlug.set(
+                remote.slug,
+                local
+                  ? { ...local, ...remote, status: 'published', image: safeArticleImage(remote.image || local.image) }
+                  : { ...remote, status: 'published', image: safeArticleImage(remote.image) },
+              );
+            }
+            return Array.from(bySlug.values());
+          });
+        } catch {
+          /* offline / misconfigured — keep local demo */
+        }
+      })();
+    }
   }, []);
 
   useEffect(() => {
-    if (ready) persist({ articles, questions, notices, activity });
-  }, [articles, questions, notices, activity, ready]);
+    if (ready) persist({ articles, questions, notices, activity, subscribers, contributors });
+  }, [articles, questions, notices, activity, subscribers, contributors, ready]);
 
   const log = useCallback((action: string, user: string, target: string) => {
     setActivity((prev) => [{ id: `l${Date.now()}`, action, user, target, timestamp: nowStamp() }, ...prev]);
@@ -336,12 +408,80 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
   }, []);
 
+  const addSubscriber = useCallback((email: string) => {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized || !normalized.includes('@')) return false;
+    let added = false;
+    setSubscribers((prev) => {
+      const existing = prev.find((s) => s.email.toLowerCase() === normalized);
+      if (existing) {
+        if (!existing.active) {
+          added = true;
+          return prev.map((s) => (s.id === existing.id ? { ...s, active: true, date: shortDate() } : s));
+        }
+        return prev;
+      }
+      added = true;
+      return [{ id: `s${Date.now()}`, email: normalized, date: shortDate(), active: true }, ...prev];
+    });
+    if (added) {
+      notify({ title: 'New subscriber', body: normalized, role: 'administrator' });
+      notify({ title: 'New subscriber', body: normalized, role: 'editor' });
+    }
+    return true;
+  }, [notify]);
+
+  const toggleSubscriber = useCallback((id: string, active: boolean) => {
+    setSubscribers((prev) => prev.map((s) => (s.id === id ? { ...s, active } : s)));
+  }, []);
+
+  const addAuthor = useCallback(
+    (input: { name: string; email: string; role?: Role; madhhab?: string }) => {
+      const name = input.name.trim();
+      const email = input.email.trim().toLowerCase();
+      if (!name || !email || !email.includes('@')) return null;
+      if (contributors.some((c) => c.email.toLowerCase() === email)) return null;
+
+      const parts = name.split(/\s+/).filter(Boolean);
+      const initials = ((parts[0]?.[0] || 'A') + (parts[1]?.[0] || parts[0]?.[1] || 'U')).toUpperCase();
+      const avatarPool = [
+        images.scholarQuran,
+        images.scholarBeard,
+        images.scholarPrayer,
+        images.scholarKufi,
+        images.scholarLantern,
+      ];
+      const created: Contributor = {
+        id: `c${Date.now()}`,
+        name,
+        email,
+        role: input.role || 'author',
+        initials,
+        madhhab: input.madhhab || 'Hanafi',
+        articles: 0,
+        active: true,
+        image: avatarPool[contributors.length % avatarPool.length],
+      };
+
+      setContributors((prev) => [created, ...prev]);
+      notify({ title: 'Author added', body: `${name} can now contribute.`, role: 'administrator' });
+      log('Added author', 'Administrator', name);
+      return created;
+    },
+    [contributors, log, notify],
+  );
+  const toggleAuthorActive = useCallback((id: string, active: boolean) => {
+    setContributors((prev) => prev.map((c) => (c.id === id ? { ...c, active } : c)));
+  }, []);
+
   const value = useMemo<Store>(
     () => ({
       articles,
       questions,
       notices,
       activity,
+      subscribers,
+      contributors,
       publishedArticles: articles
         .filter((a) => a.status === 'published')
         .slice()
@@ -357,6 +497,10 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       publishArticle,
       unpublishArticle,
       addQuestion,
+      addSubscriber,
+      toggleSubscriber,
+      addAuthor,
+      toggleAuthorActive,
       markNoticeRead,
     }),
     [
@@ -364,6 +508,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       questions,
       notices,
       activity,
+      subscribers,
+      contributors,
       saveArticle,
       submitArticle,
       approveArticle,
@@ -371,6 +517,10 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       publishArticle,
       unpublishArticle,
       addQuestion,
+      addSubscriber,
+      toggleSubscriber,
+      addAuthor,
+      toggleAuthorActive,
       markNoticeRead,
     ],
   );
@@ -395,7 +545,7 @@ export function emptyArticle(role: Role): Article {
     footnotes: '',
     seoTitle: '',
     seoDescription: '',
-    category: 'Tarbiyah',
+    category: 'Islamic Education',
     author: user.name,
     authorSlug: user.slug,
     authorInitials: user.initials,

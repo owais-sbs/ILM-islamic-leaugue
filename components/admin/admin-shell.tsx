@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu, Plus, X } from 'lucide-react';
 import { navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
+import { adminPath, normalizeAdminSection, type AdminSection } from '@/lib/admin-routes';
 import { clearAdminRole, readAdminRole } from '@/lib/admin-session';
 import { canPublish, emptyArticle, useIlm } from '@/lib/ilm-store';
+import { adminSwal } from '@/lib/admin-swal';
 import { tryCreateClient } from '@/lib/supabase/client';
 import { AdminBrand } from '@/components/admin/admin-brand';
 import { NavIcon } from '@/components/admin/nav-icon';
@@ -50,10 +52,12 @@ type Screen = 'tab' | 'edit' | 'preview';
 
 export function AdminShell() {
   const router = useRouter();
+  const params = useParams();
+  const sectionParam = typeof params?.section === 'string' ? params.section : Array.isArray(params?.section) ? params.section[0] : 'dashboard';
   const reduce = useReducedMotion();
   const { articles, notices, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, markNoticeRead } = useIlm();
   const [role, setRole] = useState<Role | null>(null);
-  const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState<AdminSection>(() => normalizeAdminSection(sectionParam));
   const [screen, setScreen] = useState<Screen>('tab');
   const [active, setActive] = useState<Article | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -62,6 +66,29 @@ export function AdminShell() {
   const [userOpen, setUserOpen] = useState(false);
   const [flash, setFlash] = useState('');
   const menusRef = useRef<HTMLDivElement>(null);
+  const keepOverlay = useRef(false);
+
+  useEffect(() => {
+    if (sectionParam && sectionParam !== normalizeAdminSection(sectionParam)) {
+      router.replace(adminPath('dashboard'));
+    }
+  }, [sectionParam, router]);
+
+  useEffect(() => {
+    const next = normalizeAdminSection(sectionParam);
+    setTab(next);
+    if (keepOverlay.current) {
+      keepOverlay.current = false;
+      if (next === 'create-article') setScreen('edit');
+      return;
+    }
+    if (next === 'create-article') {
+      setScreen('edit');
+      return;
+    }
+    setScreen('tab');
+    setActive(null);
+  }, [sectionParam]);
 
   useEffect(() => {
     const stored = readAdminRole();
@@ -71,6 +98,13 @@ export function AdminShell() {
     }
     setRole(stored);
   }, [router]);
+
+  useEffect(() => {
+    if (!role) return;
+    if (tab === 'create-article' && screen === 'edit' && !active) {
+      setActive(emptyArticle(role));
+    }
+  }, [tab, screen, active, role]);
 
   useEffect(() => {
     if (!bellOpen && !userOpen) return;
@@ -153,23 +187,33 @@ export function AdminShell() {
   };
   const goCreate = () => {
     if (!role) return;
+    keepOverlay.current = true;
     setActive(emptyArticle(role));
     setScreen('edit');
     setTab('create-article');
     setMobileNav(false);
+    router.push(adminPath('create-article'));
   };
   const backToList = () => {
     setScreen('tab');
     setActive(null);
-    if (tab === 'create-article') setTab(role === 'author' ? 'my-articles' : 'articles');
+    const fallback: AdminSection = role === 'author' ? 'my-articles' : 'articles';
+    const next = tab === 'create-article' ? fallback : tab;
+    setTab(next);
+    router.push(adminPath(next));
   };
 
   const selectTab = (key: string) => {
-    setTab(key);
+    const next = normalizeAdminSection(key);
+    setMobileNav(false);
+    if (next === 'create-article') {
+      goCreate();
+      return;
+    }
+    setTab(next);
     setScreen('tab');
     setActive(null);
-    setMobileNav(false);
-    if (key === 'create-article') goCreate();
+    router.push(adminPath(next));
   };
 
   if (!role || !user) {
@@ -199,19 +243,12 @@ export function AdminShell() {
             onEdit={openEdit}
             onApprove={(a) => {
               approveArticle(a.id, user.name);
-              ping(`Approved. Ready for you to publish — or use Approve & Publish next time.`);
-            }}
-            onApproveAndPublish={(a) => {
-              publishArticle(a.id, user.name);
-              ping(`Published. “${a.title}” is live on the public website cards.`);
             }}
             onReturn={(a, notes) => {
               returnArticle(a.id, user.name, notes);
-              ping(`Rejected. Returned to ${a.author} with notes.`);
             }}
             onPublish={(a) => {
               publishArticle(a.id, user.name);
-              ping(`Published. “${a.title}” is now on the public website.`);
             }}
           />
         );
@@ -250,7 +287,7 @@ export function AdminShell() {
         {groups.map((group) => (
           <div key={group.label || 'main'} className="mb-4">
             {group.label && !(collapsed && !mobileNav) && (
-              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">{group.label}</p>
+              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">{group.label}</p>
             )}
             {group.items.map((item) => {
               const isActive = tab === item.key && screen === 'tab';
@@ -260,8 +297,8 @@ export function AdminShell() {
                   key={item.key}
                   onClick={() => selectTab(item.key)}
                   className={cn(
-                    'mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors',
-                    isActive ? 'bg-ilm-gold/15 text-ilm-gold-light' : 'text-white/60 hover:bg-white/10 hover:text-white',
+                    'mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors',
+                    isActive ? 'bg-ilm-gold/15 text-ilm-gold-light' : 'text-white/85 hover:bg-white/10 hover:text-white',
                     iconOnly && 'justify-center px-0'
                   )}
                 >
@@ -288,15 +325,19 @@ export function AdminShell() {
           {(!collapsed || mobileNav) && 'Visit main site'}
         </a>
         <div className={cn('flex items-center gap-3 rounded-2xl bg-white/5 p-3', collapsed && !mobileNav && 'justify-center p-2')}>
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ilm-gold/20 font-serif text-xs text-ilm-gold-light">{user.initials}</div>
+          <img
+            src={user.image}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-ilm-gold/30"
+          />
           {(!collapsed || mobileNav) && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{user.name}</p>
+              <p className="truncate text-sm font-semibold text-white">{user.name}</p>
               <RoleBadge role={role} />
             </div>
           )}
         </div>
-        <button onClick={logout} className={cn('mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-white/45 hover:text-red-300', collapsed && !mobileNav && 'justify-center')}>
+        <button onClick={logout} className={cn('mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-white/75 hover:text-red-300', collapsed && !mobileNav && 'justify-center')}>
           <LogOut size={16} />
           {(!collapsed || mobileNav) && 'Log out'}
         </button>
@@ -374,7 +415,9 @@ export function AdminShell() {
                 aria-label="Notifications"
               >
                 <Bell size={16} />
-                {unread > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-ilm-gold" />}
+                {unread > 0 && (
+                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                )}
               </button>
               <AnimatePresence>
                 {bellOpen && (
@@ -409,7 +452,9 @@ export function AdminShell() {
                 className="flex items-center gap-2 rounded-full bg-white py-1 pl-1 pr-2 shadow-sm sm:pr-3"
                 aria-label="Account menu"
               >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-ilm-navy font-serif text-[11px] text-ilm-gold-light">{user.initials}</span>
+                <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-ilm-navy">
+                  <img src={user.image} alt="" className="h-full w-full object-cover" />
+                </span>
                 <span className="hidden sm:inline"><RoleBadge role={role} /></span>
               </button>
               <AnimatePresence>
@@ -421,7 +466,7 @@ export function AdminShell() {
                     transition={{ duration: 0.2, ease }}
                     className="absolute right-0 top-12 z-30 w-44 rounded-2xl border border-ilm-navy/10 bg-white p-2 shadow-xl"
                   >
-                    <button onClick={() => { setTab('my-profile'); setScreen('tab'); setUserOpen(false); }} className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-ilm-cream">My profile</button>
+                    <button onClick={() => { selectTab('my-profile'); setUserOpen(false); }} className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-ilm-cream">My profile</button>
                     <button onClick={logout} className="w-full rounded-xl px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50">Log out</button>
                   </motion.div>
                 )}
@@ -495,13 +540,20 @@ export function AdminShell() {
                   onPreview={openPreview}
                   onSave={(a, submit) => {
                     saveArticle(a, user.name, submit);
-                    ping(submit ? 'Submitted. The editor will review this article.' : 'Draft saved (revision snapshot created).');
+                    setActive(a);
+                    void adminSwal.success(submit ? 'Submitted for review' : 'Draft saved', a.title || 'Untitled');
                     if (submit) backToList();
                   }}
                   onPublish={(a) => {
                     saveArticle(a, user.name, false);
                     publishArticle(a.id, user.name);
-                    ping(`Published. “${a.title}” is now on the public website.`);
+                    void adminSwal.success('Published', a.title);
+                    backToList();
+                  }}
+                  onApproveAndPublish={(a) => {
+                    saveArticle({ ...a, status: 'approved' }, user.name, false);
+                    publishArticle(a.id, user.name);
+                    void adminSwal.success('Approved & published', a.title);
                     backToList();
                   }}
                 />

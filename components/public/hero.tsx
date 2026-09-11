@@ -23,13 +23,13 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(199,154,61,0.08),transparent_42%)]" />
       <GeometricOrnament className="absolute -right-6 top-24 hidden h-[420px] w-[280px] lg:block" />
 
-      <div className="relative mx-auto grid min-h-[calc(100svh-6rem)] max-w-[1280px] items-center gap-8 px-4 pb-20 sm:gap-10 sm:px-6 sm:pb-24 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
-        <motion.div style={{ y: copyY, opacity: fade }} className="relative z-10 max-w-[560px]">
+      <div className="relative mx-auto grid min-h-[calc(100svh-6rem)] max-w-[1280px] items-center gap-8 px-4 pb-24 sm:gap-10 sm:px-6 sm:pb-28 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+        <motion.div style={{ y: copyY, opacity: fade }} className="relative z-10 mx-auto w-full max-w-[560px] text-center lg:mx-0 lg:text-left">
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.08, ease }}
-            className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep sm:text-[11px] sm:tracking-[0.22em]"
+            className="flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep sm:text-[11px] sm:tracking-[0.22em] lg:justify-start"
           >
             <span className="h-px w-6 bg-ilm-gold sm:w-8" /> A living tradition of guidance
           </motion.p>
@@ -37,7 +37,7 @@ export function Hero() {
             initial={reduce ? false : { opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.16, ease }}
-            className="mt-5 text-[40px] font-semibold leading-[1.02] tracking-[-0.045em] text-ilm-navy sm:mt-6 sm:text-[56px] sm:leading-[0.98] lg:text-[76px]"
+            className="mt-5 text-[36px] font-semibold leading-[1.05] tracking-[-0.045em] text-ilm-navy sm:mt-6 sm:text-[56px] sm:leading-[0.98] lg:text-[76px]"
           >
             <span className="sr-only">{siteConfig.name}. </span>
             For those who
@@ -50,7 +50,7 @@ export function Hero() {
             initial={reduce ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.3, ease }}
-            className="mt-5 max-w-[420px] text-[15px] leading-[1.7] text-ilm-navy/60 sm:mt-6 sm:text-[16px] sm:leading-[1.75]"
+            className="mx-auto mt-5 max-w-[420px] text-[15px] leading-[1.7] text-ilm-navy/60 sm:mt-6 sm:text-[16px] sm:leading-[1.75] lg:mx-0"
           >
             {siteConfig.description}
           </motion.p>
@@ -58,7 +58,7 @@ export function Hero() {
             initial={reduce ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.4, ease }}
-            className="mt-7 flex flex-wrap items-center gap-4 sm:mt-9 sm:gap-6"
+            className="mt-7 flex flex-wrap items-center justify-center gap-4 sm:mt-9 sm:gap-6 lg:justify-start"
           >
             <Link
               href="/articles"
@@ -77,7 +77,7 @@ export function Hero() {
 
         <motion.div
           style={{ y: imageY }}
-          className="relative mx-auto h-[340px] w-full max-w-[420px] sm:h-[440px] sm:max-w-[520px] lg:h-[560px]"
+          className="relative mx-auto h-[300px] w-full max-w-[360px] sm:h-[440px] sm:max-w-[520px] lg:h-[560px] lg:max-w-none"
         >
           <motion.div
             initial={reduce ? false : { opacity: 0, scale: 0.94 }}
@@ -131,11 +131,11 @@ export function Hero() {
 
       <a
         href="#our-why"
-        className="absolute bottom-5 left-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-navy/40 sm:bottom-8 sm:left-6 sm:gap-3 sm:tracking-[0.2em] lg:left-12"
+        className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-2 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-navy/40 sm:bottom-8 sm:gap-3 sm:tracking-[0.2em]"
       >
-        <span className="h-6 w-px bg-ilm-gold sm:h-8" />
+        <span className="h-6 w-px shrink-0 bg-ilm-gold sm:h-8" />
         Scroll to explore
-        <ChevronDown size={14} className="animate-bounce" />
+        <ChevronDown size={14} className="shrink-0 animate-bounce" />
       </a>
     </section>
   );

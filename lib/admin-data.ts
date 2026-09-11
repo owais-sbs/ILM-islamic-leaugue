@@ -55,6 +55,7 @@ export interface Contributor {
   madhhab: string;
   articles: number;
   active: boolean;
+  image: string;
 }
 
 export interface Subscriber {
@@ -88,182 +89,96 @@ export interface Notice {
   read?: boolean;
 }
 
-const sampleBody = (lead: string) =>
-  `${lead}
-
-Sacred knowledge was never meant to be gathered the way one gathers possessions. The early teachers of this ummah treated learning as an act of worship: begun in sincerity, held with humility, and completed in character.
-
-The first adab is intention. A student asks: am I seeking this to be seen as learned, or to become more pleasing to Allah? That question is itself a lesson.
-
-The second is respect for the teacher and the text. We sit with a book the way we sit with a person of knowledge: attentive, unhurried, and ready to be changed.
-
-May Allah make what we write a means of light, not a means of pride.`;
+const sampleBody = (paragraphs: string[]) => paragraphs.join('\n\n');
 
 export const articles: Article[] = [
   {
     id: 'a1',
-    title: 'The Etiquette of Seeking Sacred Knowledge',
-    slug: 'etiquette-of-seeking-sacred-knowledge',
-    excerpt: 'How the early Murabbiyūn approached learning as an act of worship, not mere accumulation of facts.',
-    body: sampleBody('How the early Murabbiyūn approached learning as an act of worship, not mere accumulation of facts.'),
-    footnotes: '1. Imam al-Nawawi, al-Majmu‘.\n2. Ibn Jama‘ah, Tadhkirat al-Sami‘.',
-    seoTitle: 'The Etiquette of Seeking Sacred Knowledge | ILM',
-    seoDescription: 'Adab of seeking knowledge from the early teachers of this ummah.',
-    category: 'Tarbiyah',
+    title: 'The Role of a Murabbī: Nurturing Knowledge, Character, and Faith',
+    slug: 'role-of-a-murabbi-nurturing-knowledge-character-faith',
+    excerpt:
+      'What Murabbī means, how nurturing differs from merely teaching information, and the responsibilities of those who serve in Islamic education.',
+    body: sampleBody([
+      'A Murabbī is more than a transmitter of facts. The word itself carries the sense of raising, cultivating, and accompanying a person until knowledge settles into character and faith.',
+      'Teaching information asks: what do you know? Tarbiyah asks: who are you becoming? One fills the mind; the other shapes the heart, manners, and the way a seeker meets Allah, people, and responsibility.',
+      'A Murabbī listens before correcting, paces learning to the student’s capacity, and never separates sacred knowledge from adab. They guard sincerity, model humility, and remind the learner that understanding without practice is incomplete.',
+      'Their responsibilities include clarifying intention, protecting the dignity of the student, connecting texts to lived ethics, and pointing always toward Allah rather than toward the teacher’s own status.',
+      'When Islamic education recovers this role, classrooms and majālis become places of formation, not performance. Knowledge is nurtured so that faith grows, and character becomes the proof of what was learned.',
+    ]),
+    footnotes: '1. Reflect on classical adab literature and the practice of early teachers of this ummah.',
+    seoTitle: 'The Role of a Murabbī | Knowledge, Character & Faith | ILM',
+    seoDescription:
+      'Understand what a Murabbī is, how nurturing differs from mere instruction, and the duties of those who guide Islamic education.',
+    category: 'Islamic Education',
     author: 'Ustadh Bilal Rahman',
     authorSlug: 'bilal-rahman',
     authorInitials: 'BR',
     status: 'published',
-    date: 'Sep 2, 2026',
-    publishedAt: 'Sep 2, 2026',
+    date: 'Sep 11, 2026',
+    publishedAt: 'Sep 11, 2026',
     readTime: '7 min',
-    tags: ['tarbiyah', 'adab', 'knowledge'],
-    image: images.quranSunrise,
+    tags: ['Murabbī', 'Islamic Education', 'Tarbiyah', 'Character', 'Knowledge'],
+    image: images.mosqueInterior,
     featured: true,
-    revisions: [{ version: 1, savedAt: 'Sep 1, 2026', title: 'The Etiquette of Seeking Sacred Knowledge' }],
+    revisions: [{ version: 1, savedAt: 'Sep 11, 2026', title: 'The Role of a Murabbī: Nurturing Knowledge, Character, and Faith' }],
   },
   {
     id: 'a2',
-    title: 'Understanding Ikhtilaf with Grace',
-    slug: 'understanding-ikhtilaf-with-grace',
-    excerpt: 'A gentle framework for engaging scholarly disagreement without losing brotherhood or dignity.',
-    body: sampleBody('A gentle framework for engaging scholarly disagreement without losing brotherhood or dignity.'),
-    footnotes: '1. Ibn Taymiyyah, Raf‘ al-Malam.',
-    seoTitle: 'Understanding Ikhtilaf with Grace | ILM',
-    seoDescription: 'How to hold scholarly difference without losing brotherhood.',
-    category: 'Fiqh',
-    author: 'Ustadh Bilal Rahman',
-    authorSlug: 'bilal-rahman',
-    authorInitials: 'BR',
+    title: 'The Ethics of Disagreement in Islam: How to Handle Ikhtilāf with Wisdom',
+    slug: 'ethics-of-disagreement-ikhtilaf-with-wisdom',
+    excerpt:
+      'How Muslims can approach legitimate differences of opinion with knowledge, humility, good manners, and respect, without falling into needless argument.',
+    body: sampleBody([
+      'Ikhtilāf, legitimate scholarly difference, has always been part of this ummah’s intellectual life. The question is not whether Muslims will differ, but how they will differ.',
+      'Principled disagreement begins with knowledge: knowing the evidence, the scope of the issue, and whether the matter is open to ijtihād. Humility follows: recognizing that sincere scholars may reach different conclusions without either side leaving the fold of sincerity.',
+      'Adab requires that we speak of opponents with fairness, avoid mockery, and refuse to turn every difference into a test of loyalty. Unity is not uniformity; it is holding the bond of faith while navigating disagreement with wisdom.',
+      'Unnecessary argumentation, by contrast, seeks victory of the ego. It multiplies speech, hardens hearts, and confuses the public. The ethical path is to clarify when needed, stay silent when silence is safer, and keep brotherhood intact.',
+      'Handled with wisdom, ikhtilāf becomes a school of patience and precision. Handled without adab, it becomes a wound. May Allah grant us knowledge that softens disagreement and manners that protect the ummah.',
+    ]),
+    footnotes: '1. See classical discussions on adab al-ikhtilāf and the ethics of scholarly debate.',
+    seoTitle: 'Ethics of Disagreement & Ikhtilāf in Islam | ILM',
+    seoDescription:
+      'A guide to handling Islamic differences of opinion with knowledge, humility, adab, and respect for unity.',
+    category: 'Islamic Ethics',
+    author: 'Shaykh Hamza Idris',
+    authorSlug: 'hamza-idris',
+    authorInitials: 'HI',
     status: 'published',
-    date: 'Aug 28, 2026',
-    publishedAt: 'Aug 28, 2026',
-    readTime: '9 min',
-    tags: ['fiqh', 'ikhtilaf', 'adab'],
-    image: images.quranOpen,
-    revisions: [{ version: 1, savedAt: 'Aug 27, 2026', title: 'Understanding Ikhtilaf with Grace' }],
+    date: 'Sep 10, 2026',
+    publishedAt: 'Sep 10, 2026',
+    readTime: '8 min',
+    tags: ['Ikhtilāf', 'Islamic Ethics', 'Adab', 'Disagreement', 'Unity'],
+    image: images.blueMosque,
+    revisions: [{ version: 1, savedAt: 'Sep 10, 2026', title: 'The Ethics of Disagreement in Islam: How to Handle Ikhtilāf with Wisdom' }],
   },
   {
     id: 'a3',
-    title: 'Cultivating the Heart in an Age of Noise',
-    slug: 'cultivating-the-heart-in-an-age-of-noise',
-    excerpt: 'Practical reflections on tazkiyah, purification of the self, drawn from classical sources.',
-    body: sampleBody('Practical reflections on tazkiyah, purification of the self, drawn from classical sources.'),
-    footnotes: '1. Imam al-Ghazali, Ihya ‘Ulum al-Din.',
-    seoTitle: 'Cultivating the Heart in an Age of Noise | ILM',
-    seoDescription: 'Tazkiyah for a noisy age.',
-    category: 'Spirituality',
-    author: 'Shaykh Hamza Idris',
-    authorSlug: 'hamza-idris',
-    authorInitials: 'HI',
-    status: 'published',
-    date: 'Aug 21, 2026',
-    publishedAt: 'Aug 21, 2026',
-    readTime: '6 min',
-    tags: ['tazkiyah', 'spirituality'],
-    image: images.mosqueInterior,
-    revisions: [{ version: 1, savedAt: 'Aug 20, 2026', title: 'Cultivating the Heart in an Age of Noise' }],
-  },
-  {
-    id: 'a4',
-    title: 'Foundations of Aqidah for Seekers',
-    slug: 'foundations-of-aqidah-for-seekers',
-    excerpt: 'A clear introduction to creed that steadies the heart without overwhelming the beginner.',
-    body: sampleBody('A clear introduction to creed that steadies the heart without overwhelming the beginner.'),
-    footnotes: '1. Imam al-Tahawi, al-‘Aqidah al-Tahawiyyah.',
-    seoTitle: 'Foundations of Aqidah for Seekers | ILM',
-    seoDescription: 'A beginner’s map of creed.',
-    category: 'Aqidah',
+    title: 'Seeking Knowledge with Purpose: From Learning to Practice',
+    slug: 'seeking-knowledge-with-purpose-learning-to-practice',
+    excerpt:
+      'Why Islamic learning should lead to understanding, character development, and action rather than simply accumulating information.',
+    body: sampleBody([
+      'Knowledge in Islam is not a trophy. It is a trust that asks to be understood, embodied, and acted upon. When learning stops at collection, the heart remains unchanged and the self remains untrained.',
+      'Seeking with purpose begins with intention: learning to please Allah, to remove ignorance, and to benefit others. Understanding follows: not rushing through titles, but allowing meanings to settle until they reshape how we see and choose.',
+      'Character is the bridge between text and life. The student of knowledge watches speech, patience, sincerity, and fairness, knowing that adab is part of the curriculum. Without it, information becomes weight without light.',
+      'Practice completes the circle. Prayer improved, relationships refined, habits corrected; these are signs that learning has moved from the page into the person. Accumulation without action leaves the seeker informed yet untransformed.',
+      'May Allah make our seeking purposeful, our understanding deep, and our practice sincere so that knowledge becomes a path of self-development and nearness to Him.',
+    ]),
+    footnotes: '1. Classical teachers repeatedly linked ‘ilm to ‘amal and tazkiyah.',
+    seoTitle: 'Seeking Knowledge with Purpose | From Learning to Practice | ILM',
+    seoDescription:
+      'Explore why Islamic learning should produce understanding, character, and action, not mere information.',
+    category: 'Knowledge & Learning',
     author: 'Ustadh Yusuf Karim',
     authorSlug: 'yusuf-karim',
     authorInitials: 'YK',
-    status: 'submitted',
+    status: 'published',
     date: 'Sep 9, 2026',
-    readTime: '8 min',
-    tags: ['aqidah', 'creed'],
-    image: images.mosqueDome,
-    revisions: [{ version: 1, savedAt: 'Sep 9, 2026', title: 'Foundations of Aqidah for Seekers' }],
-  },
-  {
-    id: 'a5',
-    title: 'The Language of Care',
-    slug: 'the-language-of-care',
-    excerpt: 'How the words we choose shape the relationships we build in community and in teaching.',
-    body: sampleBody('How the words we choose shape the relationships we build in community and in teaching.'),
-    footnotes: '',
-    seoTitle: 'The Language of Care | ILM',
-    seoDescription: 'Speech as a trust.',
-    category: 'Tarbiyah',
-    author: 'Shaykh Hamza Idris',
-    authorSlug: 'hamza-idris',
-    authorInitials: 'HI',
-    status: 'submitted',
-    date: 'Sep 10, 2026',
-    readTime: '9 min',
-    tags: ['tarbiyah', 'speech'],
-    image: images.prayerHall,
-    revisions: [{ version: 1, savedAt: 'Sep 10, 2026', title: 'The Language of Care' }],
-  },
-  {
-    id: 'a6',
-    title: 'On Mercy and Its Demands',
-    slug: 'on-mercy-and-its-demands',
-    excerpt: 'Mercy is not soft. It asks more of us than justice ever could.',
-    body: sampleBody('Mercy is not soft. It asks more of us than justice ever could.'),
-    footnotes: '1. Qur’an 21:107.',
-    seoTitle: 'On Mercy and Its Demands | ILM',
-    seoDescription: 'Rahmah as a way of living.',
-    category: 'Spirituality',
-    author: 'Ustadh Bilal Rahman',
-    authorSlug: 'bilal-rahman',
-    authorInitials: 'BR',
-    status: 'approved',
-    date: 'Sep 6, 2026',
-    readTime: '12 min',
-    tags: ['mercy', 'akhlaq'],
-    image: images.kaaba,
-    revisions: [{ version: 2, savedAt: 'Sep 8, 2026', title: 'On Mercy and Its Demands' }],
-  },
-  {
-    id: 'a7',
-    title: 'Leading with a Softer Voice',
-    slug: 'leading-with-a-softer-voice',
-    excerpt: 'A reflection on influence, responsibility, and the strength of listening well.',
-    body: sampleBody('A reflection on influence, responsibility, and the strength of listening well.'),
-    footnotes: '',
-    seoTitle: 'Leading with a Softer Voice | ILM',
-    seoDescription: 'Leadership as listening.',
-    category: 'Tarbiyah',
-    author: 'Ustadh Bilal Rahman',
-    authorSlug: 'bilal-rahman',
-    authorInitials: 'BR',
-    status: 'returned',
-    date: 'Sep 7, 2026',
+    publishedAt: 'Sep 9, 2026',
     readTime: '7 min',
-    reviewNotes: 'The third paragraph could use a concrete example from a classroom or majlis. Otherwise strong work; please resubmit.',
-    tags: ['leadership', 'listening'],
-    image: images.quranHands,
-    revisions: [{ version: 1, savedAt: 'Sep 7, 2026', title: 'Leading with a Softer Voice' }],
-  },
-  {
-    id: 'a8',
-    title: 'The Art of Asking Better Questions',
-    slug: 'the-art-of-asking-better-questions',
-    excerpt: 'Why curiosity is the first virtue of a learner and a mentor alike.',
-    body: sampleBody('Why curiosity is the first virtue of a learner and a mentor alike.'),
-    footnotes: '',
-    seoTitle: 'The Art of Asking Better Questions | ILM',
-    seoDescription: 'Curiosity as worship.',
-    category: 'Tarbiyah',
-    author: 'Ustadh Bilal Rahman',
-    authorSlug: 'bilal-rahman',
-    authorInitials: 'BR',
-    status: 'draft',
-    date: 'Sep 10, 2026',
-    readTime: '4 min',
-    tags: ['education', 'curiosity'],
-    image: images.mosqueArch,
-    revisions: [{ version: 1, savedAt: 'Sep 10, 2026', title: 'The Art of Asking Better Questions' }],
+    tags: ['Knowledge', 'Learning', 'Action', 'Islamic Education', 'Self-Development'],
+    image: images.quranSunrise,
+    revisions: [{ version: 1, savedAt: 'Sep 9, 2026', title: 'Seeking Knowledge with Purpose: From Learning to Practice' }],
   },
 ];
 
@@ -276,11 +191,11 @@ export const questions: Question[] = [
 ];
 
 export const contributors: Contributor[] = [
-  { id: 'c1', name: 'Ustadh Bilal Rahman', email: 'bilal@ilm.org', role: 'author', initials: 'BR', madhhab: 'Maliki', articles: 4, active: true },
-  { id: 'c2', name: 'Shaykh Hamza Idris', email: 'hamza@ilm.org', role: 'author', initials: 'HI', madhhab: "Shafi'i", articles: 2, active: true },
-  { id: 'c3', name: 'Ustadh Yusuf Karim', email: 'yusuf@ilm.org', role: 'author', initials: 'YK', madhhab: 'Hanbali', articles: 1, active: true },
-  { id: 'c4', name: 'Shaykh Ibrahim Al-Fadl', email: 'ibrahim@ilm.org', role: 'administrator', initials: 'IF', madhhab: 'Hanafi', articles: 1, active: true },
-  { id: 'c5', name: 'Ustadh Omar Khalid', email: 'omar@ilm.org', role: 'editor', initials: 'OK', madhhab: 'Hanafi', articles: 0, active: true },
+  { id: 'c1', name: 'Ustadh Bilal Rahman', email: 'bilal@ilm.org', role: 'author', initials: 'BR', madhhab: 'Maliki', articles: 1, active: true, image: images.scholarQuran },
+  { id: 'c2', name: 'Shaykh Hamza Idris', email: 'hamza@ilm.org', role: 'author', initials: 'HI', madhhab: "Shafi'i", articles: 1, active: true, image: images.scholarBeard },
+  { id: 'c3', name: 'Ustadh Yusuf Karim', email: 'yusuf@ilm.org', role: 'author', initials: 'YK', madhhab: 'Hanbali', articles: 1, active: true, image: images.scholarPrayer },
+  { id: 'c4', name: 'Shaykh Ibrahim Al-Fadl', email: 'ibrahim@ilm.org', role: 'administrator', initials: 'IF', madhhab: 'Hanafi', articles: 0, active: true, image: images.scholarKufi },
+  { id: 'c5', name: 'Ustadh Omar Khalid', email: 'omar@ilm.org', role: 'editor', initials: 'OK', madhhab: 'Hanafi', articles: 0, active: true, image: images.scholarLantern },
 ];
 
 export const subscribers: Subscriber[] = [
@@ -292,25 +207,25 @@ export const subscribers: Subscriber[] = [
 ];
 
 export const activityLog: ActivityEntry[] = [
-  { id: 'l1', action: 'Published', user: 'Shaykh Ibrahim Al-Fadl', target: 'The Etiquette of Seeking Sacred Knowledge', timestamp: 'Sep 2, 2026 · 2:14 PM' },
-  { id: 'l2', action: 'Approved', user: 'Ustadh Omar Khalid', target: 'On Mercy and Its Demands', timestamp: 'Sep 8, 2026 · 10:30 AM' },
-  { id: 'l3', action: 'Returned', user: 'Ustadh Omar Khalid', target: 'Leading with a Softer Voice', timestamp: 'Sep 7, 2026 · 4:45 PM' },
-  { id: 'l4', action: 'Submitted', user: 'Ustadh Yusuf Karim', target: 'Foundations of Aqidah for Seekers', timestamp: 'Sep 9, 2026 · 9:00 AM' },
+  { id: 'l1', action: 'Published', user: 'Shaykh Ibrahim Al-Fadl', target: 'The Role of a Murabbī: Nurturing Knowledge, Character, and Faith', timestamp: 'Sep 11, 2026 · 10:00 AM' },
+  { id: 'l2', action: 'Published', user: 'Shaykh Ibrahim Al-Fadl', target: 'The Ethics of Disagreement in Islam: How to Handle Ikhtilāf with Wisdom', timestamp: 'Sep 10, 2026 · 2:14 PM' },
+  { id: 'l3', action: 'Published', user: 'Shaykh Ibrahim Al-Fadl', target: 'Seeking Knowledge with Purpose: From Learning to Practice', timestamp: 'Sep 9, 2026 · 9:00 AM' },
 ];
 
 export const notices: Notice[] = [
-  { id: 'n1', title: 'Article returned', body: 'Leading with a Softer Voice was returned with review notes.', role: 'author', authorName: 'Ustadh Bilal Rahman' },
-  { id: 'n2', title: 'New question assigned', body: 'What books do you recommend for new Muslims?', role: 'author', authorName: 'Ustadh Bilal Rahman' },
-  { id: 'n3', title: 'Review queue', body: 'Two articles are waiting for editorial review.', role: 'editor' },
-  { id: 'n4', title: 'Ready to publish', body: 'On Mercy and Its Demands is approved and awaiting publication.', role: 'administrator' },
+  { id: 'n1', title: 'New question', body: 'How do I find a mentor for my teenage son?', role: 'administrator', read: false },
+  { id: 'n2', title: 'New question', body: 'How do I find a mentor for my teenage son?', role: 'editor', read: false },
+  { id: 'n3', title: 'Articles live', body: 'Three core articles are published on the public site.', role: 'administrator', read: true },
 ];
 
 export const categories: Category[] = [
-  { id: 'cat1', name: 'Aqidah', slug: 'aqidah', articleCount: 3 },
-  { id: 'cat2', name: 'Fiqh', slug: 'fiqh', articleCount: 4 },
-  { id: 'cat3', name: 'Tarbiyah', slug: 'tarbiyah', articleCount: 6 },
-  { id: 'cat4', name: 'History', slug: 'history', articleCount: 2 },
-  { id: 'cat5', name: 'Spirituality', slug: 'spirituality', articleCount: 5 },
+  { id: 'cat1', name: 'Islamic Education', slug: 'islamic-education', articleCount: 1 },
+  { id: 'cat2', name: 'Islamic Ethics', slug: 'islamic-ethics', articleCount: 1 },
+  { id: 'cat3', name: 'Knowledge & Learning', slug: 'knowledge-learning', articleCount: 1 },
+  { id: 'cat4', name: 'Tarbiyah', slug: 'tarbiyah', articleCount: 0 },
+  { id: 'cat5', name: 'Aqidah', slug: 'aqidah', articleCount: 0 },
+  { id: 'cat6', name: 'Fiqh', slug: 'fiqh', articleCount: 0 },
+  { id: 'cat7', name: 'Spirituality', slug: 'spirituality', articleCount: 0 },
 ];
 
 export const roleLabels: Record<Role, string> = {
@@ -319,10 +234,10 @@ export const roleLabels: Record<Role, string> = {
   administrator: 'Administrator',
 };
 
-export const roleUsers: Record<Role, { name: string; initials: string; slug: string }> = {
-  author: { name: 'Ustadh Bilal Rahman', initials: 'BR', slug: 'bilal-rahman' },
-  editor: { name: 'Ustadh Omar Khalid', initials: 'OK', slug: 'omar-khalid' },
-  administrator: { name: 'Shaykh Ibrahim Al-Fadl', initials: 'IF', slug: 'ibrahim-al-fadl' },
+export const roleUsers: Record<Role, { name: string; initials: string; slug: string; image: string }> = {
+  author: { name: 'Ustadh Bilal Rahman', initials: 'BR', slug: 'bilal-rahman', image: images.scholarQuran },
+  editor: { name: 'Ustadh Omar Khalid', initials: 'OK', slug: 'omar-khalid', image: images.scholarLantern },
+  administrator: { name: 'Shaykh Ibrahim Al-Fadl', initials: 'IF', slug: 'ibrahim-al-fadl', image: images.scholarKufi },
 };
 
 export interface NavItem {
@@ -395,9 +310,9 @@ export const statusStyles: Record<ArticleStatus, string> = {
 };
 
 export const roleBadgeStyles: Record<Role, string> = {
-  author: 'bg-gray-100 text-gray-600',
-  editor: 'bg-blue-100 text-blue-700',
-  administrator: 'bg-amber-100 text-amber-800',
+  author: 'bg-gray-200 text-gray-800',
+  editor: 'bg-blue-100 text-blue-800',
+  administrator: 'bg-ilm-gold text-ilm-navy-deep',
 };
 
 export function nowStamp() {

@@ -2,7 +2,8 @@
 
 import { AlertCircle, CheckCircle2, FileText, MailQuestion, TrendingUp } from 'lucide-react';
 import type { Article, Role } from '@/lib/admin-data';
-import { contributors, questions, roleUsers } from '@/lib/admin-data';
+import { roleUsers } from '@/lib/admin-data';
+import { useIlm } from '@/lib/ilm-store';
 import { StaggerContainer, StaggerItem, Reveal } from './reveal';
 import { StatusPill } from './status-pill';
 
@@ -15,6 +16,7 @@ export function DashboardScreen({
   articles: Article[];
   onOpen?: (article: Article) => void;
 }) {
+  const { questions, contributors } = useIlm();
   const mine = articles.filter((a) => a.author === roleUsers[role].name);
   const pool = role === 'author' ? mine : articles;
   const published = articles.filter((a) => a.status === 'published');

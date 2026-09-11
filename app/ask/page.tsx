@@ -14,7 +14,7 @@ export default function AskPage() {
   return (
     <main className="min-h-screen pt-28">
       <SiteHeader active="connect" />
-      <section className="mx-auto max-w-xl px-6 py-16">
+      <section className="mx-auto max-w-xl px-4 py-12 sm:px-6 sm:py-16">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Ask with adab</p>
         <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">Ask a question</h1>
         <p className="mt-3 text-sm leading-relaxed text-ilm-navy/55">

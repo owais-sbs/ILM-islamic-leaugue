@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Clock, Eye, Save, Send, Upload } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, Eye, Save, Send, Upload } from 'lucide-react';
 import { Reveal } from './reveal';
 import type { Article, Role } from '@/lib/admin-data';
-import { canPublish } from '@/lib/ilm-store';
+import { canApprove, canPublish } from '@/lib/ilm-store';
 import { categories } from '@/lib/admin-data';
 import { images } from '@/lib/images';
+import { adminSwal } from '@/lib/admin-swal';
 
 const covers = [images.quranSunrise, images.quranClose, images.mosqueArch, images.mosqueDome, images.kaaba, images.blueMosque];
 
@@ -17,6 +18,7 @@ export function ArticleEditor({
   onPreview,
   onSave,
   onPublish,
+  onApproveAndPublish,
 }: {
   article: Article;
   role: Role;
@@ -24,6 +26,7 @@ export function ArticleEditor({
   onPreview: (article: Article) => void;
   onSave: (article: Article, submit?: boolean) => void;
   onPublish?: (article: Article) => void;
+  onApproveAndPublish?: (article: Article) => void;
 }) {
   const [draft, setDraft] = useState(article);
   const [saved, setSaved] = useState('');
@@ -80,6 +83,24 @@ export function ArticleEditor({
               <Send size={14} /> Submit for review
             </button>
           )}
+          {canPublish(role) && draft.status === 'submitted' && onApproveAndPublish && (
+            <button
+              onClick={async () => {
+                const res = await adminSwal.confirm('Approve & publish?', draft.title || 'Untitled article', 'Approve & Publish');
+                if (!res.isConfirmed) return;
+                const next = {
+                  ...draft,
+                  slug: draft.slug || slugify(draft.title || 'untitled'),
+                  seoTitle: draft.seoTitle || draft.title,
+                };
+                onApproveAndPublish(next);
+                await adminSwal.success('Published', next.title);
+              }}
+              className="inline-flex items-center gap-2 rounded-full bg-ilm-gold px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy-deep"
+            >
+              <CheckCircle2 size={14} /> Approve & Publish
+            </button>
+          )}
           {canPublish(role) && (draft.status === 'approved' || draft.status === 'published') && onPublish && (
             <button
               onClick={() => onPublish(draft)}
@@ -87,6 +108,9 @@ export function ArticleEditor({
             >
               <Upload size={14} /> {draft.status === 'published' ? 'Update live' : 'Publish to site'}
             </button>
+          )}
+          {canApprove(role) && !canPublish(role) && draft.status === 'submitted' && (
+            <span className="text-[11px] text-ilm-navy/40">Open Review to approve</span>
           )}
         </div>
       </div>

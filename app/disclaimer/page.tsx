@@ -7,7 +7,7 @@ export default function DisclaimerPage() {
   return (
     <main className="min-h-screen pt-28">
       <SiteHeader />
-      <section className="mx-auto max-w-2xl px-6 py-20">
+      <section className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Disclaimer</p>
         <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">A note on this content</h1>
         <p className="mt-6 leading-relaxed text-ilm-navy/65">

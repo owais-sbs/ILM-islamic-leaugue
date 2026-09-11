@@ -51,6 +51,7 @@
     font-family: var(--font-sans), Inter, Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
     min-width: 0;
+    overflow-x: hidden;
   }
 
   a {
@@ -115,6 +116,12 @@ em {
 
 .animate-fade-rise {
   animation: fadeRise 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Guard against Framer Motion leaving cards stuck at opacity 0 after filter changes */
+.library-grid > *,
+.murabbi-grid > * {
+  opacity: 1 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

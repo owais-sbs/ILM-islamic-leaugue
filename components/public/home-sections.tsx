@@ -27,7 +27,7 @@ export function HomeSections() {
 
 function OurWhy() {
   return (
-    <section id="about-us" className="mx-auto grid max-w-[1280px] gap-12 px-6 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
+    <section id="about-us" className="mx-auto grid max-w-[1280px] gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> About Us
@@ -52,11 +52,11 @@ function OurWhy() {
 
 function Pillars() {
   return (
-    <section className="mx-auto max-w-[1280px] px-6 pb-8 lg:px-8">
+    <section className="mx-auto max-w-[1280px] px-4 pb-8 sm:px-6 lg:px-8">
       <StaggerIn className="grid gap-5 md:grid-cols-3">
         {pillars.map((pillar, i) => (
           <StaggerChild key={pillar.title} from={i % 2 === 0 ? 'left' : 'right'}>
-            <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-8 shadow-[0_8px_30px_rgba(11,17,82,0.04)]">
+            <article className="rounded-[24px] border border-ilm-navy/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(11,17,82,0.04)] sm:p-8">
               <span className="font-serif text-3xl text-ilm-gold/70">0{i + 1}</span>
               <h3 className="mt-4 text-xl font-semibold text-ilm-navy">{pillar.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">{pillar.body}</p>
@@ -73,18 +73,25 @@ function FeaturedAndSubjects() {
   const featured = publishedArticles.find((a) => a.featured) || publishedArticles[0];
   if (!featured) return null;
   return (
-    <section className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
+    <section className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> Featured
         </p>
-        <Link href={`/articles/${featured.slug}`} className="mt-5 grid overflow-hidden rounded-[22px] border border-ilm-navy/10 bg-white sm:rounded-[28px] md:grid-cols-2">
-          <img src={featured.image} alt="" className="h-56 w-full object-cover sm:h-72 md:h-full" />
-          <div className="p-6 sm:p-8 md:p-12">
+        <Link
+          href={`/articles/${featured.slug}`}
+          className="mt-5 grid overflow-hidden rounded-[22px] border border-ilm-navy/10 bg-white sm:rounded-[24px] md:grid-cols-2 md:items-center"
+        >
+          <img
+            src={featured.image}
+            alt=""
+            className="h-44 w-full object-cover sm:h-52 md:h-[240px]"
+          />
+          <div className="flex flex-col justify-center p-5 sm:p-6 md:px-8 md:py-6">
             <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-gold-deep">{featured.category}</span>
-            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ilm-navy sm:text-3xl">{featured.title}</h3>
-            <p className="mt-3 text-sm leading-relaxed text-ilm-navy/55">{featured.excerpt}</p>
-            <p className="mt-6 text-sm font-semibold text-ilm-navy">
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">{featured.title}</h3>
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ilm-navy/55">{featured.excerpt}</p>
+            <p className="mt-4 text-sm font-semibold text-ilm-navy">
               {featured.author} · {featured.readTime}
             </p>
           </div>
@@ -108,7 +115,7 @@ function LibraryPreview() {
   return (
     <section className="py-16">
       <LibraryExplorer heading limit={3} />
-      <div className="mx-auto mt-10 max-w-[1280px] px-6 lg:px-8">
+      <div className="mx-auto mt-10 max-w-[1280px] px-4 sm:px-6 lg:px-8">
         <Link href="/articles" className="inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy">
           View all writings <ArrowRight size={14} />
         </Link>
@@ -142,7 +149,7 @@ function MurabbiPreview() {
 
 function HowItWorks() {
   return (
-    <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8">
+    <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> A way of learning
@@ -151,7 +158,7 @@ function HowItWorks() {
           How seekers walk with ILM.
         </h2>
       </ScrollReveal>
-      <StaggerIn className="mt-12 grid gap-8 md:grid-cols-3">
+      <StaggerIn className="mt-10 grid gap-8 sm:mt-12 md:grid-cols-3">
         {steps.map((step, i) => (
           <StaggerChild key={step.n} from={i % 2 === 0 ? 'left' : 'right'}>
             <p className="font-serif text-4xl text-ilm-gold">{step.n}</p>
@@ -165,13 +172,14 @@ function HowItWorks() {
 }
 
 function ConnectSection() {
+  const { addSubscriber } = useIlm();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
   return (
     <section id="connect" className="relative overflow-hidden bg-ilm-navy text-white">
       <div className="pointer-events-none absolute -right-40 -top-40 h-[670px] w-[670px] rounded-full border border-ilm-gold/20 shadow-[0_0_0_80px_rgba(199,154,61,0.04)]" />
-      <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
+      <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
         <ScrollReveal from="left">
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-light">
             <span className="h-px w-8 bg-ilm-gold" /> Stay in the circle
@@ -185,7 +193,7 @@ function ConnectSection() {
             Monthly reflections, new conversations, and gentle reminders for the road ahead.
           </p>
         </ScrollReveal>
-        <ScrollReveal from="right" delay={0.1} className="rounded-3xl border border-white/15 bg-white/8 p-8">
+        <ScrollReveal from="right" delay={0.1} className="rounded-3xl border border-white/15 bg-white/8 p-6 sm:p-8">
           {subscribed ? (
             <div className="flex flex-col gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-ilm-gold-light text-ilm-navy">
@@ -198,7 +206,9 @@ function ConnectSection() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (email.trim()) setSubscribed(true);
+                if (!email.trim()) return;
+                addSubscriber(email);
+                setSubscribed(true);
               }}
             >
               <label htmlFor="email" className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/70">

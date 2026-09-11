@@ -7,7 +7,7 @@ import { libraryCategories, type LibraryCategory } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
 import { ArticleCard } from './article-card';
 import { GeometricOrnament } from './brand';
-import { ScrollReveal, StaggerChild, StaggerIn } from './scroll-reveal';
+import { ScrollReveal } from './scroll-reveal';
 import { cn } from '@/lib/utils';
 
 export function LibraryExplorer({
@@ -26,9 +26,9 @@ export function LibraryExplorer({
   }, [filter, limit, publishedArticles]);
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden" data-library="v7">
       {heading && (
-        <div className="relative mx-auto max-w-[1280px] px-6 pt-8 lg:px-8">
+        <div className="relative mx-auto max-w-[1280px] px-4 pt-8 sm:px-6 lg:px-8">
           <GeometricOrnament className="absolute right-8 top-0 hidden h-56 w-40 lg:block" />
           <ScrollReveal from="left">
             <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
@@ -44,11 +44,12 @@ export function LibraryExplorer({
         </div>
       )}
 
-      <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-        <ScrollReveal delay={0.08} className="mt-8 -mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex-wrap sm:overflow-visible">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
+        <div className="mt-8 -mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex-wrap sm:overflow-visible">
           {libraryCategories.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setFilter(cat)}
               className={cn(
                 'shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium transition-all sm:px-4 sm:text-[13px]',
@@ -60,15 +61,19 @@ export function LibraryExplorer({
               {cat}
             </button>
           ))}
-        </ScrollReveal>
+        </div>
 
-        <StaggerIn className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((article, i) => (
-            <StaggerChild key={article.slug} from={i % 2 === 0 ? 'left' : 'right'}>
-              <ArticleCard article={article} />
-            </StaggerChild>
-          ))}
-        </StaggerIn>
+        {filtered.length === 0 ? (
+          <p className="mt-12 text-center text-sm text-ilm-navy/45">No articles in this category yet.</p>
+        ) : (
+          <div key={filter} className="library-grid mt-8 grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((article) => (
+              <div key={article.slug} className="h-full">
+                <ArticleCard article={article} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -80,6 +85,7 @@ export function ViewToggle({ value, onChange }: { value: 'grid' | 'list'; onChan
       {(['grid', 'list'] as const).map((v) => (
         <button
           key={v}
+          type="button"
           onClick={() => onChange(v)}
           className={cn('grid h-9 w-9 place-items-center', value === v ? 'bg-ilm-cream text-ilm-navy' : 'text-ilm-navy/35')}
           aria-label={v}
@@ -105,6 +111,7 @@ export function FilterPills({
       {items.map((item) => (
         <motion.button
           key={item}
+          type="button"
           onClick={() => onChange(item)}
           whileTap={{ scale: 0.97 }}
           className={cn(

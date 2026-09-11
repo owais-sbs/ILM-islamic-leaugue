@@ -3,7 +3,16 @@ import { images } from './images';
 export const heroImage = images.quranSunrise;
 export const mosqueArchImage = images.mosqueArch;
 
-export const libraryCategories = ['All', 'Aqidah', 'Fiqh', 'Tarbiyah', 'History', 'Spirituality'] as const;
+export const libraryCategories = [
+  'All',
+  'Islamic Education',
+  'Islamic Ethics',
+  'Knowledge & Learning',
+  'Tarbiyah',
+  'Aqidah',
+  'Fiqh',
+  'Spirituality',
+] as const;
 export type LibraryCategory = (typeof libraryCategories)[number];
 
 export const murabbiFilters = ['All', 'Studies', 'Hanafi', 'Maliki', "Shafi'i", 'Hanbali'] as const;

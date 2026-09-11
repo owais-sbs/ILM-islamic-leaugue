@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { AdminShell } from '@/components/admin/admin-shell';
-
-export default function AdminPage() {
-  return <AdminShell />;
+export default function AdminIndexPage() {
+  redirect('/admin/dashboard');
 }

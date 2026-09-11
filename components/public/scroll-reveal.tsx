@@ -29,7 +29,7 @@ export function ScrollReveal({
   delay = 0,
   y = 36,
   from = 'up',
-  once = false,
+  once = true,
 }: {
   children: ReactNode;
   className?: string;
@@ -43,8 +43,8 @@ export function ScrollReveal({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, ...start }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      initial={{ ...start }}
+      whileInView={{ x: 0, y: 0 }}
       viewport={{ once, amount: 0.18, margin: '0px 0px -40px 0px' }}
       transition={{ duration: 0.75, delay, ease }}
     >
@@ -61,20 +61,30 @@ const stagger: Variants = {
 function itemVariants(from: RevealFrom = 'up'): Variants {
   const start = offset(from, 28);
   return {
-    hidden: { opacity: 0, ...start },
-    show: { opacity: 1, x: 0, y: 0, transition: { duration: 0.65, ease } },
+    hidden: { ...start },
+    show: { x: 0, y: 0, transition: { duration: 0.65, ease } },
   };
 }
 
 export function StaggerIn({
   children,
   className = '',
-  once = false,
+  once = true,
+  mode = 'view',
 }: {
   children: ReactNode;
   className?: string;
   once?: boolean;
+  /** `animate` remounts safely on filter changes; `view` uses whileInView */
+  mode?: 'view' | 'animate';
 }) {
+  if (mode === 'animate') {
+    return (
+      <motion.div className={className} variants={stagger} initial="hidden" animate="show">
+        {children}
+      </motion.div>
+    );
+  }
   return (
     <motion.div
       className={className}

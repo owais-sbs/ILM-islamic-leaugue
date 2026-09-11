@@ -29,17 +29,7 @@ export const metadata: Metadata = {
   authors: [{ name: siteConfig.fullName }],
   creator: siteConfig.fullName,
   publisher: siteConfig.fullName,
-  keywords: [
-    'ILM',
-    'Islamic League of Murabbiyūn',
-    'Islamic learning',
-    'murabbi',
-    'tarbiyah',
-    'fiqh',
-    'aqidah',
-    'spirituality',
-    'Islamic articles',
-  ],
+  keywords: [...siteConfig.keywords],
   themeColor: '#0B1152',
   viewport: {
     width: 'device-width',
@@ -54,7 +44,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: siteConfig.url,
-    siteName: siteConfig.name,
+    siteName: siteConfig.fullName,
     title: siteConfig.title,
     description: siteConfig.description,
     images: [
@@ -62,7 +52,7 @@ export const metadata: Metadata = {
         url: siteConfig.ogImage,
         width: 1200,
         height: 630,
-        alt: `${siteConfig.name} — Islamic learning`,
+        alt: `${siteConfig.fullName} — Open Graph`,
       },
       {
         url: siteConfig.logo,

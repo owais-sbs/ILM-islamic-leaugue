@@ -74,8 +74,10 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
       </div>
 
       <StaggerIn
+        key={`${filter}-${view}`}
+        mode="animate"
         className={cn(
-          'mx-auto mt-8 max-w-[1280px] px-4 sm:px-6 lg:px-8',
+          'murabbi-grid mx-auto mt-8 max-w-[1280px] px-4 sm:px-6 lg:px-8',
           view === 'grid' ? 'grid gap-4 sm:gap-5 sm:grid-cols-2 xl:grid-cols-4' : 'flex flex-col gap-4'
         )}
       >
@@ -126,13 +128,16 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
       </StaggerIn>
 
       {!compact && (
-        <div className="mx-auto mt-14 flex max-w-[1280px] flex-col gap-3 px-4 text-[11px] uppercase tracking-[0.16em] text-ilm-navy/35 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="relative mx-auto mt-14 max-w-[1280px] px-4 text-[11px] uppercase tracking-[0.16em] text-ilm-navy/35 sm:px-6 lg:px-8">
           <p className="flex items-center gap-3">
             <span className="font-serif text-lg text-ilm-gold">✿</span>
             <span className="h-px w-10 bg-ilm-navy/15" />
             ILM / Murabbiyūn
           </p>
-          <a href="#directory" className="flex items-center gap-2">
+          <a
+            href="#directory"
+            className="mt-4 flex items-center justify-center gap-2 sm:absolute sm:left-1/2 sm:top-1/2 sm:mt-0 sm:-translate-x-1/2 sm:-translate-y-1/2"
+          >
             Scroll to explore <span className="text-ilm-navy">↓</span>
           </a>
         </div>

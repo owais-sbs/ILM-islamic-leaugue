@@ -15,7 +15,13 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
     () => publishedArticles.find((a) => a.slug === params.slug),
     [publishedArticles, params.slug]
   );
-  const related = publishedArticles.filter((a) => a.slug !== params.slug && a.category === article?.category).slice(0, 3);
+  const related = useMemo(() => {
+    if (!article) return [];
+    const same = publishedArticles.filter((a) => a.slug !== article.slug && a.category === article.category);
+    if (same.length >= 1) return same.slice(0, 3);
+    return publishedArticles.filter((a) => a.slug !== article.slug).slice(0, 3);
+  }, [publishedArticles, article]);
+
 
   if (!article) {
     return (
@@ -46,7 +52,7 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
       {related.length > 0 && (
         <section className="mx-auto w-full max-w-[1280px] px-4 pb-16 sm:px-6 sm:pb-20">
           <h2 className="mb-6 text-2xl font-semibold text-ilm-navy">Related articles</h2>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid items-stretch gap-6 md:grid-cols-3">
             {related.map((a) => (
               <ArticleCard key={a.id} article={a} />
             ))}

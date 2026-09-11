@@ -7,7 +7,7 @@ export default function ContactPage() {
   return (
     <main className="min-h-screen pt-28">
       <SiteHeader active="connect" />
-      <section className="mx-auto max-w-xl px-6 py-20">
+      <section className="mx-auto max-w-xl px-4 py-14 sm:px-6 sm:py-20">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Contact</p>
         <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">Write to ILM</h1>
         <p className="mt-4 leading-relaxed text-ilm-navy/60">
