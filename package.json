@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "generate:og": "node scripts/generate-og-image.mjs",
     "db:demo-users": "node scripts/ensure-demo-users.mjs",
     "db:test": "node scripts/test-connection.mjs",
     "smoke": "node scripts/smoke-flow.mjs"
@@ -78,6 +79,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "sharp": "^0.35.4"
   }
 }

@@ -36,9 +36,12 @@ export const metadata: Metadata = {
     initialScale: 1,
   },
   icons: {
-    icon: [{ url: siteConfig.logo, type: 'image/webp' }],
-    shortcut: siteConfig.logo,
-    apple: siteConfig.logo,
+    icon: [
+      { url: siteConfig.favicon, type: 'image/webp', sizes: '512x512' },
+      { url: '/favicon.png', type: 'image/png', sizes: '512x512' },
+    ],
+    shortcut: siteConfig.favicon,
+    apple: [{ url: '/favicon.png', sizes: '512x512', type: 'image/png' }],
   },
   openGraph: {
     type: 'website',
@@ -47,26 +50,11 @@ export const metadata: Metadata = {
     siteName: siteConfig.fullName,
     title: siteConfig.title,
     description: siteConfig.description,
-    images: [
-      {
-        url: siteConfig.ogImage,
-        width: 1200,
-        height: 630,
-        alt: `${siteConfig.fullName} — Open Graph`,
-      },
-      {
-        url: siteConfig.logo,
-        width: 512,
-        height: 512,
-        alt: `${siteConfig.name} logo`,
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: siteConfig.title,
     description: siteConfig.description,
-    images: [siteConfig.ogImage],
   },
   robots: {
     index: true,
@@ -90,6 +78,7 @@ const jsonLd = {
   alternateName: siteConfig.name,
   url: siteConfig.url,
   logo: `${siteConfig.url}${siteConfig.logo}`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   description: siteConfig.description,
 };
 
@@ -97,8 +86,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href={siteConfig.logo} type="image/webp" />
-        <link rel="apple-touch-icon" href={siteConfig.logo} />
+        <link rel="icon" href={siteConfig.favicon} type="image/webp" sizes="512x512" />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
