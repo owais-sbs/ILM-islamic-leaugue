@@ -85,9 +85,12 @@
   }
 }
 
-.font-serif,
-em {
+.font-serif {
   font-family: var(--font-serif), 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+.font-serif em {
+  font-family: inherit;
 }
 
 .hero-blob {

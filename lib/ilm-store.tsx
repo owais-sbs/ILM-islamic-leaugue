@@ -9,6 +9,8 @@ import {
   activityLog as seedLog,
   subscribers as seedSubscribers,
   contributors as seedContributors,
+  seedMedia,
+  defaultSiteSettings,
   roleUsers,
   shortDate,
   nowStamp,
@@ -22,6 +24,8 @@ import {
   type Contributor,
   type Role,
   type UserProfile,
+  type MediaItem,
+  type SiteSettings,
 } from '@/lib/admin-data';
 
 const SEED_TAGS = [
@@ -43,7 +47,7 @@ const SEED_TAGS = [
 ] as const;
 import { images, safeArticleImage, safeScholarImage } from '@/lib/images';
 
-const KEY = 'ilm-demo-state-v8';
+const KEY = 'ilm-demo-state-v10';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
 const LEGACY_KEYS = [
   'ilm-demo-state-v1',
@@ -52,6 +56,9 @@ const LEGACY_KEYS = [
   'ilm-demo-state-v4',
   'ilm-demo-state-v5',
   'ilm-demo-state-v6',
+  'ilm-demo-state-v7',
+  'ilm-demo-state-v8',
+  'ilm-demo-state-v9',
 ];
 
 interface Store {
@@ -63,6 +70,8 @@ interface Store {
   activity: ActivityEntry[];
   subscribers: Subscriber[];
   contributors: Contributor[];
+  media: MediaItem[];
+  siteSettings: SiteSettings;
   publishedArticles: Article[];
   newlyPublishedSlugs: string[];
   saveArticle: (article: Article, actor: string, asSubmit?: boolean) => void;
@@ -71,6 +80,7 @@ interface Store {
   returnArticle: (id: string, actor: string, notes: string) => void;
   publishArticle: (id: string, actor: string) => void;
   unpublishArticle: (id: string, actor: string) => void;
+  deleteArticle: (id: string, actor: string) => void;
   addQuestion: (q: Omit<Question, 'id' | 'date' | 'status'>) => void;
   syncQuestions: () => Promise<void>;
   assignQuestion: (id: string, assignee: string) => void;
@@ -83,13 +93,47 @@ interface Store {
   addTag: (name: string) => boolean;
   removeTag: (name: string) => void;
   addSubscriber: (email: string) => boolean;
+  syncSubscribers: () => Promise<void>;
   toggleSubscriber: (id: string, active: boolean) => void;
-  addAuthor: (input: { name: string; email: string; role?: Role; madhhab?: string }) => Contributor | null;
+  addAuthor: (input: {
+    name: string;
+    email: string;
+    role?: Role;
+    madhhab?: string;
+    bio?: string;
+    inviteToken?: string;
+    inviteExpiresAt?: number;
+    inviteStatus?: 'pending' | 'active';
+  }) => Contributor | null;
+  activateInvitedAuthor: (email: string) => void;
+  markInviteResent: (id: string, token: string, expiresAt: number) => void;
   toggleAuthorActive: (id: string, active: boolean) => void;
   markNoticeRead: (id: string) => void;
+  markAllNoticesRead: (role: Role, authorName?: string) => void;
+  addMedia: (item: Omit<MediaItem, 'id' | 'createdAt'>) => MediaItem | null;
+  removeMedia: (id: string) => void;
+  updateSiteSettings: (patch: Partial<SiteSettings>, actor: string) => void;
 }
 
 const IlmContext = createContext<Store | null>(null);
+
+function questionSortKey(q: Question) {
+  const rank = q.status === 'new' ? 0 : q.status === 'author_ready' ? 1 : q.status === 'assigned' ? 2 : 3;
+  const ts =
+    typeof q.createdAt === 'number'
+      ? q.createdAt
+      : Number.parseInt(String(q.id).replace(/\D/g, ''), 10) || 0;
+  return { rank, ts };
+}
+
+export function sortQuestions(list: Question[]) {
+  return list.slice().sort((a, b) => {
+    const ka = questionSortKey(a);
+    const kb = questionSortKey(b);
+    if (ka.rank !== kb.rank) return ka.rank - kb.rank;
+    return kb.ts - ka.ts;
+  });
+}
 
 function slugify(value: string) {
   return value
@@ -109,11 +153,13 @@ function persist(data: {
   subscribers: Subscriber[];
   contributors: Contributor[];
   profiles: Record<Role, UserProfile>;
+  media: MediaItem[];
+  siteSettings: SiteSettings;
 }) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
-    /* ignore */
+    /* ignore quota */
   }
 }
 
@@ -127,6 +173,8 @@ function readPersisted(): {
   subscribers?: Subscriber[];
   contributors?: Contributor[];
   profiles?: Record<Role, UserProfile>;
+  media?: MediaItem[];
+  siteSettings?: SiteSettings;
 } | null {
   try {
     const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
@@ -179,6 +227,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const [subscribers, setSubscribers] = useState<Subscriber[]>(seedSubscribers);
   const [contributors, setContributors] = useState<Contributor[]>(seedContributors);
   const [profiles, setProfiles] = useState<Record<Role, UserProfile>>(defaultProfiles);
+  const [media, setMedia] = useState<MediaItem[]>(seedMedia);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [newlyPublishedSlugs, setNewlyPublishedSlugs] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -229,6 +279,19 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (parsed.profiles) {
         setProfiles((prev) => ({ ...prev, ...parsed.profiles! }));
       }
+      if (Array.isArray(parsed.media) && parsed.media.length) setMedia(parsed.media);
+      if (parsed.siteSettings) {
+        const settings = { ...defaultSiteSettings, ...parsed.siteSettings };
+        setSiteSettings(settings);
+        if (settings.featuredArticleId) {
+          setArticles((arts) =>
+            arts.map((a) => ({
+              ...a,
+              featured: a.id === settings.featuredArticleId && a.status === 'published',
+            })),
+          );
+        }
+      }
     }
     setReady(true);
 
@@ -278,8 +341,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready) persist({ articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles });
-  }, [articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, ready]);
+    if (ready) persist({ articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, media, siteSettings });
+  }, [articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, media, siteSettings, ready]);
 
   const log = useCallback((action: string, user: string, target: string) => {
     setActivity((prev) => [{ id: `l${Date.now()}`, action, user, target, timestamp: nowStamp() }, ...prev]);
@@ -468,11 +531,30 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     [log],
   );
 
+  const deleteArticle = useCallback(
+    (id: string, actor: string) => {
+      let title = '';
+      setArticles((prev) => {
+        const article = prev.find((a) => a.id === id);
+        if (!article) return prev;
+        title = article.title;
+        return prev.filter((a) => a.id !== id);
+      });
+      if (!title) return;
+      log('Deleted', actor, title);
+      notify({ title: 'Article deleted', body: title, role: 'administrator' });
+    },
+    [log, notify],
+  );
+
   const addQuestion = useCallback(
     (q: Omit<Question, 'id' | 'date' | 'status'>) => {
       const source = q.source || 'ask';
       const label = source === 'contact' ? 'New contact message' : 'New question';
-      setQuestions((prev) => [{ ...q, source, id: `q${Date.now()}`, date: shortDate(), status: 'new' }, ...prev]);
+      setQuestions((prev) => [
+        { ...q, source, id: `q${Date.now()}`, date: shortDate(), createdAt: Date.now(), status: 'new' },
+        ...prev,
+      ]);
       void (async () => {
         try {
           await fetch('/api/questions', {
@@ -509,7 +591,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
           const local = byId.get(remote.id);
           byId.set(remote.id, local ? { ...local, ...remote } : remote);
         }
-        return Array.from(byId.values()).sort((a, b) => b.date.localeCompare(a.date));
+        return sortQuestions(Array.from(byId.values()));
       });
     } catch {
       /* ignore */
@@ -576,8 +658,56 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     [notify, questions],
   );
 
-  const updateProfile = useCallback((role: Role, patch: Partial<UserProfile>) => {
-    setProfiles((prev) => ({ ...prev, [role]: { ...prev[role], ...patch, role } }));
+  const updateProfile = useCallback(
+    (role: Role, patch: Partial<UserProfile>) => {
+      setProfiles((prev) => {
+        const before = prev[role];
+        const next = { ...before, ...patch, role };
+        if (before.name !== next.name) {
+          setArticles((arts) =>
+            arts.map((a) => (a.author === before.name ? { ...a, author: next.name } : a)),
+          );
+          setQuestions((qs) =>
+            qs.map((q) => (q.assignedTo === before.name ? { ...q, assignedTo: next.name } : q)),
+          );
+        }
+        setContributors((cs) =>
+          cs.map((c) => {
+            const matchEmail = before.email && c.email.toLowerCase() === before.email.toLowerCase();
+            const matchRoleSlot = c.role === role && c.name === before.name;
+            if (!matchEmail && !matchRoleSlot) return c;
+            return {
+              ...c,
+              name: next.name,
+              email: next.email || c.email,
+              madhhab: next.madhhab || c.madhhab,
+              image: next.image || c.image,
+              initials:
+                next.name
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join('')
+                  .toUpperCase() || c.initials,
+            };
+          }),
+        );
+        return { ...prev, [role]: next };
+      });
+      log('Updated profile', patch.name || roleUsers[role].name, role);
+    },
+    [log],
+  );
+
+  const markAllNoticesRead = useCallback((role: Role, authorName?: string) => {
+    setNotices((prev) =>
+      prev.map((n) => {
+        const mine =
+          n.role === role || n.role === 'all' || (n.role === 'author' && n.authorName === authorName);
+        return mine ? { ...n, read: true } : n;
+      }),
+    );
   }, []);
 
   const answerQuestion = useCallback(
@@ -669,16 +799,105 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     if (added) {
       notify({ title: 'New subscriber', body: normalized, role: 'administrator' });
       notify({ title: 'New subscriber', body: normalized, role: 'editor' });
+      log('New subscriber', 'Public site', normalized);
+      void fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalized }),
+      }).catch(() => undefined);
     }
-    return true;
-  }, [notify]);
+    return added;
+  }, [log, notify]);
 
-  const toggleSubscriber = useCallback((id: string, active: boolean) => {
-    setSubscribers((prev) => prev.map((s) => (s.id === id ? { ...s, active } : s)));
+  const syncSubscribers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/subscribers', { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = (await res.json()) as {
+        ok?: boolean;
+        subscribers?: { id: string; email: string; date: string; active: boolean }[];
+      };
+      if (!json.ok || !Array.isArray(json.subscribers)) return;
+      setSubscribers((prev) => {
+        const byEmail = new Map(prev.map((s) => [s.email.toLowerCase(), s]));
+        for (const remote of json.subscribers!) {
+          const key = remote.email.toLowerCase();
+          const local = byEmail.get(key);
+          byEmail.set(key, local ? { ...local, ...remote, email: key } : { ...remote, email: key });
+        }
+        return Array.from(byEmail.values()).sort((a, b) => b.date.localeCompare(a.date));
+      });
+    } catch {
+      /* ignore */
+    }
   }, []);
 
+  const toggleSubscriber = useCallback((id: string, active: boolean) => {
+    setSubscribers((prev) => {
+      const target = prev.find((s) => s.id === id);
+      if (target?.email) {
+        void fetch('/api/subscribers', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: target.email, active }),
+        }).catch(() => undefined);
+      }
+      return prev.map((s) => (s.id === id ? { ...s, active } : s));
+    });
+  }, []);
+
+  const addMedia = useCallback((item: Omit<MediaItem, 'id' | 'createdAt'>) => {
+    const created: MediaItem = {
+      ...item,
+      id: `m${Date.now()}`,
+      createdAt: shortDate(),
+    };
+    setMedia((prev) => [created, ...prev]);
+    log('Uploaded media', 'Staff', created.name);
+    return created;
+  }, [log]);
+
+  const removeMedia = useCallback(
+    (id: string) => {
+      setMedia((prev) => {
+        const target = prev.find((m) => m.id === id);
+        if (target) log('Deleted media', 'Staff', target.name);
+        return prev.filter((m) => m.id !== id);
+      });
+    },
+    [log],
+  );
+
+  const updateSiteSettings = useCallback(
+    (patch: Partial<SiteSettings>, actor: string) => {
+      setSiteSettings((prev) => {
+        const next = { ...prev, ...patch };
+        if (patch.featuredArticleId) {
+          setArticles((arts) =>
+            arts.map((a) => ({
+              ...a,
+              featured: a.id === patch.featuredArticleId && a.status === 'published',
+            })),
+          );
+        }
+        return next;
+      });
+      log('Updated settings', actor, Object.keys(patch).join(', '));
+    },
+    [log],
+  );
+
   const addAuthor = useCallback(
-    (input: { name: string; email: string; role?: Role; madhhab?: string }) => {
+    (input: {
+      name: string;
+      email: string;
+      role?: Role;
+      madhhab?: string;
+      bio?: string;
+      inviteToken?: string;
+      inviteExpiresAt?: number;
+      inviteStatus?: 'pending' | 'active';
+    }) => {
       const name = input.name.trim();
       const email = input.email.trim().toLowerCase();
       if (!name || !email || !email.includes('@')) return null;
@@ -693,6 +912,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         images.scholarKufi,
         images.scholarLantern,
       ];
+      const pending = input.inviteStatus === 'pending' || Boolean(input.inviteToken);
       const created: Contributor = {
         id: `c${Date.now()}`,
         name,
@@ -701,17 +921,52 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         initials,
         madhhab: input.madhhab || 'Hanafi',
         articles: 0,
-        active: true,
+        active: !pending,
         image: avatarPool[contributors.length % avatarPool.length],
+        bio: input.bio,
+        inviteStatus: pending ? 'pending' : 'active',
+        inviteToken: input.inviteToken,
+        inviteExpiresAt: input.inviteExpiresAt,
       };
 
       setContributors((prev) => [created, ...prev]);
-      notify({ title: 'Author added', body: `${name} can now contribute.`, role: 'administrator' });
-      log('Added author', 'Administrator', name);
+      notify({
+        title: pending ? 'Invite sent' : 'Author added',
+        body: pending ? `${name} invited — awaiting password setup.` : `${name} can now contribute.`,
+        role: 'administrator',
+      });
+      log(pending ? 'Invited author' : 'Added author', 'Administrator', name);
       return created;
     },
     [contributors, log, notify],
   );
+
+  const activateInvitedAuthor = useCallback((email: string) => {
+    const normalized = email.trim().toLowerCase();
+    setContributors((prev) =>
+      prev.map((c) =>
+        c.email.toLowerCase() === normalized
+          ? {
+              ...c,
+              active: true,
+              inviteStatus: 'active',
+              inviteToken: undefined,
+              inviteExpiresAt: undefined,
+            }
+          : c,
+      ),
+    );
+  }, []);
+
+  const markInviteResent = useCallback((id: string, token: string, expiresAt: number) => {
+    setContributors((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, inviteToken: token, inviteExpiresAt: expiresAt, inviteStatus: 'pending', active: false }
+          : c,
+      ),
+    );
+  }, []);
   const toggleAuthorActive = useCallback((id: string, active: boolean) => {
     setContributors((prev) => prev.map((c) => (c.id === id ? { ...c, active } : c)));
   }, []);
@@ -721,11 +976,13 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       articles,
       categories,
       tags,
-      questions,
+      questions: sortQuestions(questions),
       notices,
       activity,
       subscribers,
       contributors,
+      media,
+      siteSettings,
       newlyPublishedSlugs,
       publishedArticles: articles
         .filter((a) => a.status === 'published')
@@ -741,6 +998,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       returnArticle,
       publishArticle,
       unpublishArticle,
+      deleteArticle,
       addQuestion,
       syncQuestions,
       assignQuestion,
@@ -753,10 +1011,17 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       addTag,
       removeTag,
       addSubscriber,
+      syncSubscribers,
       toggleSubscriber,
       addAuthor,
+      activateInvitedAuthor,
+      markInviteResent,
       toggleAuthorActive,
       markNoticeRead,
+      markAllNoticesRead,
+      addMedia,
+      removeMedia,
+      updateSiteSettings,
     }),
     [
       articles,
@@ -767,6 +1032,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       activity,
       subscribers,
       contributors,
+      media,
+      siteSettings,
       profiles,
       newlyPublishedSlugs,
       saveArticle,
@@ -775,6 +1042,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       returnArticle,
       publishArticle,
       unpublishArticle,
+      deleteArticle,
       addQuestion,
       syncQuestions,
       assignQuestion,
@@ -786,10 +1054,17 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       addTag,
       removeTag,
       addSubscriber,
+      syncSubscribers,
       toggleSubscriber,
       addAuthor,
+      activateInvitedAuthor,
+      markInviteResent,
       toggleAuthorActive,
       markNoticeRead,
+      markAllNoticesRead,
+      addMedia,
+      removeMedia,
+      updateSiteSettings,
     ],
   );
 
@@ -802,8 +1077,17 @@ export function useIlm() {
   return ctx;
 }
 
-export function emptyArticle(role: Role): Article {
+export function emptyArticle(role: Role, profile?: UserProfile): Article {
   const user = roleUsers[role];
+  const name = profile?.name || user.name;
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join('')
+      .toUpperCase() || user.initials;
   return {
     id: `a${Date.now()}`,
     title: '',
@@ -814,9 +1098,9 @@ export function emptyArticle(role: Role): Article {
     seoTitle: '',
     seoDescription: '',
     category: 'Islamic Education',
-    author: user.name,
+    author: name,
     authorSlug: user.slug,
-    authorInitials: user.initials,
+    authorInitials: initials,
     status: 'draft',
     date: shortDate(),
     readTime: '5 min',

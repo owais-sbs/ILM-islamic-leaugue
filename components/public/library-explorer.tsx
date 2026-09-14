@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { libraryCategories, type LibraryCategory } from '@/lib/public-data';
@@ -10,6 +11,12 @@ import { GeometricOrnament } from './brand';
 import { ScrollReveal } from './scroll-reveal';
 import { cn } from '@/lib/utils';
 
+function resolveCategory(raw: string | null): LibraryCategory {
+  if (!raw) return 'All';
+  const decoded = decodeURIComponent(raw);
+  return (libraryCategories.find((cat) => cat.toLowerCase() === decoded.toLowerCase()) || 'All') as LibraryCategory;
+}
+
 export function LibraryExplorer({
   heading = true,
   limit,
@@ -18,7 +25,13 @@ export function LibraryExplorer({
   limit?: number;
 }) {
   const { publishedArticles, newlyPublishedSlugs } = useIlm();
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<LibraryCategory>('All');
+
+  useEffect(() => {
+    setFilter(resolveCategory(searchParams.get('category')));
+  }, [searchParams]);
+
   const filtered = useMemo(() => {
     const list =
       filter === 'All' ? publishedArticles : publishedArticles.filter((a) => a.category === filter);
@@ -26,7 +39,7 @@ export function LibraryExplorer({
   }, [filter, limit, publishedArticles]);
 
   return (
-    <section className="relative overflow-hidden" data-library="v7">
+    <section className="relative overflow-x-hidden" data-library="v7">
       {heading && (
         <div className="relative mx-auto max-w-[1280px] px-4 pt-8 sm:px-6 lg:px-8">
           <GeometricOrnament className="absolute right-8 top-0 hidden h-56 w-40 lg:block" />
@@ -45,7 +58,7 @@ export function LibraryExplorer({
       )}
 
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
-        <div className="mt-8 -mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex-wrap sm:overflow-visible">
+        <div className="mt-8 -mx-1 flex max-w-full gap-2 overflow-x-auto px-1 py-1.5 scrollbar-none sm:flex-wrap sm:overflow-visible">
           {libraryCategories.map((cat) => (
             <button
               key={cat}
@@ -107,7 +120,7 @@ export function FilterPills({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
+    <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 py-1.5 scrollbar-none">
       {items.map((item) => (
         <motion.button
           key={item}

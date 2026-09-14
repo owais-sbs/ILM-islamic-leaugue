@@ -63,7 +63,23 @@ export default function LoginPage() {
 
         const uid = data.user?.id;
         let nextRole: Role = role;
+        let mustChangePassword = false;
+
         if (uid) {
+          let roleFromMapping: Role | null = null;
+          const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, {
+            cache: 'no-store',
+          });
+          if (meRes.ok) {
+            const me = (await meRes.json()) as {
+              ok?: boolean;
+              mustChangePassword?: boolean;
+              role?: Role | null;
+            };
+            if (me.role) roleFromMapping = me.role;
+            mustChangePassword = Boolean(me.mustChangePassword);
+          }
+
           const { data: profile } = await supabase
             .from('profiles')
             .select('role, is_active')
@@ -73,11 +89,11 @@ export default function LoginPage() {
           if (profile && !profile.is_active) {
             throw new Error('This account is inactive. Contact an administrator.');
           }
-          if (mapped) nextRole = mapped;
+          nextRole = roleFromMapping || mapped || role;
         }
 
         writeAdminRole(nextRole);
-        router.push('/admin/dashboard');
+        router.push(mustChangePassword ? '/change-password' : '/admin/dashboard');
         return;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Sign-in failed';

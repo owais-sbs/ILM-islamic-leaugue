@@ -1,7 +1,11 @@
 import nodemailer from 'nodemailer';
 
+function smtpPass() {
+  return process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
+}
+
 function smtpConfigured() {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && smtpPass());
 }
 
 function transporter() {
@@ -13,7 +17,7 @@ function transporter() {
     secure,
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      pass: smtpPass(),
     },
   });
 }

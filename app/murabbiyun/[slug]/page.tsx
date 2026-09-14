@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { murabbiyūn } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
 import { ArticleCard } from '@/components/public/article-card';
+import { AskQuestionModal } from '@/components/public/ask-question-modal';
 import { SiteFooter } from '@/components/public/site-footer';
 import { SiteHeader } from '@/components/public/site-header';
 
@@ -13,6 +14,7 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
   const slug = params.slug === 'maryam-yusuf' ? 'bilal-rahman' : params.slug;
   const person = murabbiyūn.find((m) => m.id === slug);
   const { publishedArticles } = useIlm();
+  const [askOpen, setAskOpen] = useState(false);
   const works = useMemo(
     () => publishedArticles.filter((a) => a.authorSlug === slug || a.author === person?.name),
     [publishedArticles, slug, person?.name]
@@ -35,14 +37,35 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
   return (
     <main className="flex min-h-[100svh] flex-col pt-28">
       <SiteHeader active="murabbiyun" />
-      <section className="mx-auto grid w-full max-w-[1100px] flex-1 gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-[280px_1fr]">
-        <div className="text-center md:text-left">
-          <div className="mx-auto h-40 w-40 overflow-hidden rounded-full ring-4 ring-ilm-cream md:mx-0">
+      <section className="mx-auto grid w-full max-w-[1100px] flex-1 gap-10 px-4 py-8 sm:px-6 sm:py-16 md:grid-cols-[280px_1fr]">
+        <div className="text-left">
+          <Link
+            href="/murabbiyun"
+            className="mb-6 inline-flex items-center gap-2 text-sm text-ilm-navy/50 hover:text-ilm-navy"
+          >
+            <ArrowLeft size={14} /> Murabbiyūn directory
+          </Link>
+          <div className="h-40 w-40 overflow-hidden rounded-full ring-4 ring-ilm-cream">
             <img src={person.image} alt={person.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
           </div>
           <h1 className="mt-5 text-2xl font-semibold text-ilm-navy">{person.name}</h1>
           <p className="mt-1 text-ilm-gold-deep">{person.role}</p>
           <p className="mt-2 text-sm text-ilm-navy/45">{person.credentials}</p>
+          <div className="mt-6 flex flex-col items-start gap-3">
+            <button
+              type="button"
+              onClick={() => setAskOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-ilm-navy px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+            >
+              Ask a question <ArrowRight size={15} />
+            </button>
+            <Link
+              href="/articles"
+              className="inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy"
+            >
+              Explore the library <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Biography</p>
@@ -56,6 +79,7 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
           </div>
         </div>
       </section>
+      <AskQuestionModal open={askOpen} onClose={() => setAskOpen(false)} />
       <SiteFooter />
     </main>
   );

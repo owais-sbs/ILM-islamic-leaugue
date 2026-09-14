@@ -8,7 +8,15 @@ import { ArrowRight, ChevronDown, Menu, Search, X } from 'lucide-react';
 import { Brand } from './brand';
 import { AskQuestionModal } from './ask-question-modal';
 import { NewArticleBanner } from './new-article-banner';
+import { libraryCategories } from '@/lib/public-data';
 import { cn } from '@/lib/utils';
+
+const articleCategoryLinks = libraryCategories
+  .filter((cat) => cat !== 'All')
+  .map((cat) => ({
+    href: `/articles?category=${encodeURIComponent(cat)}`,
+    label: cat,
+  }));
 
 const nav = [
   { href: '/', label: 'Home', id: 'home' },
@@ -19,6 +27,7 @@ const nav = [
     id: 'articles',
     children: [
       { href: '/articles', label: 'Article library' },
+      ...articleCategoryLinks,
       { href: '/search', label: 'Search' },
     ],
   },
@@ -51,6 +60,7 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
   const [searchOpen, setSearchOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState<string | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -66,8 +76,15 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
   useEffect(() => {
     setMenuOpen(false);
     setOpenMenu(null);
+    setMobileOpen(null);
     setSearchOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    if (current === 'articles') setMobileOpen('Articles');
+    else if (current === 'connect') setMobileOpen('Connect');
+  }, [menuOpen, current]);
 
   useEffect(() => {
     if (!menuOpen && !searchOpen && !askOpen) return;
@@ -128,7 +145,7 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 8 }}
-                          className="absolute left-1/2 top-full z-20 mt-3 w-44 -translate-x-1/2 rounded-2xl border border-ilm-navy/8 bg-white p-2 shadow-xl"
+                          className="absolute left-1/2 top-full z-20 mt-3 max-h-[70vh] w-56 -translate-x-1/2 overflow-y-auto rounded-2xl border border-ilm-navy/8 bg-white p-2 shadow-xl"
                         >
                           {item.children.map((child) => (
                             <Link
@@ -181,26 +198,71 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
             exit={{ opacity: 0, y: -8 }}
             className="fixed inset-x-3 top-[84px] z-40 max-h-[calc(100svh-100px)] overflow-y-auto rounded-3xl border border-ilm-navy/10 bg-white p-4 shadow-2xl sm:inset-x-4 sm:top-[92px] sm:p-5 lg:hidden"
           >
-            <div className="flex flex-col gap-3">
-              {nav.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    'rounded-xl px-3 py-2 text-sm font-medium',
-                    current === item.id ? 'bg-ilm-cream text-ilm-navy' : 'text-ilm-navy/70'
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <div className="flex flex-col gap-1">
+              {nav.map((item) => {
+                const hasChildren = Boolean(item.children?.length);
+                const expanded = mobileOpen === item.label;
+                return (
+                  <div key={item.label} className="flex flex-col">
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        className={cn(
+                          'min-w-0 flex-1 rounded-xl px-3 py-2.5 text-sm font-medium',
+                          current === item.id ? 'bg-ilm-cream text-ilm-navy' : 'text-ilm-navy/70'
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                      {hasChildren && (
+                        <button
+                          type="button"
+                          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${item.label} menu`}
+                          aria-expanded={expanded}
+                          onClick={() => setMobileOpen(expanded ? null : item.label)}
+                          className="grid h-10 w-10 place-items-center rounded-xl text-ilm-navy/50 hover:bg-ilm-cream hover:text-ilm-navy"
+                        >
+                          <ChevronDown
+                            size={16}
+                            className={cn('transition-transform duration-200', expanded && 'rotate-180')}
+                          />
+                        </button>
+                      )}
+                    </div>
+                    <AnimatePresence initial={false}>
+                      {hasChildren && expanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mb-1 ml-2 flex flex-col gap-0.5 border-l border-ilm-navy/10 py-1 pl-3">
+                            {item.children!.map((child) => (
+                              <Link
+                                key={`${item.label}-${child.label}`}
+                                href={child.href}
+                                onClick={() => setMenuOpen(false)}
+                                className="rounded-lg px-3 py-2 text-[13px] text-ilm-navy/55 hover:bg-ilm-cream hover:text-ilm-navy"
+                              >
+                                {child.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
               <button
                 onClick={() => {
                   setMenuOpen(false);
                   setAskOpen(true);
                 }}
-                className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-ilm-navy px-4 py-3 text-sm font-semibold text-white"
+                className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-ilm-navy px-4 py-3 text-sm font-semibold text-white"
               >
                 Ask a Question <ArrowRight size={15} />
               </button>

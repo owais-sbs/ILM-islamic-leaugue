@@ -26,7 +26,7 @@ export function Brand({
       {!compact && (
         <span
           className={cn(
-            'hidden border-l pl-2.5 text-[8px] font-semibold uppercase leading-[1.25] tracking-[0.08em] sm:block sm:pl-3 sm:text-[9px]',
+            'border-l pl-2 text-[8px] font-semibold uppercase leading-[1.25] tracking-[0.08em] sm:pl-3 sm:text-[9px]',
             light ? 'border-white/35 text-white/90' : 'border-ilm-navy/20 text-ilm-navy'
           )}
         >

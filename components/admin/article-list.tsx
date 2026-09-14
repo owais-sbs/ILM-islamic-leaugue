@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Eye, Pencil, Search } from 'lucide-react';
+import { Eye, Pencil, Search, Trash2 } from 'lucide-react';
 import type { Article, ArticleStatus, Role } from '@/lib/admin-data';
 import { StatusPill } from './status-pill';
 import { canEditArticle } from '@/lib/ilm-store';
+import { adminSwal } from '@/lib/admin-swal';
 import { cn } from '@/lib/utils';
 
 const statusFilters = ['all', 'draft', 'submitted', 'approved', 'published', 'returned'] as const;
@@ -16,6 +17,7 @@ export function ArticleTable({
   title,
   onPreview,
   onEdit,
+  onDelete,
 }: {
   articles: Article[];
   role: Role;
@@ -23,6 +25,7 @@ export function ArticleTable({
   title?: string;
   onPreview: (article: Article) => void;
   onEdit: (article: Article) => void;
+  onDelete?: (article: Article) => void;
 }) {
   const [filter, setFilter] = useState<(typeof statusFilters)[number]>('all');
   const [q, setQ] = useState('');
@@ -37,6 +40,11 @@ export function ArticleTable({
       return statusOk && textOk;
     });
   }, [articles, filter, q]);
+
+  const canDelete = (article: Article) => {
+    if (role === 'administrator' || role === 'editor') return true;
+    return article.author === userName && (article.status === 'draft' || article.status === 'returned');
+  };
 
   return (
     <div>
@@ -111,6 +119,18 @@ export function ArticleTable({
                             className="inline-flex items-center gap-1 rounded-full bg-ilm-navy px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white"
                           >
                             <Pencil size={13} /> Edit
+                          </button>
+                        )}
+                        {onDelete && canDelete(article) && (
+                          <button
+                            onClick={async () => {
+                              const res = await adminSwal.confirm('Delete article?', article.title, 'Delete');
+                              if (!res.isConfirmed) return;
+                              onDelete(article);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full border border-red-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 size={13} /> Delete
                           </button>
                         )}
                       </div>

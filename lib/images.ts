@@ -33,6 +33,9 @@ export const images = {
     'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&h=800&q=80',
   scholarLantern:
     'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&h=800&q=80',
+  /** Temporary shared Murabbiyūn portrait until individual photos are ready */
+  murabbiPortrait:
+    'https://i.pinimg.com/736x/c7/6d/f8/c76df858f0e70484b8073d8a214e91e5.jpg',
 } as const;
 
 /** Blocked URLs (women portraits / unsuitable stock). */

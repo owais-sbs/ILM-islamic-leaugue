@@ -18,13 +18,21 @@ const rolePill: Record<Role, string> = {
 
 const madhhabs = ['Hanafi', 'Maliki', "Shafi'i", 'Hanbali'] as const;
 
+const roleIdByUi: Record<Role, number> = {
+  author: 1,
+  editor: 2,
+  administrator: 3,
+};
+
 export function AuthorsScreen() {
   const { contributors, addAuthor, toggleAuthorActive } = useIlm();
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('author');
   const [madhhab, setMadhhab] = useState<string>('Hanafi');
+  const [bio, setBio] = useState('');
 
   const toggleActive = async (id: string) => {
     const person = contributors.find((r) => r.id === id);
@@ -35,7 +43,7 @@ export function AuthorsScreen() {
       next
         ? `${person.name} will be able to contribute again.`
         : `${person.name} will be marked inactive and cannot publish.`,
-      next ? 'Activate' : 'Deactivate'
+      next ? 'Activate' : 'Deactivate',
     );
     if (!result.isConfirmed) return;
     toggleAuthorActive(id, next);
@@ -44,17 +52,65 @@ export function AuthorsScreen() {
 
   const submitAuthor = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created = addAuthor({ name, email, role, madhhab });
-    if (!created) {
-      await adminSwal.error('Could not add author', 'Check the name and email, or that the email is not already used.');
-      return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/admin/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: name,
+          email,
+          role,
+          roleId: roleIdByUi[role],
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        warning?: string;
+        emailOk?: boolean;
+        roleName?: string;
+      };
+
+      if (!res.ok || !json.ok) {
+        await adminSwal.error('Could not create account', json.error || 'Request failed');
+        return;
+      }
+
+      const created = addAuthor({
+        name,
+        email,
+        role,
+        madhhab,
+        bio: bio || undefined,
+        inviteStatus: 'active',
+      });
+      if (!created) {
+        await adminSwal.success(
+          'Account created in Supabase',
+          json.warning ||
+            `${name} can sign in with the temporary password. (Local list may already include this email.)`,
+        );
+      } else if (json.warning) {
+        await adminSwal.success('Account created', json.warning);
+      } else {
+        await adminSwal.success(
+          'Account created',
+          `${created.name} · ${json.roleName || roleLabels[role]}. Welcome email sent. Temporary password is in the email.`,
+        );
+      }
+
+      setOpen(false);
+      setName('');
+      setEmail('');
+      setRole('author');
+      setMadhhab('Hanafi');
+      setBio('');
+    } catch (err) {
+      await adminSwal.error('Could not create account', err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setBusy(false);
     }
-    setOpen(false);
-    setName('');
-    setEmail('');
-    setRole('author');
-    setMadhhab('Hanafi');
-    await adminSwal.success('Author added', created.name);
   };
 
   const list = useMemo(() => contributors, [contributors]);
@@ -67,7 +123,7 @@ export function AuthorsScreen() {
           onClick={() => setOpen(true)}
           className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white"
         >
-          <Plus size={14} /> Add Author
+          <Plus size={14} /> Create Account
         </button>
       </div>
 
@@ -75,7 +131,7 @@ export function AuthorsScreen() {
         <div className="mb-6 rounded-2xl border border-ilm-navy/10 bg-white p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <p className="inline-flex items-center gap-2 text-sm font-semibold text-ilm-navy">
-              <UserPlus size={16} /> New author
+              <UserPlus size={16} /> New account
             </p>
             <button type="button" onClick={() => setOpen(false)} className="text-ilm-navy/40 hover:text-ilm-navy" aria-label="Close">
               <X size={16} />
@@ -129,11 +185,31 @@ export function AuthorsScreen() {
                 ))}
               </select>
             </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-ilm-navy/45">Bio (optional)</span>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={2}
+                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3 py-2.5 text-sm outline-none focus:border-ilm-gold"
+              />
+            </label>
+            <p className="sm:col-span-2 text-xs text-ilm-navy/45">
+              Creates a Supabase Auth user with a temporary password, maps the role via role_master, and sends a welcome email.
+            </p>
             <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
-              <button type="submit" className="rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white">
-                Save author
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-60"
+              >
+                {busy ? 'Creating…' : 'Create account'}
               </button>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-ilm-navy/15 px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full border border-ilm-navy/15 px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy"
+              >
                 Cancel
               </button>
             </div>
@@ -185,7 +261,7 @@ export function AuthorsScreen() {
                       onClick={() => toggleActive(c.id)}
                       className={cn(
                         'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition',
-                        c.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
+                        c.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500',
                       )}
                       aria-pressed={c.active}
                     >
@@ -193,7 +269,7 @@ export function AuthorsScreen() {
                         <span
                           className={cn(
                             'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition',
-                            c.active ? 'left-4' : 'left-0.5'
+                            c.active ? 'left-4' : 'left-0.5',
                           )}
                         />
                       </span>

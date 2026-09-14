@@ -67,7 +67,7 @@ export function Hero() {
               Explore the Library <ArrowRight size={16} />
             </Link>
             <Link
-              href="/#our-why"
+              href="/about"
               className="inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy transition-colors hover:text-ilm-gold-deep"
             >
               Discover Our Story <MoveUpRight size={14} />

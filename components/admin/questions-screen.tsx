@@ -24,10 +24,18 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
       );
     }
     const needle = q.trim().toLowerCase();
-    if (!needle) return base;
-    return base.filter((item) =>
-      `${item.question} ${item.asker} ${item.email || ''} ${item.subject || ''}`.toLowerCase().includes(needle),
-    );
+    const filtered = !needle
+      ? base
+      : base.filter((item) =>
+          `${item.question} ${item.asker} ${item.email || ''} ${item.subject || ''}`.toLowerCase().includes(needle),
+        );
+    const rank = (s: Question['status']) =>
+      s === 'new' ? 0 : s === 'author_ready' ? 1 : s === 'assigned' ? 2 : 3;
+    return filtered.slice().sort((a, b) => {
+      const r = rank(a.status) - rank(b.status);
+      if (r !== 0) return r;
+      return b.date.localeCompare(a.date);
+    });
   }, [questions, q, isAuthor, userName]);
 
   const open = (item: Question) => {
@@ -72,7 +80,7 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
           </thead>
           <tbody>
             {list.map((item) => (
-              <tr key={item.id} className="border-b border-ilm-navy/5 last:border-0">
+              <tr key={item.id} className={`border-b border-ilm-navy/5 last:border-0 ${item.status === 'new' ? 'bg-ilm-gold/5' : ''}`}>
                 <td className="px-5 py-4">
                   <p className="flex items-start gap-2 text-sm text-ilm-navy">
                     <MailQuestion size={16} className="mt-0.5 shrink-0 text-ilm-gold-deep" />

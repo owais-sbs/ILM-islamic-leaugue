@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, MoveUpRight } from 'lucide-react';
 import { categories } from '@/lib/admin-data';
@@ -27,7 +27,7 @@ export function HomeSections() {
 
 function OurWhy() {
   return (
-    <section id="about-us" className="mx-auto grid max-w-[1280px] gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-32">
+    <section id="about-us" className="mx-auto grid max-w-[1280px] gap-8 px-4 py-12 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-20">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> About Us
@@ -52,7 +52,7 @@ function OurWhy() {
 
 function Pillars() {
   return (
-    <section className="mx-auto max-w-[1280px] px-4 pb-8 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-[1280px] px-4 pb-4 sm:px-6 lg:px-8">
       <StaggerIn className="grid gap-5 md:grid-cols-3">
         {pillars.map((pillar, i) => (
           <StaggerChild key={pillar.title} from={i % 2 === 0 ? 'left' : 'right'}>
@@ -72,7 +72,7 @@ function FeaturedAndSubjects() {
   const { publishedArticles, newlyPublishedSlugs } = useIlm();
   const featured = publishedArticles.find((a) => a.featured) || publishedArticles[0];
   return (
-    <section className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+    <section className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> Featured
@@ -123,9 +123,11 @@ function FeaturedAndSubjects() {
 
 function LibraryPreview() {
   return (
-    <section className="py-16">
-      <LibraryExplorer heading limit={3} />
-      <div className="mx-auto mt-10 max-w-[1280px] px-4 sm:px-6 lg:px-8">
+    <section className="py-10 sm:py-12">
+      <Suspense fallback={<div className="px-4 py-10 text-ilm-navy/40 sm:px-6">Loading library…</div>}>
+        <LibraryExplorer heading limit={3} />
+      </Suspense>
+      <div className="mx-auto mt-8 max-w-[1280px] px-4 sm:px-6 lg:px-8">
         <Link href="/articles" className="inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy">
           View all writings <ArrowRight size={14} />
         </Link>
@@ -136,7 +138,7 @@ function LibraryPreview() {
 
 function QuoteBand() {
   return (
-    <section className="relative overflow-hidden bg-[#E8DFD1] px-4 py-16 text-center sm:px-6 sm:py-24">
+    <section className="relative overflow-hidden bg-[#E8DFD1] px-4 py-12 text-center sm:px-6 sm:py-16">
       <span className="absolute left-[8%] top-6 font-serif text-[90px] leading-none text-ilm-gold/50 sm:left-[12%] sm:top-10 sm:text-[140px]">“</span>
       <ScrollReveal>
         <blockquote className="relative mx-auto max-w-3xl font-serif text-[22px] italic leading-snug tracking-tight text-ilm-navy sm:text-[28px] md:text-[38px]">
@@ -151,7 +153,7 @@ function QuoteBand() {
 
 function MurabbiPreview() {
   return (
-    <section id="murabbiyun" className="py-12">
+    <section id="murabbiyun" className="py-8 sm:py-10">
       <MurabbiyunDirectory />
     </section>
   );
@@ -159,7 +161,7 @@ function MurabbiPreview() {
 
 function HowItWorks() {
   return (
-    <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <section className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> A way of learning
@@ -189,7 +191,7 @@ function ConnectSection() {
   return (
     <section id="connect" className="relative overflow-hidden bg-ilm-navy text-white">
       <div className="pointer-events-none absolute -right-40 -top-40 h-[670px] w-[670px] rounded-full border border-ilm-gold/20 shadow-[0_0_0_80px_rgba(199,154,61,0.04)]" />
-      <div className="relative mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_0.8fr] lg:px-8">
+      <div className="relative mx-auto grid max-w-[1280px] items-center gap-8 px-4 py-12 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-[1fr_0.8fr] lg:px-8">
         <ScrollReveal from="left">
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-light">
             <span className="h-px w-8 bg-ilm-gold" /> Stay in the circle
@@ -217,8 +219,13 @@ function ConnectSection() {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!email.trim()) return;
-                addSubscriber(email);
-                setSubscribed(true);
+                const ok = addSubscriber(email);
+                if (ok) {
+                  setSubscribed(true);
+                  setEmail('');
+                } else {
+                  setSubscribed(true);
+                }
               }}
             >
               <label htmlFor="email" className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/70">

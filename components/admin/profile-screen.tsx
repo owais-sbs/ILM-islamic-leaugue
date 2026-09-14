@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Camera, Save } from 'lucide-react';
 import { Reveal } from './reveal';
 import type { Role } from '@/lib/admin-data';
@@ -11,7 +11,6 @@ import { adminSwal } from '@/lib/admin-swal';
 export function ProfileScreen({ role = 'author' }: { role?: Role }) {
   const { profiles, updateProfile, articles } = useIlm();
   const profile = profiles[role];
-  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
   const [bio, setBio] = useState(profile.bio);
@@ -19,14 +18,24 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
   const [credentials, setCredentials] = useState(profile.credentials);
   const [image, setImage] = useState(profile.image);
 
-  const publishedCount = articles.filter((a) => a.author === name && a.status === 'published').length;
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase() || 'IL';
+  useEffect(() => {
+    setName(profile.name);
+    setEmail(profile.email);
+    setBio(profile.bio);
+    setMadhhab(profile.madhhab);
+    setCredentials(profile.credentials);
+    setImage(profile.image);
+  }, [profile, role]);
+
+  const publishedCount = articles.filter((a) => a.author === profile.name && a.status === 'published').length;
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join('')
+      .toUpperCase() || 'IL';
 
   const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,8 +48,19 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
   };
 
   const save = async () => {
-    updateProfile(role, { name, email, bio, madhhab, credentials, image });
-    await adminSwal.success('Profile saved', 'Your details are updated for this session.');
+    if (!name.trim() || !email.trim()) {
+      await adminSwal.error('Missing fields', 'Name and email are required.');
+      return;
+    }
+    updateProfile(role, {
+      name: name.trim(),
+      email: email.trim(),
+      bio: bio.trim(),
+      madhhab,
+      credentials: credentials.trim(),
+      image,
+    });
+    await adminSwal.success('Profile saved', 'Your details are updated across the portal.');
   };
 
   return (
@@ -55,17 +75,15 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
                 {initials}
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full bg-ilm-gold text-ilm-navy-deep transition-colors hover:bg-ilm-gold-light"
-            >
+            <label className="absolute bottom-0 right-0 grid h-9 w-9 cursor-pointer place-items-center rounded-full bg-ilm-gold text-ilm-navy-deep transition-colors hover:bg-ilm-gold-light">
               <Camera size={16} />
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            </label>
           </div>
           <h3 className="text-lg font-semibold text-ilm-navy">{name}</h3>
-          <p className="text-sm text-ilm-navy/40">{roleLabels[role]} · {madhhab}</p>
+          <p className="text-sm text-ilm-navy/40">
+            {roleLabels[role]} · {madhhab}
+          </p>
           <div className="mt-4 border-t border-ilm-navy/5 pt-4">
             <div className="flex justify-between text-sm">
               <span className="text-ilm-navy/50">Articles published</span>
@@ -77,7 +95,7 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
         <div className="rounded-2xl border border-ilm-navy/8 bg-white p-8">
           <h3 className="mb-5 text-sm font-bold uppercase tracking-wide text-ilm-navy/40">Profile Details</h3>
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm text-ilm-navy/60">Full Name</label>
                 <input
@@ -104,7 +122,7 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
                 className="w-full resize-none rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3.5 py-2.5 text-sm text-ilm-navy outline-none transition-colors focus:border-ilm-gold"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm text-ilm-navy/60">Madhhab</label>
                 <select

@@ -55,7 +55,7 @@ export function AdminShell() {
   const params = useParams();
   const sectionParam = typeof params?.section === 'string' ? params.section : Array.isArray(params?.section) ? params.section[0] : 'dashboard';
   const reduce = useReducedMotion();
-  const { articles, questions, notices, profiles, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, markNoticeRead, syncQuestions } = useIlm();
+  const { articles, questions, notices, profiles, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, deleteArticle, markNoticeRead, markAllNoticesRead, syncQuestions } = useIlm();
   const [role, setRole] = useState<Role | null>(null);
   const [tab, setTab] = useState<AdminSection>(() => normalizeAdminSection(sectionParam));
   const [screen, setScreen] = useState<Screen>('tab');
@@ -97,6 +97,23 @@ export function AdminShell() {
       return;
     }
     setRole(stored);
+
+    void (async () => {
+      try {
+        const { tryCreateClient } = await import('@/lib/supabase/client');
+        const supabase = tryCreateClient();
+        if (!supabase) return;
+        const { data } = await supabase.auth.getUser();
+        const uid = data.user?.id;
+        if (!uid) return;
+        const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, { cache: 'no-store' });
+        if (!meRes.ok) return;
+        const me = (await meRes.json()) as { mustChangePassword?: boolean };
+        if (me.mustChangePassword) router.replace('/change-password');
+      } catch {
+        /* ignore */
+      }
+    })();
   }, [router]);
 
   useEffect(() => {
@@ -109,9 +126,9 @@ export function AdminShell() {
   useEffect(() => {
     if (!role) return;
     if (tab === 'create-article' && screen === 'edit' && !active) {
-      setActive(emptyArticle(role));
+      setActive(emptyArticle(role, profiles[role]));
     }
-  }, [tab, screen, active, role]);
+  }, [tab, screen, active, role, profiles]);
 
   useEffect(() => {
     if (!bellOpen && !userOpen) return;
@@ -258,7 +275,7 @@ export function AdminShell() {
   const goCreate = () => {
     if (!role) return;
     keepOverlay.current = true;
-    setActive(emptyArticle(role));
+    setActive(emptyArticle(role, profiles[role]));
     setScreen('edit');
     setTab('create-article');
     setMobileNav(false);
@@ -305,9 +322,33 @@ export function AdminShell() {
       case 'dashboard':
         return <DashboardScreen role={role} articles={articles} onOpen={openPreview} />;
       case 'my-articles':
-        return <ArticleTable articles={myArticles} role={role} userName={user.name} onPreview={openPreview} onEdit={openEdit} />;
+        return (
+          <ArticleTable
+            articles={myArticles}
+            role={role}
+            userName={user.name}
+            onPreview={openPreview}
+            onEdit={openEdit}
+            onDelete={(a) => {
+              deleteArticle(a.id, user.name);
+              void adminSwal.success('Deleted', a.title);
+            }}
+          />
+        );
       case 'articles':
-        return <ArticleTable articles={visibleArticles} role={role} userName={user.name} onPreview={openPreview} onEdit={openEdit} />;
+        return (
+          <ArticleTable
+            articles={visibleArticles}
+            role={role}
+            userName={user.name}
+            onPreview={openPreview}
+            onEdit={openEdit}
+            onDelete={(a) => {
+              deleteArticle(a.id, user.name);
+              void adminSwal.success('Deleted', a.title);
+            }}
+          />
+        );
       case 'create-article':
         return null;
       case 'my-profile':
@@ -344,7 +385,7 @@ export function AdminShell() {
       case 'subscribers':
         return <SubscribersScreen />;
       case 'settings':
-        return <SettingsScreen />;
+        return <SettingsScreen actorName={user.name} />;
       case 'activity-log':
         return <ActivityLogScreen />;
       default:
@@ -524,11 +565,31 @@ export function AdminShell() {
                     transition={{ duration: 0.2, ease }}
                     className="absolute right-0 top-12 z-30 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-ilm-navy/10 bg-white p-3 shadow-xl"
                   >
+                    <div className="mb-2 flex items-center justify-between px-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-ilm-navy/40">
+                        Notifications {unread > 0 ? `(${unread})` : ''}
+                      </p>
+                      {unread > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => markAllNoticesRead(role, user.name)}
+                          className="text-[11px] font-semibold text-ilm-gold-deep hover:underline"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
                     {myNotices.length === 0 && <p className="px-2 py-4 text-center text-xs text-ilm-navy/40">No messages yet.</p>}
                     {myNotices.slice(0, 8).map((n) => (
                       <button
                         key={n.id}
-                        onClick={() => markNoticeRead(n.id)}
+                        onClick={() => {
+                          markNoticeRead(n.id);
+                          if (n.title.toLowerCase().includes('question') || n.title.toLowerCase().includes('subscriber')) {
+                            selectTab(n.title.toLowerCase().includes('subscriber') ? 'subscribers' : 'questions');
+                            setBellOpen(false);
+                          }
+                        }}
                         className={cn('w-full rounded-xl px-3 py-2 text-left hover:bg-ilm-cream', !n.read && 'bg-ilm-cream/70')}
                       >
                         <p className="text-sm font-semibold text-ilm-navy">{n.title}</p>

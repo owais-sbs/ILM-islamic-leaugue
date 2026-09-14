@@ -34,6 +34,7 @@ function mapRow(row: Record<string, unknown>) {
     category: row.category ? String(row.category) : undefined,
     source: inferSource(row),
     date: created.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    createdAt: created.getTime(),
     status: String(row.status || 'new') as 'new' | 'assigned' | 'author_ready' | 'answered',
     assignedTo: row.assigned_to_name ? String(row.assigned_to_name) : undefined,
     authorDraft: row.author_draft ? String(row.author_draft) : undefined,

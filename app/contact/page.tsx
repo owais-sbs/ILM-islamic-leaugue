@@ -12,9 +12,9 @@ export default function ContactPage() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <main className="min-h-screen pt-28">
+    <main className="min-h-screen pt-24 sm:pt-28">
       <SiteHeader active="connect" />
-      <section className="mx-auto max-w-xl px-4 py-14 sm:px-6 sm:py-20">
+      <section className="mx-auto max-w-xl px-4 pb-14 pt-4 sm:px-6 sm:pb-20 sm:pt-10">
         <p className="text-[11px] uppercase tracking-[0.18em] text-ilm-gold-deep">Contact</p>
         <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">Write to ILM</h1>
         <p className="mt-4 leading-relaxed text-ilm-navy/60">

@@ -11,6 +11,7 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [question, setQuestion] = useState('');
 
   const reset = () => {
@@ -18,6 +19,7 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
     setBusy(false);
     setError('');
     setName('');
+    setEmail('');
     setQuestion('');
   };
 
@@ -73,7 +75,7 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
                   try {
                     addQuestion({
                       asker: name.trim() || 'Anonymous',
-                      email: 'visitor@ilm.local',
+                      email: email.trim(),
                       question: question.trim(),
                       subject: 'Question from the site',
                     });
@@ -89,6 +91,14 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name (optional to stay anonymous)"
+                  className="w-full rounded-2xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm outline-none focus:border-ilm-gold"
+                />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Your email"
                   className="w-full rounded-2xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm outline-none focus:border-ilm-gold"
                 />
                 <textarea

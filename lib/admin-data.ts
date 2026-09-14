@@ -42,6 +42,7 @@ export interface Question {
   category?: string;
   source?: 'ask' | 'contact';
   date: string;
+  createdAt?: number;
   status: 'new' | 'assigned' | 'author_ready' | 'answered';
   assignedTo?: string;
   authorDraft?: string;
@@ -68,6 +69,10 @@ export interface Contributor {
   articles: number;
   active: boolean;
   image: string;
+  inviteStatus?: 'pending' | 'active';
+  inviteToken?: string;
+  inviteExpiresAt?: number;
+  bio?: string;
 }
 
 export interface Subscriber {
@@ -100,6 +105,40 @@ export interface Notice {
   authorName?: string;
   read?: boolean;
 }
+
+export interface MediaItem {
+  id: string;
+  name: string;
+  size: string;
+  src: string;
+  createdAt: string;
+}
+
+export interface SiteSettings {
+  siteTitle: string;
+  contactEmail: string;
+  disclaimerText: string;
+  featuredArticleId: string;
+  announcementBanner: string;
+}
+
+export const defaultSiteSettings: SiteSettings = {
+  siteTitle: 'Islamic League of Murabbiyūn',
+  contactEmail: 'salam@ilm.org',
+  disclaimerText:
+    'The content on this site is for educational and spiritual guidance purposes. Always consult qualified scholars for specific religious rulings.',
+  featuredArticleId: 'a1',
+  announcementBanner: '',
+};
+
+export const seedMedia: MediaItem[] = [
+  { id: 'm1', name: 'mosque-sunrise.jpg', size: '2.4 MB', src: images.mosqueArch, createdAt: 'Sep 1, 2026' },
+  { id: 'm2', name: 'open-quran.jpg', size: '1.1 MB', src: images.quranOpen, createdAt: 'Sep 1, 2026' },
+  { id: 'm3', name: 'blue-mosque.jpg', size: '3.2 MB', src: images.blueMosque, createdAt: 'Sep 1, 2026' },
+  { id: 'm4', name: 'kaaba-makkah.jpg', size: '0.8 MB', src: images.kaaba, createdAt: 'Sep 1, 2026' },
+  { id: 'm5', name: 'mosque-interior.jpg', size: '1.7 MB', src: images.mosqueInterior, createdAt: 'Sep 1, 2026' },
+  { id: 'm6', name: 'mosque-dome.jpg', size: '2.0 MB', src: images.mosqueDome, createdAt: 'Sep 1, 2026' },
+];
 
 const sampleBody = (paragraphs: string[]) => paragraphs.join('\n\n');
 
@@ -309,6 +348,10 @@ export const navConfig: Record<Role, NavGroup[]> = {
     { label: 'System', items: [
       { label: 'Settings', key: 'settings', icon: 'settings' },
       { label: 'Activity Log', key: 'activity-log', icon: 'activity' },
+    ]},
+    { label: 'Account', items: [
+      { label: 'My Profile', key: 'my-profile', icon: 'profile' },
+      { label: 'Help', key: 'help', icon: 'help' },
     ]},
   ],
 };

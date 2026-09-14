@@ -27,6 +27,8 @@ export function SiteFooter() {
           <Link href="/ask" className="hover:text-ilm-gold-light">Ask a question</Link>
           <Link href="/contact" className="hover:text-ilm-gold-light">Contact us</Link>
           <Link href="/disclaimer" className="hover:text-ilm-gold-light">Disclaimer</Link>
+          <Link href="/privacy" className="hover:text-ilm-gold-light">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-ilm-gold-light">Terms &amp; Conditions</Link>
           <Link href="/login" className="hover:text-ilm-gold-light">Contributor portal</Link>
         </div>
         <div>
@@ -56,6 +58,8 @@ export function SiteFooter() {
             </a>
           </p>
           <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+            <Link href="/privacy" className="hover:text-ilm-gold-light">Privacy</Link>
+            <Link href="/terms" className="hover:text-ilm-gold-light">Terms</Link>
             <Link href="/disclaimer" className="hover:text-ilm-gold-light">Disclaimer</Link>
             <Link href="/#top" aria-label="Instagram" className="hover:text-ilm-gold-light"><Instagram size={15} /></Link>
             <Link href="/#top" aria-label="LinkedIn" className="hover:text-ilm-gold-light"><Linkedin size={15} /></Link>

@@ -30,7 +30,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
   }, [filter]);
 
   return (
-    <section className="relative overflow-hidden pb-8">
+    <section className="relative overflow-x-hidden pb-8">
       {!compact && (
         <div className="relative mx-auto grid max-w-[1280px] items-start gap-8 px-4 pt-4 sm:gap-10 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <ScrollReveal>
@@ -66,7 +66,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
         </div>
       )}
 
-      <div className="mx-auto mt-8 flex max-w-[1280px] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-8 flex max-w-[1280px] items-center justify-between gap-3 px-4 py-1 sm:gap-4 sm:px-6 lg:px-8">
         <div className="min-w-0 flex-1">
           <FilterPills items={murabbiFilters} value={filter} onChange={(v) => setFilter(v as MurabbiFilter)} />
         </div>
