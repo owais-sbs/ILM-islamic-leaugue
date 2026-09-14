@@ -69,33 +69,43 @@ function Pillars() {
 }
 
 function FeaturedAndSubjects() {
-  const { publishedArticles } = useIlm();
+  const { publishedArticles, newlyPublishedSlugs } = useIlm();
   const featured = publishedArticles.find((a) => a.featured) || publishedArticles[0];
-  if (!featured) return null;
   return (
     <section className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> Featured
         </p>
-        <Link
-          href={`/articles/${featured.slug}`}
-          className="mt-5 grid overflow-hidden rounded-[22px] border border-ilm-navy/10 bg-white sm:rounded-[24px] md:grid-cols-2 md:items-center"
-        >
-          <img
-            src={featured.image}
-            alt=""
-            className="h-44 w-full object-cover sm:h-52 md:h-[240px]"
-          />
-          <div className="flex flex-col justify-center p-5 sm:p-6 md:px-8 md:py-6">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-gold-deep">{featured.category}</span>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">{featured.title}</h3>
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ilm-navy/55">{featured.excerpt}</p>
-            <p className="mt-4 text-sm font-semibold text-ilm-navy">
-              {featured.author} · {featured.readTime}
-            </p>
+        {featured ? (
+          <Link
+            href={`/articles/${featured.slug}`}
+            className="relative mt-5 grid overflow-hidden rounded-[22px] border border-ilm-navy/10 bg-white sm:rounded-[24px] md:grid-cols-2 md:items-center"
+          >
+            {newlyPublishedSlugs.includes(featured.slug) && (
+              <span className="absolute right-4 top-4 z-10 rounded-full bg-ilm-gold px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ilm-navy-deep">
+                New
+              </span>
+            )}
+            <img
+              src={featured.image}
+              alt=""
+              className="h-44 w-full object-cover sm:h-52 md:h-[240px]"
+            />
+            <div className="flex flex-col justify-center p-5 sm:p-6 md:px-8 md:py-6">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-gold-deep">{featured.category}</span>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">{featured.title}</h3>
+              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ilm-navy/55">{featured.excerpt}</p>
+              <p className="mt-4 text-sm font-semibold text-ilm-navy">
+                {featured.author} · {featured.readTime}
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <div className="mt-5 rounded-[22px] border border-ilm-navy/10 bg-white p-8 text-sm text-ilm-navy/50">
+            New writing will appear here once it is published.
           </div>
-        </Link>
+        )}
       </ScrollReveal>
       <StaggerIn className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {categories.map((cat, i) => (

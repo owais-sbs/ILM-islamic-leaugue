@@ -40,10 +40,22 @@ export interface Question {
   email?: string;
   subject?: string;
   category?: string;
+  source?: 'ask' | 'contact';
   date: string;
-  status: 'new' | 'assigned' | 'answered';
+  status: 'new' | 'assigned' | 'author_ready' | 'answered';
   assignedTo?: string;
+  authorDraft?: string;
   answerNotes?: string;
+}
+
+export interface UserProfile {
+  role: Role;
+  name: string;
+  email: string;
+  bio: string;
+  madhhab: string;
+  credentials: string;
+  image?: string;
 }
 
 export interface Contributor {
@@ -256,7 +268,7 @@ export const navConfig: Record<Role, NavGroup[]> = {
       { label: 'Dashboard', key: 'dashboard', icon: 'dashboard' },
       { label: 'My Articles', key: 'my-articles', icon: 'articles' },
       { label: 'Create Article', key: 'create-article', icon: 'create' },
-      { label: 'Assigned Questions', key: 'questions', icon: 'questions' },
+      { label: 'Assigned to me', key: 'questions', icon: 'questions' },
     ]},
     { label: 'Account', items: [
       { label: 'My Profile', key: 'my-profile', icon: 'profile' },

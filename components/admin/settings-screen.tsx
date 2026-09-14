@@ -6,7 +6,6 @@ import { Reveal } from './reveal';
 export function SettingsScreen() {
   return (
     <Reveal>
-      <h2 className="text-2xl font-semibold text-ilm-navy mb-6 tracking-tight">Settings</h2>
       <div className="space-y-6 max-w-2xl">
         <div className="bg-white rounded-2xl border border-ilm-navy/8 p-6">
           <h3 className="text-sm font-bold uppercase tracking-wide text-ilm-navy/40 mb-4">Site Information</h3>

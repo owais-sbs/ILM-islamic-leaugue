@@ -55,7 +55,7 @@ export function AdminShell() {
   const params = useParams();
   const sectionParam = typeof params?.section === 'string' ? params.section : Array.isArray(params?.section) ? params.section[0] : 'dashboard';
   const reduce = useReducedMotion();
-  const { articles, notices, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, markNoticeRead } = useIlm();
+  const { articles, questions, notices, profiles, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, markNoticeRead, syncQuestions } = useIlm();
   const [role, setRole] = useState<Role | null>(null);
   const [tab, setTab] = useState<AdminSection>(() => normalizeAdminSection(sectionParam));
   const [screen, setScreen] = useState<Screen>('tab');
@@ -88,7 +88,7 @@ export function AdminShell() {
     }
     setScreen('tab');
     setActive(null);
-  }, [sectionParam]);
+  }, [sectionParam, role, router]);
 
   useEffect(() => {
     const stored = readAdminRole();
@@ -98,6 +98,13 @@ export function AdminShell() {
     }
     setRole(stored);
   }, [router]);
+
+  useEffect(() => {
+    if (!role) return;
+    void syncQuestions();
+    const timer = setInterval(() => void syncQuestions(), 30000);
+    return () => clearInterval(timer);
+  }, [role, syncQuestions]);
 
   useEffect(() => {
     if (!role) return;
@@ -138,8 +145,71 @@ export function AdminShell() {
     };
   }, [mobileNav]);
 
-  const user = role ? roleUsers[role] : null;
+  const profile = role ? profiles[role] : null;
+  const user = role && profile
+    ? {
+        ...roleUsers[role],
+        name: profile.name,
+        image: profile.image || roleUsers[role].image,
+        initials: profile.name
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((p) => p[0])
+          .join('')
+          .toUpperCase() || roleUsers[role].initials,
+      }
+    : null;
   const groups = role ? navConfig[role] : [];
+
+  const navCount = (key: string): number => {
+    if (!role || !user) return 0;
+    switch (key) {
+      case 'review-queue':
+        return articles.filter((a) => a.status === 'submitted').length;
+      case 'questions':
+        if (role === 'author') {
+          return questions.filter((q) => q.assignedTo === user.name && q.status === 'assigned').length;
+        }
+        return questions.filter((q) => q.status === 'new' || q.status === 'author_ready').length;
+      case 'my-articles':
+        return articles.filter((a) => a.author === user.name && a.status === 'returned').length;
+      case 'articles':
+        return role !== 'author' ? articles.filter((a) => a.status === 'submitted').length : 0;
+      case 'create-article':
+        return 0;
+      default:
+        return 0;
+    }
+  };
+
+  const [seenCounts, setSeenCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('ilm-nav-seen');
+      if (raw) setSeenCounts(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const navBadge = (key: string) => Math.max(0, navCount(key) - (seenCounts[key] ?? 0));
+
+  useEffect(() => {
+    if (!role || !user) return;
+    const count = navCount(tab);
+    setSeenCounts((prev) => {
+      if (prev[tab] === count) return prev;
+      const updated = { ...prev, [tab]: count };
+      try {
+        sessionStorage.setItem('ilm-nav-seen', JSON.stringify(updated));
+      } catch {
+        /* ignore */
+      }
+      return updated;
+    });
+  }, [tab, role, user, articles, questions]);
 
   const myNotices = useMemo(() => {
     if (!role || !user) return [];
@@ -206,6 +276,16 @@ export function AdminShell() {
   const selectTab = (key: string) => {
     const next = normalizeAdminSection(key);
     setMobileNav(false);
+    const count = navCount(next);
+    setSeenCounts((prev) => {
+      const updated = { ...prev, [next]: count };
+      try {
+        sessionStorage.setItem('ilm-nav-seen', JSON.stringify(updated));
+      } catch {
+        /* ignore */
+      }
+      return updated;
+    });
     if (next === 'create-article') {
       goCreate();
       return;
@@ -225,9 +305,9 @@ export function AdminShell() {
       case 'dashboard':
         return <DashboardScreen role={role} articles={articles} onOpen={openPreview} />;
       case 'my-articles':
-        return <ArticleTable articles={myArticles} role={role} userName={user.name} title="My Articles" onPreview={openPreview} onEdit={openEdit} />;
+        return <ArticleTable articles={myArticles} role={role} userName={user.name} onPreview={openPreview} onEdit={openEdit} />;
       case 'articles':
-        return <ArticleTable articles={visibleArticles} role={role} userName={user.name} title="Articles" onPreview={openPreview} onEdit={openEdit} />;
+        return <ArticleTable articles={visibleArticles} role={role} userName={user.name} onPreview={openPreview} onEdit={openEdit} />;
       case 'create-article':
         return null;
       case 'my-profile':
@@ -243,6 +323,7 @@ export function AdminShell() {
             onEdit={openEdit}
             onApprove={(a) => {
               approveArticle(a.id, user.name);
+              void adminSwal.success('Article approved', a.title);
             }}
             onReturn={(a, notes) => {
               returnArticle(a.id, user.name, notes);
@@ -259,7 +340,7 @@ export function AdminShell() {
       case 'media':
         return <MediaScreen />;
       case 'questions':
-        return <QuestionsScreen assignedOnly={role === 'author'} assignee={user.name} />;
+        return <QuestionsScreen role={role} userName={user.name} />;
       case 'subscribers':
         return <SubscribersScreen />;
       case 'settings':
@@ -297,13 +378,25 @@ export function AdminShell() {
                   key={item.key}
                   onClick={() => selectTab(item.key)}
                   className={cn(
-                    'mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors',
+                    'relative mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors',
                     isActive ? 'bg-ilm-gold/15 text-ilm-gold-light' : 'text-white/85 hover:bg-white/10 hover:text-white',
                     iconOnly && 'justify-center px-0'
                   )}
                 >
                   <NavIcon name={item.icon} size={18} />
-                  {!iconOnly && <span className="truncate">{item.label}</span>}
+                  {!iconOnly && (
+                    <>
+                      <span className="truncate">{item.label}</span>
+                      {navBadge(item.key) > 0 && (
+                        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-ilm-gold px-1.5 text-[10px] font-bold text-ilm-navy-deep">
+                          {navBadge(item.key)}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {iconOnly && navBadge(item.key) > 0 && (
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-ilm-gold" />
+                  )}
                 </button>
               );
             })}
@@ -345,16 +438,16 @@ export function AdminShell() {
     </>
   );
 
+  const sidebarWidth = collapsed ? 84 : 268;
+
   return (
-    <div className="flex min-h-screen bg-ilm-cream">
-      <motion.aside
-        initial={reduce ? false : { x: -24, opacity: 0 }}
-        animate={{ x: 0, opacity: 1, width: collapsed ? 84 : 268 }}
-        transition={{ duration: reduce ? 0 : 0.45, ease }}
-        className="sticky top-0 z-30 hidden h-screen shrink-0 flex-col overflow-hidden bg-ilm-navy-deep text-white lg:flex"
+    <div className="min-h-screen bg-ilm-cream">
+      <aside
+        style={{ width: sidebarWidth }}
+        className="fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden border-r border-white/10 bg-ilm-navy-deep text-white lg:flex"
       >
-        {navContent}
-      </motion.aside>
+        <div className="flex h-full flex-col overflow-y-auto">{navContent}</div>
+      </aside>
 
       <AnimatePresence>
         {mobileNav && (
@@ -381,8 +474,11 @@ export function AdminShell() {
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-ilm-navy/10 bg-ilm-cream/90 px-3 py-3 backdrop-blur sm:gap-4 sm:px-6 sm:py-4">
+      <div
+        className="flex min-h-screen min-w-0 flex-col max-lg:!ml-0"
+        style={{ marginLeft: sidebarWidth }}
+      >
+        <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-2 border-b border-white bg-ilm-cream/95 px-3 py-3 backdrop-blur sm:gap-4 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => setMobileNav(true)}
@@ -392,16 +488,16 @@ export function AdminShell() {
               <Menu size={18} />
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold text-ilm-navy sm:text-lg">
-                {screen === 'preview' ? 'Preview' : screen === 'edit' ? (active?.title ? 'Edit article' : 'Create article') : titles[tab] ?? 'Dashboard'}
+              <h1 className="truncate text-base font-normal tracking-tight text-ilm-navy sm:text-lg">
+                {screen === 'preview' ? 'Preview' : screen === 'edit' ? (active?.title ? 'Edit article' : 'Create article') : tab === 'questions' && role === 'author' ? 'Assigned to me' : titles[tab] ?? 'Dashboard'}
               </h1>
-              <p className="hidden text-xs text-ilm-navy/40 sm:block">{roleLabels[role]} portal · UI simulation</p>
+              <p className="hidden text-xs font-light text-ilm-navy/40 sm:block">{roleLabels[role]} portal</p>
             </div>
           </div>
           <div ref={menusRef} className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
               onClick={goCreate}
-              className="inline-flex items-center gap-1.5 rounded-full bg-ilm-navy px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-white transition-transform hover:-translate-y-0.5 sm:px-4 sm:text-xs"
+              className="inline-flex items-center gap-1.5 rounded-full bg-ilm-navy px-3 py-2 text-[10px] uppercase tracking-wide text-white sm:px-4 sm:text-xs"
             >
               <Plus size={14} /> <span className="sm:hidden">New</span><span className="hidden sm:inline">New Article</span>
             </button>
@@ -488,7 +584,7 @@ export function AdminShell() {
           )}
         </AnimatePresence>
 
-        <main className="flex-1 overflow-x-hidden px-3 py-5 sm:px-6 sm:py-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-5 sm:px-6 sm:py-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${role}-${tab}-${screen}-${active?.id ?? 'none'}`}

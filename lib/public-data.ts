@@ -20,7 +20,6 @@ export type MurabbiFilter = (typeof murabbiFilters)[number];
 
 export interface Murabbi {
   id: string;
-  initials: string;
   name: string;
   role: string;
   bio: string;
@@ -35,7 +34,6 @@ export interface Murabbi {
 export const murabbiyūn: Murabbi[] = [
   {
     id: 'ibrahim-al-fadl',
-    initials: 'IF',
     name: 'Shaykh Ibrahim Al-Fadl',
     role: 'Director of Studies',
     bio: 'Guides the academic and spiritual curriculum with wisdom and clarity. He holds the Administrator role and final publishing authority for the league.',
@@ -47,34 +45,19 @@ export const murabbiyūn: Murabbi[] = [
     button: 'gold',
   },
   {
-    id: 'bilal-rahman',
-    initials: 'BR',
-    name: 'Ustadh Bilal Rahman',
-    role: 'Fiqh Instructor',
-    bio: 'Brings the principles of fiqh to life through clarity and practical examples drawn from the Maliki school.',
-    credentials: 'Traditional studies · Maliki fiqh',
-    madhhab: 'Maliki',
-    focus: 'Fiqh',
-    image: images.scholarQuran,
+    id: 'omar-khalid',
+    name: 'Ustadh Omar Khalid',
+    role: 'Editorial Lead',
+    bio: 'Shapes clarity, tone, and scholarly rigour across submissions before they reach the public library.',
+    credentials: 'Editorial review · Hanafi',
+    madhhab: 'Hanafi',
+    focus: 'Studies',
+    image: images.scholarLantern,
     accent: 'bg-emerald-100 text-emerald-700',
     button: 'ghost',
   },
   {
-    id: 'hamza-idris',
-    initials: 'HI',
-    name: 'Shaykh Hamza Idris',
-    role: 'Spiritual Counsel',
-    bio: 'Supports hearts, strengthens faith, and walks with seekers through tazkiyah and daily practice.',
-    credentials: 'Spiritual counsel · Shafi‘i',
-    madhhab: "Shafi'i",
-    focus: 'Spiritual',
-    image: images.scholarBeard,
-    accent: 'bg-indigo-100 text-indigo-700',
-    button: 'ghost',
-  },
-  {
     id: 'yusuf-karim',
-    initials: 'YK',
     name: 'Ustadh Yusuf Karim',
     role: 'Arabic & Text Studies',
     bio: 'Builds language skills and deepens understanding of the sacred texts with patience and precision.',
@@ -84,6 +67,30 @@ export const murabbiyūn: Murabbi[] = [
     image: images.scholarPrayer,
     accent: 'bg-orange-100 text-orange-700',
     button: 'sand',
+  },
+  {
+    id: 'amina-hassan',
+    name: 'Ustadha Amina Hassan',
+    role: 'Tarbiyah & Community',
+    bio: 'Walks with families and youth, helping knowledge settle into character and everyday practice.',
+    credentials: 'Tarbiyah · Maliki',
+    madhhab: 'Maliki',
+    focus: 'Spiritual',
+    image: images.mosqueInterior,
+    accent: 'bg-indigo-100 text-indigo-700',
+    button: 'ghost',
+  },
+  {
+    id: 'khalid-noor',
+    name: 'Ustadh Khalid Noor',
+    role: 'Fiqh & Practical Guidance',
+    bio: 'Brings fiqh down to earth with examples that help seekers live with clarity and adab.',
+    credentials: "Fiqh studies · Shafi'i",
+    madhhab: "Shafi'i",
+    focus: 'Fiqh',
+    image: images.scholarQuran,
+    accent: 'bg-amber-100 text-amber-800',
+    button: 'navy',
   },
 ];
 

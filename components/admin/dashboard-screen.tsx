@@ -23,7 +23,9 @@ export function DashboardScreen({
   const submitted = articles.filter((a) => a.status === 'submitted');
   const returned = pool.filter((a) => a.status === 'returned');
   const drafts = pool.filter((a) => a.status === 'draft');
-  const unanswered = questions.filter((q) => q.status === 'new');
+  const unanswered = questions.filter((q) => q.status === 'new' || q.status === 'assigned');
+  const contactLeads = questions.filter((q) => q.source === 'contact' && q.status !== 'answered');
+  const askLeads = questions.filter((q) => (q.source === 'ask' || !q.source) && q.status !== 'answered');
   const user = roleUsers[role];
 
   const stats =
@@ -36,13 +38,13 @@ export function DashboardScreen({
       : role === 'editor'
         ? [
             { label: 'Review Queue', value: String(submitted.length).padStart(2, '0'), note: 'Awaiting your eye', icon: CheckCircle2, tone: 'text-blue-600' },
-            { label: 'Approved (awaiting Admin)', value: String(articles.filter((a) => a.status === 'approved').length).padStart(2, '0'), note: 'Cannot publish', icon: FileText, tone: 'text-ilm-navy' },
+            { label: 'Open questions', value: String(unanswered.length).padStart(2, '0'), note: `${askLeads.length} ask · ${contactLeads.length} contact`, icon: MailQuestion, tone: 'text-ilm-gold-deep' },
             { label: 'Returned', value: String(articles.filter((a) => a.status === 'returned').length).padStart(2, '0'), note: 'Sent back to authors', icon: AlertCircle, tone: 'text-red-500' },
           ]
         : [
             { label: 'Published', value: String(published.length).padStart(2, '0'), note: 'Live on the public site', icon: TrendingUp, tone: 'text-green-600' },
             { label: 'Awaiting review', value: String(submitted.length).padStart(2, '0'), note: 'Needs attention', icon: CheckCircle2, tone: 'text-blue-600' },
-            { label: 'Ready to publish', value: String(articles.filter((a) => a.status === 'approved').length).padStart(2, '0'), note: `${unanswered.length} open questions`, icon: MailQuestion, tone: 'text-ilm-gold-deep' },
+            { label: 'Open leads', value: String(unanswered.length).padStart(2, '0'), note: `${askLeads.length} ask · ${contactLeads.length} contact`, icon: MailQuestion, tone: 'text-ilm-gold-deep' },
           ];
 
   const recent =
@@ -55,7 +57,7 @@ export function DashboardScreen({
   return (
     <div>
       <Reveal>
-        <h2 className="text-3xl font-semibold tracking-tight text-ilm-navy">Welcome back, {user.name.split(' ')[0]}.</h2>
+        <h2 className="text-2xl font-normal tracking-tight text-ilm-navy">Welcome back, {user.name.split(' ')[0]}.</h2>
         <p className="mt-2 text-ilm-navy/50">
           {role === 'author' && 'Create, edit, and submit your own work. You cannot publish.'}
           {role === 'editor' && 'Review, edit, approve or return. You cannot publish; the Director has final authority.'}

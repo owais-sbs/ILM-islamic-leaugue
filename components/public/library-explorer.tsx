@@ -17,7 +17,7 @@ export function LibraryExplorer({
   heading?: boolean;
   limit?: number;
 }) {
-  const { publishedArticles } = useIlm();
+  const { publishedArticles, newlyPublishedSlugs } = useIlm();
   const [filter, setFilter] = useState<LibraryCategory>('All');
   const filtered = useMemo(() => {
     const list =
@@ -69,7 +69,7 @@ export function LibraryExplorer({
           <div key={filter} className="library-grid mt-8 grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((article) => (
               <div key={article.slug} className="h-full">
-                <ArticleCard article={article} />
+                <ArticleCard article={article} isNew={newlyPublishedSlugs.includes(article.slug)} />
               </div>
             ))}
           </div>

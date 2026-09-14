@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Mail, MoreVertical, Plus, UserPlus, X } from 'lucide-react';
+import { Mail, Plus, UserPlus, X } from 'lucide-react';
 import { roleLabels, type Role } from '@/lib/admin-data';
 import { useIlm } from '@/lib/ilm-store';
 import { safeScholarImage } from '@/lib/images';
 import { adminSwal } from '@/lib/admin-swal';
 import { Reveal } from './reveal';
+import { RowMenu } from './row-menu';
 import { cn } from '@/lib/utils';
 
 const rolePill: Record<Role, string> = {
@@ -61,7 +62,6 @@ export function AuthorsScreen() {
   return (
     <Reveal>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-semibold tracking-tight text-ilm-navy">Authors & Contributors</h2>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -201,9 +201,28 @@ export function AuthorsScreen() {
                     </button>
                   </td>
                   <td className="px-5 py-4 align-middle text-right">
-                    <button type="button" className="text-ilm-navy/35 hover:text-ilm-navy" aria-label="More">
-                      <MoreVertical size={16} />
-                    </button>
+                    <RowMenu
+                      label={`Actions for ${c.name}`}
+                      items={[
+                        {
+                          label: c.active ? 'Deactivate' : 'Activate',
+                          onClick: () => void toggleActive(c.id),
+                        },
+                        {
+                          label: 'Copy email',
+                          onClick: () => {
+                            void navigator.clipboard.writeText(c.email);
+                            void adminSwal.success('Copied', c.email);
+                          },
+                        },
+                        {
+                          label: 'Send email',
+                          onClick: () => {
+                            window.location.href = `mailto:${c.email}`;
+                          },
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

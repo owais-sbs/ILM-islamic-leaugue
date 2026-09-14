@@ -33,7 +33,6 @@ export function ReviewQueue({
 
   return (
     <div>
-      <h2 className="mb-2 text-2xl font-semibold tracking-tight text-ilm-navy">Review Queue</h2>
       <p className="mb-5 text-sm text-ilm-navy/50">
         {isAdmin
           ? 'Approve, reject with notes, or publish approved work. Approve & Publish is available in the full editor.'

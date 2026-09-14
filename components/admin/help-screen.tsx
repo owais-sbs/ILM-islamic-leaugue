@@ -13,7 +13,6 @@ const guideItems = [
 export function HelpScreen() {
   return (
     <Reveal>
-      <h2 className="text-2xl font-semibold text-ilm-navy mb-2 tracking-tight">Help & Guide</h2>
       <p className="text-ilm-navy/50 mb-8 text-sm">A short guide to using the ILM contributor portal.</p>
       <div className="space-y-4">
         {guideItems.map((item) => (

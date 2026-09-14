@@ -16,7 +16,6 @@ const mediaItems = [
 export function MediaScreen() {
   return (
     <Reveal>
-      <h2 className="text-2xl font-semibold text-ilm-navy mb-6 tracking-tight">Media Library</h2>
       <div className="border-2 border-dashed border-ilm-navy/10 rounded-2xl p-10 text-center mb-6 cursor-pointer hover:border-ilm-gold transition-colors bg-white">
         <Upload size={28} className="mx-auto text-ilm-navy/30 mb-3" />
         <p className="text-sm text-ilm-navy/50">Click or drag files to upload</p>

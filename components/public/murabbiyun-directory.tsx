@@ -54,12 +54,12 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
                 <img src={mosqueArchImage} alt="Mosque at sunrise" className="h-[200px] w-full object-cover sm:h-[280px]" />
               </div>
               <Sparkles size={14} className="absolute right-8 top-3 text-ilm-gold" />
-              <p className="absolute -right-1 bottom-6 rotate-[-12deg] font-serif italic text-[18px] leading-tight text-ilm-navy/70 sm:-right-2 sm:bottom-8 sm:text-[22px]">
+              <p className="absolute -right-1 bottom-6 rotate-[-12deg] font-serif italic text-[18px] leading-tight text-white drop-shadow-[0_2px_12px_rgba(11,17,82,0.45)] sm:-right-2 sm:bottom-8 sm:text-[22px]">
                 Knowledge
                 <br />
                 Builds
                 <br />
-                <span className="text-ilm-gold-deep">Character</span>
+                Character
               </p>
             </div>
           </ScrollReveal>
@@ -77,23 +77,24 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
         key={`${filter}-${view}`}
         mode="animate"
         className={cn(
-          'murabbi-grid mx-auto mt-8 max-w-[1280px] px-4 sm:px-6 lg:px-8',
-          view === 'grid' ? 'grid gap-4 sm:gap-5 sm:grid-cols-2 xl:grid-cols-4' : 'flex flex-col gap-4'
+          'murabbi-grid mx-auto mt-8 w-full max-w-[1400px] px-4 sm:px-6 lg:px-8',
+          view === 'grid' ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5' : 'flex flex-col gap-4'
         )}
       >
-        {list.map((person) => {
+        {list.map((person, index) => {
           const Icon = focusIcon[person.focus];
+          const num = String(index + 1).padStart(2, '0');
           return (
-            <StaggerChild key={person.id}>
+            <StaggerChild key={person.id} className="h-full">
               <article
                 className={cn(
-                  'rounded-[24px] border border-ilm-navy/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)] sm:p-6',
-                  view === 'list' && 'flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:gap-6'
+                  'flex h-full min-h-[440px] flex-col rounded-[24px] border border-ilm-navy/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-shadow duration-300 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)] sm:min-h-[460px] sm:p-6',
+                  view === 'list' && 'min-h-0 flex-row items-center gap-6 sm:min-h-[180px]'
                 )}
               >
                 <div className={cn('flex items-start justify-between', view === 'list' && 'contents')}>
-                  <span className={cn('rounded-full px-2.5 py-1 text-[11px] font-bold', person.accent)}>
-                    {person.initials}
+                  <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-medium', person.accent)}>
+                    {num}
                   </span>
                   {view === 'grid' && (
                     <span className="grid h-8 w-8 place-items-center rounded-full bg-ilm-cream text-ilm-navy/40">
@@ -101,22 +102,16 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
                     </span>
                   )}
                 </div>
-                <div className={cn('mx-auto my-5 h-[118px] w-[118px] overflow-hidden rounded-full ring-4 ring-ilm-cream', view === 'list' && 'mx-0 my-0 h-20 w-20 shrink-0')}>
+                <div className={cn('mx-auto my-5 h-[118px] w-[118px] shrink-0 overflow-hidden rounded-full ring-4 ring-ilm-cream', view === 'list' && 'mx-0 my-0 h-20 w-20')}>
                   <img src={person.image} alt={person.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 </div>
-                <div className={cn(view === 'grid' ? 'text-center' : 'flex-1')}>
+                <div className={cn('flex flex-1 flex-col', view === 'grid' ? 'text-center' : '')}>
                   <h3 className="text-[18px] font-semibold text-ilm-navy">{person.name}</h3>
                   <p className="mt-1 text-[13px] text-ilm-gold-deep">{person.role}</p>
-                  <p className="mt-3 text-[13px] leading-relaxed text-ilm-navy/50">{person.bio}</p>
+                  <p className="mt-3 min-h-[4.5rem] flex-1 text-[13px] leading-relaxed text-ilm-navy/50 line-clamp-4">{person.bio || '\u00A0'}</p>
                   <Link
                     href={`/murabbiyun/${person.id}`}
-                    className={cn(
-                      'mt-5 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
-                      person.button === 'gold' && 'bg-ilm-gold/20 text-ilm-gold-deep hover:bg-ilm-gold/30',
-                      person.button === 'ghost' && 'text-ilm-navy hover:bg-ilm-cream',
-                      person.button === 'sand' && 'bg-orange-50 text-orange-700 hover:bg-orange-100',
-                      person.button === 'navy' && 'bg-ilm-navy text-white'
-                    )}
+                    className="mt-5 inline-flex items-center justify-center gap-1.5 self-center rounded-full border border-ilm-navy/10 px-4 py-2 text-[13px] font-medium text-ilm-navy transition-colors hover:bg-ilm-cream"
                   >
                     View Profile <ArrowRight size={14} />
                   </Link>

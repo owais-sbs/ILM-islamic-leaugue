@@ -16,7 +16,6 @@ export function ActivityLogScreen() {
   const { activity } = useIlm();
   return (
     <Reveal>
-      <h2 className="text-2xl font-semibold text-ilm-navy mb-2 tracking-tight">Activity Log</h2>
       <p className="text-ilm-navy/50 mb-6 text-sm">Read-only audit trail. Admin only.</p>
       <div className="overflow-hidden rounded-2xl border border-ilm-navy/8 bg-white">
         <table className="w-full text-left">

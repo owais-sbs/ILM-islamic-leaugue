@@ -15,7 +15,7 @@ export interface CardArticle {
   image: string;
 }
 
-export function ArticleCard({ article, className }: { article: CardArticle; className?: string }) {
+export function ArticleCard({ article, className, isNew = false }: { article: CardArticle; className?: string; isNew?: boolean }) {
   const src = safeArticleImage(article.image);
   return (
     <article
@@ -32,9 +32,16 @@ export function ArticleCard({ article, className }: { article: CardArticle; clas
           decoding="async"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
-          {article.category}
-        </span>
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          {isNew && (
+            <span className="rounded-full bg-ilm-gold px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ilm-navy-deep">
+              New
+            </span>
+          )}
+          <span className="rounded-full bg-black/45 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+            {article.category}
+          </span>
+        </div>
       </div>
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         <p className="flex items-center gap-2 text-[12px] text-ilm-navy/40">

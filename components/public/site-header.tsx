@@ -11,6 +11,7 @@ import { NewArticleBanner } from './new-article-banner';
 import { cn } from '@/lib/utils';
 
 const nav = [
+  { href: '/', label: 'Home', id: 'home' },
   { href: '/about', label: 'About Us', id: 'about' },
   {
     href: '/articles',
@@ -33,23 +34,27 @@ const nav = [
   },
 ];
 
-export function SiteHeader({ active }: { active?: 'about' | 'articles' | 'murabbiyun' | 'connect' }) {
+function navActiveFromPath(pathname: string): 'home' | 'about' | 'articles' | 'murabbiyun' | 'connect' {
+  if (pathname === '/') return 'home';
+  if (pathname.startsWith('/articles') || pathname.startsWith('/search') || pathname.startsWith('/library')) return 'articles';
+  if (pathname.startsWith('/murabbiyun')) return 'murabbiyun';
+  if (pathname.startsWith('/ask') || pathname.startsWith('/contact')) return 'connect';
+  if (pathname.startsWith('/about')) return 'about';
+  return 'home';
+}
+
+export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' | 'murabbiyun' | 'connect' }) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const current =
-    active ??
-    (pathname.startsWith('/articles') || pathname.startsWith('/search') || pathname.startsWith('/library')
-      ? 'articles'
-      : pathname.startsWith('/murabbiyun')
-        ? 'murabbiyun'
-        : pathname.startsWith('/ask') || pathname.startsWith('/contact')
-          ? 'connect'
-          : 'about');
+  useEffect(() => setMounted(true), []);
+
+  const current = active ?? (mounted ? navActiveFromPath(pathname) : 'home');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -114,10 +119,7 @@ export function SiteHeader({ active }: { active?: 'about' | 'articles' | 'murabb
                       {item.label}
                       {item.children && <ChevronDown size={13} className="opacity-50" />}
                       {isActive && (
-                        <motion.span
-                          layoutId="nav-underline"
-                          className="absolute -bottom-0.5 left-0 right-0 mx-auto h-[2px] w-8 rounded-full bg-ilm-gold"
-                        />
+                        <span className="absolute -bottom-0.5 left-0 right-0 mx-auto h-[2px] w-8 rounded-full bg-ilm-gold" />
                       )}
                     </Link>
                     <AnimatePresence>

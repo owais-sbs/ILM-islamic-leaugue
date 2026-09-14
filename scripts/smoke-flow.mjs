@@ -76,7 +76,7 @@ async function main() {
   }
 
   // 4) About + login pages
-  for (const p of ['/about', '/login', '/articles', '/admin']) {
+  for (const p of ['/about', '/login', '/articles', '/admin', '/contact', '/murabbiyun', '/admin/categories-tags', '/admin/dashboard']) {
     try {
       const res = await fetch(`${BASE}${p}`, { cache: 'no-store', redirect: 'manual' });
       if (res.status >= 500) fail(`GET ${p}`, String(res.status));
@@ -96,6 +96,7 @@ async function main() {
         email: 'smoke@ilm.test',
         subject: 'Smoke question',
         body: 'Is the questions API reachable?',
+        source: 'ask',
       }),
     });
     const json = await res.json().catch(() => ({}));

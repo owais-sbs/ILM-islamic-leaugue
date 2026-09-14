@@ -33,7 +33,6 @@ export function SubscribersScreen() {
   return (
     <Reveal>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-semibold tracking-tight text-ilm-navy">Subscribers</h2>
         <button
           type="button"
           onClick={exportCsv}

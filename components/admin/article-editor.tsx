@@ -170,7 +170,30 @@ export function ArticleEditor({
               onChange={(e) => update({ slug: e.target.value })}
               className="mb-4 w-full rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm outline-none"
             />
-            <label className="mb-2 block text-sm text-ilm-navy/70">Featured image</label>
+            <label className="mb-2 block text-sm text-ilm-navy/70">Cover image</label>
+            {draft.image && (
+              <div className="mb-3 overflow-hidden rounded-xl border border-ilm-navy/10">
+                <img src={draft.image} alt="" className="h-32 w-full object-cover" />
+              </div>
+            )}
+            <label className="mb-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-ilm-navy/20 bg-ilm-cream/50 px-3 py-3 text-xs font-semibold uppercase tracking-wide text-ilm-navy/55 transition-colors hover:border-ilm-gold hover:text-ilm-navy">
+              Upload from computer
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !file.type.startsWith('image/')) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    if (typeof reader.result === 'string') update({ image: reader.result });
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </label>
+            <p className="mb-2 text-[11px] text-ilm-navy/35">Or choose a preset</p>
             <div className="grid grid-cols-3 gap-2">
               {covers.map((src) => (
                 <button

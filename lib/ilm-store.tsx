@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   articles as seedArticles,
+  categories as seedCategories,
   questions as seedQuestions,
   notices as seedNotices,
   activityLog as seedLog,
@@ -13,16 +14,36 @@ import {
   nowStamp,
   type Article,
   type ArticleStatus,
+  type Category,
   type Notice,
   type Question,
   type ActivityEntry,
   type Subscriber,
   type Contributor,
   type Role,
+  type UserProfile,
 } from '@/lib/admin-data';
+
+const SEED_TAGS = [
+  'spirituality',
+  'growth',
+  'patience',
+  'education',
+  'youth',
+  'mentorship',
+  'community',
+  'belonging',
+  'leadership',
+  'listening',
+  'communication',
+  'mindfulness',
+  'mercy',
+  'curiosity',
+  'sustainability',
+] as const;
 import { images, safeArticleImage, safeScholarImage } from '@/lib/images';
 
-const KEY = 'ilm-demo-state-v7';
+const KEY = 'ilm-demo-state-v8';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
 const LEGACY_KEYS = [
   'ilm-demo-state-v1',
@@ -35,12 +56,15 @@ const LEGACY_KEYS = [
 
 interface Store {
   articles: Article[];
+  categories: Category[];
+  tags: string[];
   questions: Question[];
   notices: Notice[];
   activity: ActivityEntry[];
   subscribers: Subscriber[];
   contributors: Contributor[];
   publishedArticles: Article[];
+  newlyPublishedSlugs: string[];
   saveArticle: (article: Article, actor: string, asSubmit?: boolean) => void;
   submitArticle: (id: string, actor: string) => void;
   approveArticle: (id: string, actor: string) => void;
@@ -48,6 +72,16 @@ interface Store {
   publishArticle: (id: string, actor: string) => void;
   unpublishArticle: (id: string, actor: string) => void;
   addQuestion: (q: Omit<Question, 'id' | 'date' | 'status'>) => void;
+  syncQuestions: () => Promise<void>;
+  assignQuestion: (id: string, assignee: string) => void;
+  authorSubmitAnswer: (id: string, draft: string, authorName: string) => void;
+  answerQuestion: (id: string, answerNotes: string) => void;
+  profiles: Record<Role, UserProfile>;
+  updateProfile: (role: Role, patch: Partial<UserProfile>) => void;
+  addCategory: (name: string) => Category | null;
+  removeCategory: (id: string) => void;
+  addTag: (name: string) => boolean;
+  removeTag: (name: string) => void;
   addSubscriber: (email: string) => boolean;
   toggleSubscriber: (id: string, active: boolean) => void;
   addAuthor: (input: { name: string; email: string; role?: Role; madhhab?: string }) => Contributor | null;
@@ -57,13 +91,24 @@ interface Store {
 
 const IlmContext = createContext<Store | null>(null);
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function persist(data: {
   articles: Article[];
+  categories: Category[];
+  tags: string[];
   questions: Question[];
   notices: Notice[];
   activity: ActivityEntry[];
   subscribers: Subscriber[];
   contributors: Contributor[];
+  profiles: Record<Role, UserProfile>;
 }) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
@@ -74,11 +119,14 @@ function persist(data: {
 
 function readPersisted(): {
   articles?: Article[];
+  categories?: Category[];
+  tags?: string[];
   questions?: Question[];
   notices?: Notice[];
   activity?: ActivityEntry[];
   subscribers?: Subscriber[];
   contributors?: Contributor[];
+  profiles?: Record<Role, UserProfile>;
 } | null {
   try {
     const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
@@ -89,13 +137,49 @@ function readPersisted(): {
   }
 }
 
+function defaultProfiles(): Record<Role, UserProfile> {
+  return {
+    author: {
+      role: 'author',
+      name: roleUsers.author.name,
+      email: 'bilal@ilm.org',
+      bio: 'Educator and writer focused on spiritual growth and community building.',
+      madhhab: 'Maliki',
+      credentials: 'Traditional studies · Fiqh',
+      image: roleUsers.author.image,
+    },
+    editor: {
+      role: 'editor',
+      name: roleUsers.editor.name,
+      email: 'omar@ilm.org',
+      bio: 'Editor shaping the ILM library with care for language, sources, and the reader’s heart.',
+      madhhab: 'Hanafi',
+      credentials: 'MA Arabic & Islamic Studies',
+      image: roleUsers.editor.image,
+    },
+    administrator: {
+      role: 'administrator',
+      name: roleUsers.administrator.name,
+      email: 'ibrahim@ilm.org',
+      bio: 'Director of the league, stewarding publishing, people, and the public voice of ILM.',
+      madhhab: 'Hanafi',
+      credentials: 'Imam & Educator',
+      image: roleUsers.administrator.image,
+    },
+  };
+}
+
 export function IlmProvider({ children }: { children: ReactNode }) {
   const [articles, setArticles] = useState<Article[]>(seedArticles);
+  const [categories, setCategories] = useState<Category[]>(seedCategories);
+  const [tags, setTags] = useState<string[]>([...SEED_TAGS]);
   const [questions, setQuestions] = useState<Question[]>(seedQuestions);
   const [notices, setNotices] = useState<Notice[]>(seedNotices);
   const [activity, setActivity] = useState<ActivityEntry[]>(seedLog);
   const [subscribers, setSubscribers] = useState<Subscriber[]>(seedSubscribers);
   const [contributors, setContributors] = useState<Contributor[]>(seedContributors);
+  const [profiles, setProfiles] = useState<Record<Role, UserProfile>>(defaultProfiles);
+  const [newlyPublishedSlugs, setNewlyPublishedSlugs] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -128,6 +212,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
           .map((a) => ({ ...a, image: safeArticleImage(a.image) }));
         setArticles([...seedArticles.map((a) => ({ ...a, image: safeArticleImage(a.image) })), ...extras]);
       }
+      if (Array.isArray(parsed.categories)) setCategories(parsed.categories);
+      if (Array.isArray(parsed.tags)) setTags(parsed.tags);
       if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
       if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
       if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
@@ -139,6 +225,9 @@ export function IlmProvider({ children }: { children: ReactNode }) {
             image: safeScholarImage(c.image),
           })),
         );
+      }
+      if (parsed.profiles) {
+        setProfiles((prev) => ({ ...prev, ...parsed.profiles! }));
       }
     }
     setReady(true);
@@ -189,8 +278,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready) persist({ articles, questions, notices, activity, subscribers, contributors });
-  }, [articles, questions, notices, activity, subscribers, contributors, ready]);
+    if (ready) persist({ articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles });
+  }, [articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, ready]);
 
   const log = useCallback((action: string, user: string, target: string) => {
     setActivity((prev) => [{ id: `l${Date.now()}`, action, user, target, timestamp: nowStamp() }, ...prev]);
@@ -328,6 +417,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       } catch {
         /* ignore */
       }
+      setNewlyPublishedSlugs((prev) => [article.slug, ...prev.filter((s) => s !== article.slug)].slice(0, 12));
       // Sync to Supabase so the live site shows the article for all users
       void (async () => {
         try {
@@ -380,7 +470,9 @@ export function IlmProvider({ children }: { children: ReactNode }) {
 
   const addQuestion = useCallback(
     (q: Omit<Question, 'id' | 'date' | 'status'>) => {
-      setQuestions((prev) => [{ ...q, id: `q${Date.now()}`, date: shortDate(), status: 'new' }, ...prev]);
+      const source = q.source || 'ask';
+      const label = source === 'contact' ? 'New contact message' : 'New question';
+      setQuestions((prev) => [{ ...q, source, id: `q${Date.now()}`, date: shortDate(), status: 'new' }, ...prev]);
       void (async () => {
         try {
           await fetch('/api/questions', {
@@ -389,23 +481,173 @@ export function IlmProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify({
               name: q.asker,
               email: q.email,
-              subject: q.subject || 'Question from the site',
+              subject: q.subject || (source === 'contact' ? 'Contact from ILM site' : 'Question from the site'),
               body: q.question,
               category: q.category,
+              source,
             }),
           });
         } catch {
           /* local queue still works */
         }
       })();
-      notify({ title: 'New question', body: q.question, role: 'editor' });
-      notify({ title: 'New question', body: q.question, role: 'administrator' });
+      notify({ title: label, body: q.question.slice(0, 120), role: 'editor' });
+      notify({ title: label, body: q.question.slice(0, 120), role: 'administrator' });
     },
     [notify],
   );
 
+  const syncQuestions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/questions', { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = (await res.json()) as { ok?: boolean; questions?: Question[] };
+      if (!json.ok || !Array.isArray(json.questions)) return;
+      setQuestions((prev) => {
+        const byId = new Map(prev.map((q) => [q.id, q]));
+        for (const remote of json.questions!) {
+          const local = byId.get(remote.id);
+          byId.set(remote.id, local ? { ...local, ...remote } : remote);
+        }
+        return Array.from(byId.values()).sort((a, b) => b.date.localeCompare(a.date));
+      });
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const markNoticeRead = useCallback((id: string) => {
     setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  }, []);
+
+  const assignQuestion = useCallback(
+    (id: string, assignee: string) => {
+      const item = questions.find((q) => q.id === id);
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, assignedTo: assignee, status: 'assigned' as const } : q)),
+      );
+      const contributor = contributors.find((c) => c.name === assignee);
+      notify({
+        title: 'Question assigned to you',
+        body: item?.question.slice(0, 100) || 'Open Assigned to me.',
+        role: 'author',
+        authorName: assignee,
+      });
+      if (contributor?.email) {
+        void fetch('/api/questions/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            assigneeName: assignee,
+            assigneeEmail: contributor.email,
+            asker: item?.asker,
+            subject: item?.subject,
+            question: item?.question,
+          }),
+        });
+      }
+    },
+    [contributors, notify, questions],
+  );
+
+  const authorSubmitAnswer = useCallback(
+    (id: string, draft: string, authorName: string) => {
+      const item = questions.find((q) => q.id === id);
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === id ? { ...q, authorDraft: draft, status: 'author_ready' as const } : q,
+        ),
+      );
+      notify({ title: 'Author answer ready', body: `${authorName} submitted a draft.`, role: 'editor' });
+      notify({ title: 'Author answer ready', body: `${authorName} submitted a draft.`, role: 'administrator' });
+      void fetch('/api/questions/author-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          authorName,
+          asker: item?.asker,
+          subject: item?.subject,
+          draft,
+        }),
+      });
+    },
+    [notify, questions],
+  );
+
+  const updateProfile = useCallback((role: Role, patch: Partial<UserProfile>) => {
+    setProfiles((prev) => ({ ...prev, [role]: { ...prev[role], ...patch, role } }));
+  }, []);
+
+  const answerQuestion = useCallback(
+    (id: string, answerNotes: string) => {
+      const item = questions.find((q) => q.id === id);
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, answerNotes, status: 'answered' as const } : q)),
+      );
+      log('Answered question', 'Staff', answerNotes.slice(0, 80));
+      if (item?.email) {
+        void fetch('/api/questions/answer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            email: item.email,
+            name: item.asker,
+            question: item.question,
+            answer: answerNotes,
+          }),
+        });
+      }
+    },
+    [log, questions],
+  );
+
+  const addCategory = useCallback(
+    (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return null;
+      const slug = slugify(trimmed);
+      if (!slug) return null;
+      let created: Category | null = null;
+      setCategories((prev) => {
+        if (prev.some((c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
+        created = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
+        return [...prev, created];
+      });
+      if (created) log('Added category', 'Administrator', trimmed);
+      return created;
+    },
+    [log],
+  );
+
+  const removeCategory = useCallback(
+    (id: string) => {
+      setCategories((prev) => {
+        const target = prev.find((c) => c.id === id);
+        if (target) log('Removed category', 'Administrator', target.name);
+        return prev.filter((c) => c.id !== id);
+      });
+    },
+    [log],
+  );
+
+  const addTag = useCallback((name: string) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) return false;
+    let added = false;
+    setTags((prev) => {
+      if (prev.includes(trimmed)) return prev;
+      added = true;
+      return [...prev, trimmed];
+    });
+    return added;
+  }, []);
+
+  const removeTag = useCallback((name: string) => {
+    const trimmed = name.trim().toLowerCase();
+    setTags((prev) => prev.filter((t) => t !== trimmed));
   }, []);
 
   const addSubscriber = useCallback((email: string) => {
@@ -477,11 +719,14 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Store>(
     () => ({
       articles,
+      categories,
+      tags,
       questions,
       notices,
       activity,
       subscribers,
       contributors,
+      newlyPublishedSlugs,
       publishedArticles: articles
         .filter((a) => a.status === 'published')
         .slice()
@@ -497,6 +742,16 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       publishArticle,
       unpublishArticle,
       addQuestion,
+      syncQuestions,
+      assignQuestion,
+      authorSubmitAnswer,
+      answerQuestion,
+      profiles,
+      updateProfile,
+      addCategory,
+      removeCategory,
+      addTag,
+      removeTag,
       addSubscriber,
       toggleSubscriber,
       addAuthor,
@@ -505,11 +760,15 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     }),
     [
       articles,
+      categories,
+      tags,
       questions,
       notices,
       activity,
       subscribers,
       contributors,
+      profiles,
+      newlyPublishedSlugs,
       saveArticle,
       submitArticle,
       approveArticle,
@@ -517,6 +776,15 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       publishArticle,
       unpublishArticle,
       addQuestion,
+      syncQuestions,
+      assignQuestion,
+      authorSubmitAnswer,
+      answerQuestion,
+      updateProfile,
+      addCategory,
+      removeCategory,
+      addTag,
+      removeTag,
       addSubscriber,
       toggleSubscriber,
       addAuthor,
