@@ -12,9 +12,9 @@ create table if not exists public.role_master (
 insert into public.role_master (id, role_name)
 overriding system value
 values
-  (1, 'Author'),
+  (1, 'Author'), 
   (2, 'Editor'),
-  (3, 'Administrator')
+  (3, 'Administrator') 
 on conflict (id) do nothing;
 
 -- Keep identity sequence in sync after explicit ids
