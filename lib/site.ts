@@ -3,7 +3,7 @@ export const siteConfig = {
   fullName: 'Islamic League of Murabbiyūn',
   title: 'ILM | Islamic League of Murabbiyūn',
   description:
-    'Thoughtful Islamic learning for seekers: articles on tarbiyah, ethics, knowledge, and the role of the Murabbī. A home for soulful conversation and character-first education.',
+    'Making beneficial Islamic knowledge accessible to Muslims in America. Reliable Islamic education rooted in the Qur’an, Sunnah, and the methodology of Ahlus-Sunnah wa-l-Jamāʿah.',
   /** Full brand banner (landscape) */
   logo: '/ILM_Final_Logo_Design.webp',
   /** Square mark for favicon / apple touch */

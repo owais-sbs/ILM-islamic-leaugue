@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, MoveUpRight } from 'lucide-react';
 import { categories } from '@/lib/admin-data';
+import { homeContent } from '@/lib/ilm-page-content';
 import { pillars, steps } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
 import { LibraryExplorer } from './library-explorer';
@@ -27,20 +28,21 @@ export function HomeSections() {
 
 function OurWhy() {
   return (
-    <section id="about-us" className="mx-auto grid max-w-[1280px] gap-8 px-4 py-12 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-20">
+    <section id="our-why" className="mx-auto grid max-w-[1280px] gap-8 px-4 py-12 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:px-8 lg:py-20">
       <ScrollReveal from="left">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
           <span className="h-px w-8 bg-ilm-gold" /> About Us
         </p>
-        <h2 className="mt-5 text-[32px] font-semibold leading-[1.1] tracking-[-0.04em] text-ilm-navy sm:text-[40px] sm:leading-[1.08] md:text-[52px]">
-          Knowledge is not just what we <em className="font-serif italic font-normal text-ilm-gold">know.</em>
-          <br />
-          It is who we <em className="font-serif italic font-normal text-ilm-gold">become.</em>
+        <h2 className="mt-5 text-[28px] font-semibold leading-[1.15] tracking-[-0.04em] text-ilm-navy sm:text-[36px] sm:leading-[1.1] md:text-[44px]">
+          {homeContent.title}
         </h2>
+        <p className="mt-4 max-w-xl text-[16px] leading-[1.8] text-ilm-navy/55 sm:text-[17px]">
+          {homeContent.body[0]}
+        </p>
       </ScrollReveal>
       <ScrollReveal from="right" delay={0.12}>
         <p className="max-w-sm text-[16px] leading-[1.8] text-ilm-navy/55">
-          In a world full of noise, we create room for the questions that matter. ILM brings together mentors, educators, and cultivators to nurture a more intentional way of living.
+          {homeContent.body[1]}
         </p>
         <Link href="/about" className="mt-7 inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy">
           Learn more about ILM <MoveUpRight size={14} />
@@ -141,11 +143,11 @@ function QuoteBand() {
     <section className="relative overflow-hidden bg-[#E8DFD1] px-4 py-12 text-center sm:px-6 sm:py-16">
       <span className="absolute left-[8%] top-6 font-serif text-[90px] leading-none text-ilm-gold/50 sm:left-[12%] sm:top-10 sm:text-[140px]">“</span>
       <ScrollReveal>
-        <blockquote className="relative mx-auto max-w-3xl font-serif text-[22px] italic leading-snug tracking-tight text-ilm-navy sm:text-[28px] md:text-[38px]">
-          We are not here simply to gather knowledge. We are here to let it change the way we see, serve, and show up in the world.
+        <blockquote className="relative mx-auto max-w-3xl font-serif text-[22px] italic leading-snug tracking-tight text-ilm-navy sm:text-[28px] md:text-[34px]">
+          {homeContent.closing}
         </blockquote>
         <span className="mx-auto mt-8 block h-px w-10 bg-ilm-gold" />
-        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-navy/45">The ILM spirit</p>
+        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-navy/45">{homeContent.title}</p>
       </ScrollReveal>
     </section>
   );

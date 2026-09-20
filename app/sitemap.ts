@@ -5,6 +5,8 @@ import { siteConfig } from '@/lib/site';
 const paths = [
   '/',
   '/about',
+  '/mission-vision',
+  '/donation',
   '/articles',
   '/murabbiyun',
   '/contact',

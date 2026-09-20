@@ -5,6 +5,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion
 import { ArrowRight, BookOpen, ChevronDown, MoveUpRight, Sprout } from 'lucide-react';
 import { GeometricOrnament } from './brand';
 import { heroImage } from '@/lib/public-data';
+import { homeContent } from '@/lib/ilm-page-content';
 import { siteConfig } from '@/lib/site';
 import { useRef } from 'react';
 
@@ -31,20 +32,17 @@ export function Hero() {
             transition={{ duration: 0.75, delay: 0.08, ease }}
             className="flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep sm:text-[11px] sm:tracking-[0.22em] lg:justify-start"
           >
-            <span className="h-px w-6 bg-ilm-gold sm:w-8" /> A living tradition of guidance
+            <span className="h-px w-6 bg-ilm-gold sm:w-8" /> {homeContent.tagline}
           </motion.p>
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.16, ease }}
-            className="mt-5 text-[36px] font-semibold leading-[1.05] tracking-[-0.045em] text-ilm-navy sm:mt-6 sm:text-[56px] sm:leading-[0.98] lg:text-[76px]"
+            className="mt-5 text-[32px] font-semibold leading-[1.08] tracking-[-0.045em] text-ilm-navy sm:mt-6 sm:text-[48px] sm:leading-[1.02] lg:text-[64px]"
           >
             <span className="sr-only">{siteConfig.name}. </span>
-            For those who
-            <br />
-            <em className="font-serif italic font-normal text-ilm-gold">cultivate</em>
-            <br />
-            goodness.
+            Islamic League of{' '}
+            <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
           </motion.h1>
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 18 }}
@@ -52,7 +50,7 @@ export function Hero() {
             transition={{ duration: 0.75, delay: 0.3, ease }}
             className="mx-auto mt-5 max-w-[420px] text-[15px] leading-[1.7] text-ilm-navy/60 sm:mt-6 sm:text-[16px] sm:leading-[1.75] lg:mx-0"
           >
-            {siteConfig.description}
+            {homeContent.supporting}
           </motion.p>
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 18 }}
@@ -106,12 +104,12 @@ export function Hero() {
                 <Sprout size={15} />
               </span>
               <div className="flex-1">
-                <p className="text-[13px] font-semibold text-ilm-navy">Ideas with Roots</p>
+                <p className="text-[13px] font-semibold text-ilm-navy">{homeContent.tagline}</p>
                 <p className="mt-0.5 text-[11px] leading-snug text-ilm-navy/50">
-                  Deepen your understanding, live with purpose.
+                  {homeContent.supporting}
                 </p>
               </div>
-              <ArrowRight size={14} className="mt-1 text-ilm-navy/30" />
+              <ArrowRight size={14} className="mt-1 shrink-0 text-ilm-navy/30" />
             </div>
           </motion.div>
 
@@ -119,11 +117,11 @@ export function Hero() {
             initial={reduce ? false : { opacity: 0, x: -20, y: 10 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ duration: 0.75, delay: 0.68, ease }}
-            className="absolute bottom-8 left-0 z-10 hidden rounded-[20px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_16px_40px_rgba(11,17,82,0.12)] backdrop-blur sm:bottom-16 sm:block"
+            className="absolute bottom-8 left-0 z-10 hidden max-w-[280px] rounded-[20px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_16px_40px_rgba(11,17,82,0.12)] backdrop-blur sm:bottom-16 sm:block"
           >
-            <p className="flex items-center gap-2 text-[13px] font-semibold text-ilm-navy">
-              <BookOpen size={15} className="text-ilm-gold-deep" />
-              Knowledge <span className="text-ilm-navy/40">→</span> Character
+            <p className="flex items-start gap-2 text-[12px] font-semibold leading-snug text-ilm-navy sm:text-[13px]">
+              <BookOpen size={15} className="mt-0.5 shrink-0 text-ilm-gold-deep" />
+              {homeContent.closing}
             </p>
           </motion.div>
         </motion.div>

@@ -12,15 +12,17 @@ export function SiteFooter() {
         <div>
           <Brand tone="light" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/50">
-            A home for thoughtful learning and soulful conversation.
+            Making beneficial Islamic knowledge accessible to Muslims in America.
           </p>
         </div>
         <div className="flex flex-col gap-2.5 text-sm text-white/60">
           <span className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-ilm-gold-light">Explore</span>
           <Link href="/" className="hover:text-ilm-gold-light">Home</Link>
           <Link href="/about" className="hover:text-ilm-gold-light">About Us</Link>
+          <Link href="/mission-vision" className="hover:text-ilm-gold-light">Mission &amp; Vision</Link>
           <Link href="/articles" className="hover:text-ilm-gold-light">Articles</Link>
           <Link href="/murabbiyun" className="hover:text-ilm-gold-light">Murabbiyūn</Link>
+          <Link href="/donation" className="hover:text-ilm-gold-light">Donation</Link>
         </div>
         <div className="flex flex-col gap-2.5 text-sm text-white/60">
           <span className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-ilm-gold-light">Connect</span>
@@ -47,7 +49,7 @@ export function SiteFooter() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-5 text-[11px] text-white/40 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 lg:px-8">
           <p>
-            © 2026 MD Abidi Arthritis Institute. All Rights Reserved. · Website by{' '}
+            © 2026 Islamic League of Murabbiyūn. All Rights Reserved. · Website by{' '}
             <a
               href="https://onepathsolutions.com/"
               target="_blank"

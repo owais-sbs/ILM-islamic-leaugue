@@ -20,7 +20,15 @@ const articleCategoryLinks = libraryCategories
 
 const nav = [
   { href: '/', label: 'Home', id: 'home' },
-  { href: '/about', label: 'About Us', id: 'about' },
+  {
+    href: '/about',
+    label: 'About Us',
+    id: 'about',
+    children: [
+      { href: '/about', label: 'About Us' },
+      { href: '/mission-vision', label: 'Mission & Vision' },
+    ],
+  },
   {
     href: '/articles',
     label: 'Articles',
@@ -39,6 +47,7 @@ const nav = [
     children: [
       { href: '/ask', label: 'Ask a question' },
       { href: '/contact', label: 'Contact' },
+      { href: '/donation', label: 'Donation' },
     ],
   },
 ];
@@ -47,8 +56,8 @@ function navActiveFromPath(pathname: string): 'home' | 'about' | 'articles' | 'm
   if (pathname === '/') return 'home';
   if (pathname.startsWith('/articles') || pathname.startsWith('/search') || pathname.startsWith('/library')) return 'articles';
   if (pathname.startsWith('/murabbiyun')) return 'murabbiyun';
-  if (pathname.startsWith('/ask') || pathname.startsWith('/contact')) return 'connect';
-  if (pathname.startsWith('/about')) return 'about';
+  if (pathname.startsWith('/ask') || pathname.startsWith('/contact') || pathname.startsWith('/donation')) return 'connect';
+  if (pathname.startsWith('/about') || pathname.startsWith('/mission-vision')) return 'about';
   return 'home';
 }
 
@@ -84,6 +93,7 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
     if (!menuOpen) return;
     if (current === 'articles') setMobileOpen('Articles');
     else if (current === 'connect') setMobileOpen('Connect');
+    else if (current === 'about') setMobileOpen('About Us');
   }, [menuOpen, current]);
 
   useEffect(() => {
