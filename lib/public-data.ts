@@ -16,8 +16,7 @@ export const libraryCategories = [
 ] as const;
 export type LibraryCategory = (typeof libraryCategories)[number];
 
-/** Madhhab filters omitted — contributor madhāhib are not supplied in source content. */
-export const murabbiFilters = ['All'] as const;
+export const murabbiFilters = ['All', 'Studies', 'Hanafi', 'Maliki', "Shafi'i", 'Hanbali'] as const;
 export type MurabbiFilter = (typeof murabbiFilters)[number];
 
 export type MurabbiDetail =
@@ -39,6 +38,9 @@ export interface Murabbi {
   bio: string;
   /** Full biography paragraphs for the profile page. */
   biography: string[];
+  /** Optional — not inventing madhhab/focus when source does not supply them. */
+  madhhab?: 'Hanafi' | 'Maliki' | "Shafi'i" | 'Hanbali';
+  focus?: 'Studies' | 'Fiqh' | 'Spiritual' | 'Arabic';
   image: string;
   accent: string;
   sections: MurabbiSection[];
@@ -72,7 +74,7 @@ export const murabbiyūn: Murabbi[] = [
             entries: [
               { label: 'Website', value: 'aqilingram.com', href: 'https://aqilingram.com' },
               { label: 'Social Media', value: '@aqilingram' },
-              { label: 'Email', value: 'askaqlingram@gmail.com', href: 'mailto:askaqlingram@gmail.com' },
+              { label: 'Email', value: 'askaqilingram@gmail.com', href: 'mailto:askaqilingram@gmail.com' },
             ],
           },
         ],

@@ -2,22 +2,31 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, GraduationCap, Sparkles, UserRound } from 'lucide-react';
 import { mosqueArchImage, murabbiFilters, murabbiyūn, type MurabbiFilter } from '@/lib/public-data';
 import { FilterPills, ViewToggle } from './library-explorer';
 import { ScrollReveal, StaggerChild, StaggerIn } from './scroll-reveal';
 import { GeometricOrnament } from './brand';
 import { cn } from '@/lib/utils';
 
+const focusIcon = {
+  Studies: GraduationCap,
+  Fiqh: BookOpen,
+  Spiritual: UserRound,
+  Arabic: BookOpen,
+};
+
 export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) {
   const [filter, setFilter] = useState<MurabbiFilter>('All');
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const list = useMemo(() => {
-    return murabbiyūn.filter(() => filter === 'All');
+    return murabbiyūn.filter((m) => {
+      if (filter === 'All') return true;
+      if (filter === 'Studies') return m.focus === 'Studies';
+      return m.madhhab === filter;
+    });
   }, [filter]);
-
-  const showFilters = murabbiFilters.length > 1;
 
   return (
     <section className="relative overflow-x-hidden pb-8">
@@ -31,7 +40,9 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
               Meet the <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
             </h1>
             <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-ilm-navy/55">
-              The contributors who sacrifice their time by authoring beneficial and knowledge based articles are all upon the way of Ahlus Sunnah wa al-Jamā’ah.
+              <span className="font-medium text-ilm-navy">Guided by knowledge. Driven by purpose.</span>
+              <br />
+              Meet the dedicated murabbiyūn who inspire, teach and nurture the next generation.
             </p>
           </ScrollReveal>
 
@@ -45,9 +56,9 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
               <p className="absolute -right-1 bottom-6 rotate-[-12deg] font-serif italic text-[18px] leading-tight text-white drop-shadow-[0_2px_12px_rgba(11,17,82,0.45)] sm:-right-2 sm:bottom-8 sm:text-[22px]">
                 Knowledge
                 <br />
-                Clarity
+                Builds
                 <br />
-                Cultivation
+                Character
               </p>
             </div>
           </ScrollReveal>
@@ -56,13 +67,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
 
       <div className="mx-auto mt-8 flex max-w-[1280px] items-center justify-between gap-3 px-4 py-1 sm:gap-4 sm:px-6 lg:px-8">
         <div className="min-w-0 flex-1">
-          {showFilters ? (
-            <FilterPills items={murabbiFilters} value={filter} onChange={(v) => setFilter(v as MurabbiFilter)} />
-          ) : (
-            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-navy/35">
-              {list.length} contributing mentors
-            </span>
-          )}
+          <FilterPills items={murabbiFilters} value={filter} onChange={(v) => setFilter(v as MurabbiFilter)} />
         </div>
         <ViewToggle value={view} onChange={setView} />
       </div>
@@ -72,10 +77,11 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
         mode="animate"
         className={cn(
           'murabbi-grid mx-auto mt-8 w-full max-w-[1400px] px-4 sm:px-6 lg:px-8',
-          view === 'grid' ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'
+          view === 'grid' ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5' : 'flex flex-col gap-4'
         )}
       >
         {list.map((person, index) => {
+          const Icon = person.focus ? focusIcon[person.focus] : BookOpen;
           const num = String(index + 1).padStart(2, '0');
           return (
             <StaggerChild key={person.id} className="h-full">
@@ -91,7 +97,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
                   </span>
                   {view === 'grid' && (
                     <span className="grid h-8 w-8 place-items-center rounded-full bg-ilm-cream text-ilm-navy/40">
-                      <BookOpen size={14} />
+                      <Icon size={14} />
                     </span>
                   )}
                 </div>
