@@ -10,7 +10,7 @@ export const siteConfig = {
   favicon: '/favicon.webp',
   /** Open Graph / Twitter share image — 1200×630 */
   ogImage: '/og-image.png',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://ilm-islamic-leaugue.vercel.app',
   keywords: [
     'ILM',
     'Islamic League of Murabbiyūn',

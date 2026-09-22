@@ -24,7 +24,7 @@ export function getSiteUrl() {
   const raw =
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     process.env.VERCEL_URL?.trim() ||
-    'http://localhost:3000';
+    'https://ilm-islamic-leaugue.vercel.app';
   if (raw.startsWith('http://') || raw.startsWith('https://')) return raw.replace(/\/$/, '');
   return `https://${raw.replace(/\/$/, '')}`;
 }

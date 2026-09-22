@@ -164,7 +164,7 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
           </div>
         </div>
       </section>
-      <AskQuestionModal open={askOpen} onClose={() => setAskOpen(false)} />
+      <AskQuestionModal open={askOpen} onClose={() => setAskOpen(false)} preferredAuthor={person.name} />
       <SiteFooter />
     </main>
   );

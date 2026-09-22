@@ -41,6 +41,7 @@ export interface Question {
   subject?: string;
   category?: string;
   source?: 'ask' | 'contact';
+  preferredAuthor?: string;
   date: string;
   createdAt?: number;
   status: 'new' | 'assigned' | 'author_ready' | 'answered';

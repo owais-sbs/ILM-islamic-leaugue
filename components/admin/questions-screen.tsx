@@ -40,7 +40,7 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
 
   const open = (item: Question) => {
     setSelected(item);
-    setAssignTo(item.assignedTo || '');
+    setAssignTo(item.assignedTo || item.preferredAuthor || '');
     setAnswer(item.authorDraft || item.answerNotes || '');
   };
 
@@ -91,6 +91,11 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
                     {!isAuthor && (
                       <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${item.source === 'contact' ? 'bg-purple-100 text-purple-700' : 'bg-sky-100 text-sky-700'}`}>
                         {item.source === 'contact' ? 'Contact' : 'Ask'}
+                      </span>
+                    )}
+                    {!isAuthor && item.preferredAuthor && (
+                      <span className="rounded-full bg-ilm-cream px-2 py-0.5 text-[10px] text-ilm-navy/60">
+                        Prefers: {item.preferredAuthor}
                       </span>
                     )}
                   </p>
@@ -151,6 +156,9 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
                 <div><dt className="inline text-ilm-navy/35">Email: </dt><dd className="inline">{selected.email}</dd></div>
               )}
               {selected.category && <div><dt className="inline text-ilm-navy/35">Category: </dt><dd className="inline">{selected.category}</dd></div>}
+              {selected.preferredAuthor && !isAuthor && (
+                <div><dt className="inline text-ilm-navy/35">Preferred Murabbī: </dt><dd className="inline">{selected.preferredAuthor}</dd></div>
+              )}
               {selected.assignedTo && <div><dt className="inline text-ilm-navy/35">Assigned: </dt><dd className="inline">{selected.assignedTo}</dd></div>}
             </dl>
 

@@ -22,7 +22,12 @@ export default function AboutPage() {
               <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
             </h1>
           </ScrollReveal>
-          <ScrollReveal from="right" delay={0.1} className="mt-6 max-w-3xl space-y-4">
+          <ScrollReveal from="right" delay={0.08} className="mt-6">
+            <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
+              <span className="h-px w-8 bg-ilm-gold" /> {aboutContent.methodologyTitle}
+            </p>
+          </ScrollReveal>
+          <ScrollReveal from="right" delay={0.1} className="mt-4 max-w-3xl space-y-4">
             {aboutContent.intro.map((para) => (
               <p key={para.slice(0, 48)} className="text-base leading-relaxed text-ilm-navy/65 sm:text-lg">
                 {para}

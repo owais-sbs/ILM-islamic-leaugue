@@ -79,6 +79,7 @@ export function staffNewSubmissionEmail(opts: {
   subject: string;
   body: string;
   category?: string | null;
+  preferredAuthor?: string | null;
 }) {
   const label = opts.source === 'contact' ? 'Contact form' : 'Ask a question';
   return {
@@ -88,6 +89,7 @@ export function staffNewSubmissionEmail(opts: {
       `<p><strong>From:</strong> ${opts.name} &lt;${opts.email}&gt;</p>
        <p><strong>Subject:</strong> ${opts.subject}</p>
        ${opts.category ? `<p><strong>Category:</strong> ${opts.category}</p>` : ''}
+       ${opts.preferredAuthor ? `<p><strong>Preferred Murabbī:</strong> ${opts.preferredAuthor}</p>` : ''}
        <p><strong>Message:</strong></p>
        <p style="white-space:pre-wrap;background:#f8f6f2;padding:16px;border-radius:12px;">${opts.body}</p>
        <p>Open the admin portal → Questions to assign and reply.</p>`,

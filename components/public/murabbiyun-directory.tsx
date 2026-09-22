@@ -24,7 +24,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
     return murabbiyūn.filter((m) => {
       if (filter === 'All') return true;
       if (filter === 'Studies') return m.focus === 'Studies';
-      return m.madhhab === filter;
+      return true;
     });
   }, [filter]);
 
@@ -40,9 +40,10 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
               Meet the <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
             </h1>
             <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-ilm-navy/55">
-              <span className="font-medium text-ilm-navy">Guided by knowledge. Driven by purpose.</span>
-              <br />
-              Meet the dedicated murabbiyūn who inspire, teach and nurture the next generation.
+              The contributors who sacrifice their time by authoring beneficial and knowledge-based articles are all upon the way of Ahlus Sunnah wa al-Jamā’ah.
+            </p>
+            <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-ilm-navy/50">
+              In specific matters one mentor’s position may differ from another. Every mentor represents himself, and his view should not be construed to be reflective of other mentors.
             </p>
           </ScrollReveal>
 

@@ -13,6 +13,7 @@ type Body = {
   subject?: string;
   body?: string;
   category?: string;
+  preferredAuthor?: string;
   source?: 'ask' | 'contact';
 };
 
@@ -32,6 +33,7 @@ function mapRow(row: Record<string, unknown>) {
     subject: String(row.subject || ''),
     question: String(row.body || ''),
     category: row.category ? String(row.category) : undefined,
+    preferredAuthor: row.preferred_author ? String(row.preferred_author) : undefined,
     source: inferSource(row),
     date: created.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     createdAt: created.getTime(),
@@ -57,13 +59,18 @@ export async function GET() {
 
   const full = await client
     .from('questions')
-    .select('id, name, email, subject, body, category, source, status, answer_notes, author_draft, assigned_to_name, created_at, assigned_to')
+    .select('id, name, email, subject, body, category, source, status, answer_notes, author_draft, assigned_to_name, preferred_author, created_at, assigned_to')
     .order('created_at', { ascending: false })
     .limit(200);
   data = full.data;
   error = full.error;
 
-  if (error?.message?.includes('source') || error?.message?.includes('author_draft') || error?.message?.includes('assigned_to_name')) {
+  if (
+    error?.message?.includes('source') ||
+    error?.message?.includes('author_draft') ||
+    error?.message?.includes('assigned_to_name') ||
+    error?.message?.includes('preferred_author')
+  ) {
     const fallback = await client
       .from('questions')
       .select('id, name, email, subject, body, category, status, answer_notes, created_at, assigned_to')
@@ -93,6 +100,7 @@ export async function POST(req: Request) {
   const subject = (payload.subject || 'Message from the site').trim().slice(0, 200);
   const body = (payload.body || '').trim().slice(0, 8000);
   const category = payload.category?.trim() || null;
+  const preferredAuthor = payload.preferredAuthor?.trim().slice(0, 160) || null;
   const source: 'ask' | 'contact' = payload.source === 'contact' ? 'contact' : 'ask';
 
   if (!body) {
@@ -108,8 +116,22 @@ export async function POST(req: Request) {
     const admin = tryCreateServiceClient();
     const client = admin ?? tryCreateServerSupabase();
     if (client) {
-      const baseRow = { name, email, subject, body, category: category || (source === 'contact' ? 'Contact' : category), status: 'new' as const };
-      let { data, error } = await client.from('questions').insert({ ...baseRow, source }).select('id').single();
+      const baseRow = {
+        name,
+        email,
+        subject,
+        body,
+        category: category || (source === 'contact' ? 'Contact' : category),
+        status: 'new' as const,
+      };
+      let { data, error } = await client
+        .from('questions')
+        .insert({ ...baseRow, source, preferred_author: preferredAuthor })
+        .select('id')
+        .single();
+      if (error?.message?.includes('preferred_author')) {
+        ({ data, error } = await client.from('questions').insert({ ...baseRow, source }).select('id').single());
+      }
       if (error?.message?.includes('source')) {
         ({ data, error } = await client.from('questions').insert(baseRow).select('id').single());
       }
@@ -120,7 +142,15 @@ export async function POST(req: Request) {
     }
   }
 
-  const staffMail = staffNewSubmissionEmail({ source, name, email, subject, body, category });
+  const staffMail = staffNewSubmissionEmail({
+    source,
+    name,
+    email,
+    subject,
+    body,
+    category,
+    preferredAuthor,
+  });
   const userMail = submissionReceivedEmail(source, name);
 
   await Promise.allSettled([

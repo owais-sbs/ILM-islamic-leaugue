@@ -1,11 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X } from 'lucide-react';
 import { useIlm } from '@/lib/ilm-store';
 
-export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AskQuestionModal({
+  open,
+  onClose,
+  preferredAuthor,
+}: {
+  open: boolean;
+  onClose: () => void;
+  preferredAuthor?: string;
+}) {
   const { addQuestion } = useIlm();
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -13,6 +21,13 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [question, setQuestion] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setSent(false);
+    setBusy(false);
+    setError('');
+  }, [open, preferredAuthor]);
 
   const reset = () => {
     setSent(false);
@@ -61,6 +76,11 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
             <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55">
               Share what is on your heart. A murabbi will sit with it and reply with care.
             </p>
+            {preferredAuthor && (
+              <p className="mt-3 rounded-2xl bg-ilm-cream px-4 py-3 text-sm text-ilm-navy/70">
+                Preferred Murabbī: <strong className="font-semibold text-ilm-navy">{preferredAuthor}</strong>
+              </p>
+            )}
             {sent ? (
               <p className="mt-8 rounded-2xl bg-ilm-cream px-4 py-5 text-sm text-ilm-navy">
                 Received. We will return to you with something thoughtful.
@@ -77,7 +97,11 @@ export function AskQuestionModal({ open, onClose }: { open: boolean; onClose: ()
                       asker: name.trim() || 'Anonymous',
                       email: email.trim(),
                       question: question.trim(),
-                      subject: 'Question from the site',
+                      subject: preferredAuthor
+                        ? `Question for ${preferredAuthor}`
+                        : 'Question from the site',
+                      preferredAuthor: preferredAuthor || undefined,
+                      source: 'ask',
                     });
                     setSent(true);
                   } catch {

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { articles } from '@/lib/admin-data';
+import { murabbiyūn } from '@/lib/public-data';
 import { siteConfig } from '@/lib/site';
 
 const paths = [
@@ -25,6 +26,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === '/' ? 1 : 0.7,
   }));
 
+  const murabbiEntries = murabbiyūn.map((m) => ({
+    url: `${siteConfig.url}/murabbiyun/${m.id}`,
+    lastModified: now,
+    changeFrequency: 'monthly' as const,
+    priority: 0.75,
+  }));
+
   const articleEntries = articles
     .filter((a) => a.status === 'published')
     .map((a) => ({
@@ -34,5 +42,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     }));
 
-  return [...staticEntries, ...articleEntries];
+  return [...staticEntries, ...murabbiEntries, ...articleEntries];
 }

@@ -566,6 +566,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
               subject: q.subject || (source === 'contact' ? 'Contact from ILM site' : 'Question from the site'),
               body: q.question,
               category: q.category,
+              preferredAuthor: q.preferredAuthor,
               source,
             }),
           });

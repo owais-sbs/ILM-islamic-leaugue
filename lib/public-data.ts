@@ -16,7 +16,7 @@ export const libraryCategories = [
 ] as const;
 export type LibraryCategory = (typeof libraryCategories)[number];
 
-export const murabbiFilters = ['All', 'Studies', 'Hanafi', 'Maliki', "Shafi'i", 'Hanbali'] as const;
+export const murabbiFilters = ['All', 'Studies'] as const;
 export type MurabbiFilter = (typeof murabbiFilters)[number];
 
 export type MurabbiDetail =
@@ -535,6 +535,258 @@ export const murabbiyūn: Murabbi[] = [
                 label: 'Email',
                 value: 'ibnkeith76@outlook.com',
                 href: 'mailto:ibnkeith76@outlook.com',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'hanif-fouse',
+    name: 'Hanif Fouse',
+    role: 'Imām — United Muslim Masjid',
+    bio: 'Hanif Fouse serves as the Imām of United Muslim Masjid in Philadelphia, Pennsylvania. In this capacity, he delivers khuṭbahs, teaches Islamic classes, and provides counseling to members of the community.',
+    biography: [
+      'Hanif Fouse serves as the Imām of United Muslim Masjid in Philadelphia, Pennsylvania. In this capacity, he delivers khuṭbahs, teaches Islamic classes, and provides counseling to members of the community.',
+    ],
+    image: images.murabbiPortrait,
+    accent: 'bg-indigo-100 text-indigo-700',
+    sections: [
+      {
+        title: 'Supporting United Muslim Masjid',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              "Those wishing to financially support United Muslim Masjid may contribute through Cash App, Zelle, or the Masjid's online donation page.",
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              {
+                label: 'Donation',
+                value: 'https://ummonline.org/donate/',
+                href: 'https://ummonline.org/donate/',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Contact',
+        blocks: [
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Name', value: 'Hanif Fouse' },
+              { label: 'Email', value: 'hfouse@theqari.org', href: 'mailto:hfouse@theqari.org' },
+              { label: 'Email', value: 'imam@ummonline.org', href: 'mailto:imam@ummonline.org' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Director of Arabic — QARI',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Hanif Fouse serves as the Director of Arabic at QARI, an Islamic educational program serving adult Muslims.',
+              'QARI provides regular classes, online classes, Qurʾān studies, and Arabic studies. Its Arabic program offers instruction at varying levels through in-person classes, with online Arabic instruction recently added. Qurʾān classes are also offered both in person and online.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Supporting QARI',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'QARI is currently seeking financial support toward the construction of its new building. Individuals may also support its educational work by sponsoring an Arabic student or Qurʾān student.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Website', value: 'www.theqari.org', href: 'https://www.theqari.org/' },
+              {
+                label: 'Support QARI',
+                value: 'https://www.theqari.org/support-us',
+                href: 'https://www.theqari.org/support-us',
+              },
+              { label: 'Contact', value: 'hfouse@theqari.org', href: 'mailto:hfouse@theqari.org' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'najeeb-al-anjelesi',
+    name: 'Najeeb al-Anjelesi',
+    role: 'Khaṭīb & Teacher — Talha ibn Ubaidillah Center',
+    bio: 'Najeeb al-Anjelesi serves as a Khaṭīb and teacher at Talha ibn Ubaidillah Center in Cambridge, Maryland. His work at the Center includes delivering khuṭbahs and conducting Islamic classes.',
+    biography: [
+      'Najeeb al-Anjelesi serves as a Khaṭīb and teacher at Talha ibn Ubaidillah Center in Cambridge, Maryland. His work at the Center includes delivering khuṭbahs and conducting Islamic classes.',
+    ],
+    image: images.murabbiPortrait,
+    accent: 'bg-amber-100 text-amber-800',
+    sections: [
+      {
+        title: 'Supporting Talha ibn Ubaidillah Center',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Those wishing to financially support the Center may send donations through Zelle or PayPal using the following email address as the recipient:',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              {
+                label: 'Donation recipient',
+                value: 'tislamicministry@gmail.com',
+                href: 'mailto:tislamicministry@gmail.com',
+              },
+            ],
+          },
+          {
+            type: 'paragraphs',
+            text: [
+              "Members of the public can also assist by spreading awareness of the Center's existence and activities, particularly among people living in Cambridge and the surrounding communities.",
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              {
+                label: 'Website',
+                value: 'cambridgemdmasjid.org',
+                href: 'https://cambridgemdmasjid.org/',
+              },
+              { label: 'Contact', value: 'Najeeb al-Anjelesi' },
+              {
+                label: 'Email',
+                value: 'najeeb@cambridgemdmasjid.org',
+                href: 'mailto:najeeb@cambridgemdmasjid.org',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Author & Publisher',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Najeeb al-Anjelesi is an author of works addressing foundational Islamic knowledge, ʿaqīdah, jurisprudential principles, and the explanation of classical and Prophetic texts.',
+            ],
+          },
+          {
+            type: 'books',
+            items: [
+              {
+                title: 'A Detailed Commentary on the Work of an Insightful Luminary',
+                paragraphs: [
+                  'A Detailed Commentary on the Work of an Insightful Luminary is a detailed commentary on the classical work of Shaykh Muhammad ibn Sulaymān al-Tamīmī titled Al-Uṣūl al-Sittah (The Six Principles).',
+                  'The work explains the introduction to the final principle and the benefits contained within the six principles, providing the reader with a deeper and more firmly rooted understanding of each subject. It is intended particularly for students seeking a foundation in fundamental Islamic knowledge.',
+                  'Available through: Amazon',
+                ],
+              },
+              {
+                title: "The Mandatory Observance of Allah's Right Upon His Servants",
+                paragraphs: [
+                  "The Mandatory Observance of Allah's Right Upon His Servants is a detailed study and line-by-line commentary on the authentic ḥadīth of Muʿādh ibn Jabal concerning the right of Allah upon His servants and the right of the servants upon Him.",
+                  'Beginning with the ḥadīth itself, the book examines its chain of transmission and then develops the fundamental Islamic principles contained within its words. The reader is introduced to the categories of Islamic legal rulings (al-Aḥkām), important jurisprudential maxims, essential matters of Islamic theology, and the actions and beliefs that nullify them.',
+                  "Rather than treating the narration as an isolated text, the work demonstrates how a single Prophetic ḥadīth encompasses foundational principles concerning worship, Tawḥīd, obedience, sin, and the servant's relationship with Allah.",
+                  'Available through: Amazon and Books.by',
+                ],
+              },
+            ],
+          },
+          {
+            type: 'paragraphs',
+            text: [
+              "Proceeds from Najeeb al-Anjelesi's publications support his daʿwah and educational work.",
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Current Writing Project',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Najeeb al-Anjelesi is currently working on an unpublished book titled:',
+              'The Highs & Lows of Scholarly Opinion on Straightening the Rows',
+              'The work examines scholarly opinions concerning the straightening of the rows in congregational prayer.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Founder / Operator — Pure Islaam',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Najeeb al-Anjelesi operates Pure Islaam, an Islamic website dedicated to publishing written Islamic material.',
+              'The website provides articles addressing Islamic subjects, making written educational and daʿwah material accessible online.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Website', value: 'pureislaam.com', href: 'https://pureislaam.com/' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'YouTube & Social Media Daʿwah',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Najeeb al-Anjelesi also utilizes digital and social-media platforms for Islamic daʿwah and educational outreach.',
+              'His online presence includes:',
+            ],
+          },
+          {
+            type: 'list',
+            items: ['YouTube', 'Facebook', 'Instagram', 'TikTok'],
+          },
+          {
+            type: 'paragraphs',
+            text: [
+              'Through these platforms, his daʿwah work extends beyond in-person teaching and khuṭbahs to audiences reached through digital media.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'President — Talha Islamic Ministry',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Najeeb al-Anjelesi serves as President of Talha Islamic Ministry, an Islamic daʿwah organization whose purpose is to improve the religious worship, education, and well-being of Muslims within urban communities.',
+              'The Ministry primarily serves Muslims and provides an organizational foundation for Islamic religious, educational, and daʿwah efforts.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              {
+                label: 'Contact',
+                value: 'najeebalangelesi@gmail.com',
+                href: 'mailto:najeebalangelesi@gmail.com',
               },
             ],
           },

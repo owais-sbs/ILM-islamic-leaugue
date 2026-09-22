@@ -34,7 +34,7 @@ export const missionVisionContent = {
   objectives: [
     'Make essential Islamic knowledge accessible to ordinary Muslims in a clear and understandable form.',
     'Address the practical religious matters Muslims encounter in their everyday lives.',
-    'Connect qualified Murabbiynn with the wider Muslim public through coordinated educational work.',
+    'Connect qualified Murabbiyūn with the wider Muslim public through coordinated educational work.',
     'Encourage Muslims to understand the reasons and evidence behind religious guidance rather than merely receiving conclusions.',
     'Identify recurring areas of confusion, cultural practice, and religious misunderstanding affecting Muslims in the United States.',
     'Develop educational resources appropriate for both ordinary Muslims and, at more advanced stages, serious students of knowledge.',
@@ -45,11 +45,12 @@ export const missionVisionContent = {
 
 export const aboutContent = {
   intro: [
-    'The contributors who sacrifice their time by authoring beneficial and knowledge based articles are all upon the way of Ahlus Sunnah wa al-Jamā’ah. Thus, all have studied the usūl of one of the well known Islamic Jurisprudence schools of thought i.e. Hanbali, Maliki, Shafi’ee, Hanafi, or Thahiri.',
-    'As a result, in specific matters one mentor’s position may differ from another mentor due to differing being abundant in these affairs, i.e. in fiqh, al-jarh wa at-ta’dīl as relates to men in the sanad (chain of transmission to a hadith) etc.',
-    'Thus, you may find a subject expounded upon by a specific mentor whose conclusion differs with another as every mentor represents himself, and his view should not be construed to be reflective of other mentors.',
-    'Despite that, ILM does guarantee that each article and what is presented therein will not clash with nor go outside of orthodoxy as it relates to the conclusion found within them, consequently making them a reliable source of knowledge based research.',
+    'The contributors who sacrifice their time by authoring beneficial and knowledge-based articles are all upon the way of Ahlus Sunnah wa al-Jamā’ah. Thus, all have studied the usūl of one of the well-known Islamic Jurisprudence schools of thought, i.e. Hanbali, Maliki, Shafi’ee, Hanafi, or Thahiri.',
+    'As a result, in specific matters one mentor’s position may differ from another mentor due to differing being abundant in these affairs, i.e. in fiqh, al-jarh wa at-ta’dīl as relates to men in the sanad (chain of transmission to a hadith), etc.',
+    'Thus, you may find a subject expounded upon by a specific mentor whose conclusion differs with another, as every mentor represents himself, and his view should not be construed to be reflective of other mentors.',
+    'Despite that, ILM does guarantee that each article and what is presented therein will not clash with nor go outside of orthodoxy as it relates to the conclusion found within them, consequently making them a reliable source of knowledge-based research.',
   ],
+  methodologyTitle: 'Scholarly differences among mentors',
   principlesTitle: 'Guiding Principles and Procedures',
   principles: [
     {
