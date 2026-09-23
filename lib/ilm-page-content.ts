@@ -119,7 +119,7 @@ export const donationContent = {
     title: 'Our Mission',
     body: "ILM is committed to providing English-speaking Muslims throughout the United States with clear, practical, and reliable Islamic education rooted in the Qur'an, Sunnah, and the methodology of Ahlus-Sunnah wa-l-Jamāʿah.",
     initialWork:
-      'Our initial work will focus on developing an online educational resource containing articles written by qualified Murabbiyūn—mentors, educators, and cultivators who have received formal Islamic education or substantial traditional training under qualified scholars.',
+      'Our initial work will focus on developing an online educational resource containing articles written by qualified Murabbiyūn, mentors, educators, and cultivators who have received formal Islamic education or substantial traditional training under qualified scholars.',
     expandIntro: 'As the organization grows, we hope to expand this work into:',
     expandItems: [
       'Educational books and publications',
@@ -173,7 +173,7 @@ export const donationContent = {
     paragraphs: [
       'The immediate goal of ILM is modest: to establish a reliable educational website and begin producing beneficial Islamic material.',
       'The long-term vision, however, is much greater.',
-      'By the permission of Allah, we hope to develop ILM into a strong and recognized national Islamic educational institution—one that serves Muslims not merely by answering individual questions, but by cultivating a population of Muslims who understand their religion, practice it correctly, and are equipped to navigate the challenges of life in America while remaining firmly grounded in their faith.',
+      'By the permission of Allah, we hope to develop ILM into a strong and recognized national Islamic educational institution, one that serves Muslims not merely by answering individual questions, but by cultivating a population of Muslims who understand their religion, practice it correctly, and are equipped to navigate the challenges of life in America while remaining firmly grounded in their faith.',
       'We also hope to cultivate the next generation of qualified Muslim educators and students of knowledge who can continue serving the community long after us.',
     ],
   },
