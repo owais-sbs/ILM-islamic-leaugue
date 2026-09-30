@@ -12,6 +12,8 @@ export const libraryCategories = [
   'Tarbiyah',
   'Aqidah',
   'Fiqh',
+  'Purification',
+  'Prayer',
   'Spirituality',
 ] as const;
 export type LibraryCategory = (typeof libraryCategories)[number];

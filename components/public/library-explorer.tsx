@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { categories as seedCategories } from '@/lib/admin-data';
 import { libraryCategories, type LibraryCategory } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
 import { ArticleCard } from './article-card';
@@ -13,8 +14,14 @@ import { cn } from '@/lib/utils';
 
 function resolveCategory(raw: string | null): LibraryCategory {
   if (!raw) return 'All';
-  const decoded = decodeURIComponent(raw);
-  return (libraryCategories.find((cat) => cat.toLowerCase() === decoded.toLowerCase()) || 'All') as LibraryCategory;
+  const decoded = decodeURIComponent(raw).trim();
+  const byLabel = libraryCategories.find((cat) => cat.toLowerCase() === decoded.toLowerCase());
+  if (byLabel) return byLabel as LibraryCategory;
+  const bySlug = seedCategories.find((c) => c.slug.toLowerCase() === decoded.toLowerCase());
+  if (bySlug && libraryCategories.includes(bySlug.name as LibraryCategory)) {
+    return bySlug.name as LibraryCategory;
+  }
+  return 'All';
 }
 
 export function LibraryExplorer({
@@ -79,9 +86,13 @@ export function LibraryExplorer({
         {filtered.length === 0 ? (
           <p className="mt-12 text-center text-sm text-ilm-navy/45">No articles in this category yet.</p>
         ) : (
-          <div key={filter} className="library-grid mt-8 grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            key={filter}
+            className="library-grid mt-8 grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3"
+            suppressHydrationWarning
+          >
             {filtered.map((article) => (
-              <div key={article.slug} className="h-full">
+              <div key={article.slug} className="h-full" suppressHydrationWarning>
                 <ArticleCard article={article} isNew={newlyPublishedSlugs.includes(article.slug)} />
               </div>
             ))}

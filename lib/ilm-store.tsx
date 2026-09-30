@@ -47,7 +47,7 @@ const SEED_TAGS = [
 ] as const;
 import { images, safeArticleImage, safeScholarImage } from '@/lib/images';
 
-const KEY = 'ilm-demo-state-v10';
+const KEY = 'ilm-demo-state-v12';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
 const LEGACY_KEYS = [
   'ilm-demo-state-v1',
@@ -59,6 +59,8 @@ const LEGACY_KEYS = [
   'ilm-demo-state-v7',
   'ilm-demo-state-v8',
   'ilm-demo-state-v9',
+  'ilm-demo-state-v10',
+  'ilm-demo-state-v11',
 ];
 
 interface Store {
@@ -251,18 +253,32 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       'leading-with-a-softer-voice',
       'the-art-of-asking-better-questions',
       'the-prophet-life',
+      'role-of-a-murabbi-nurturing-knowledge-character-faith',
+      'ethics-of-disagreement-ikhtilaf-with-wisdom',
+      'seeking-knowledge-with-purpose-learning-to-practice',
     ]);
     const seedBySlug = new Map(seedArticles.map((a) => [a.slug, a]));
+    const withSafeImages = () => seedArticles.map((a) => ({ ...a, image: safeArticleImage(a.image) }));
 
     const parsed = readPersisted();
+    // Always start from the current seed catalog so public articles never vanish after a content swap.
+    let nextArticles = withSafeImages();
     if (parsed) {
       if (Array.isArray(parsed.articles)) {
         const extras = parsed.articles
           .filter((a) => a?.slug && !OLD_ARTICLE_SLUGS.has(a.slug) && !seedBySlug.has(a.slug))
           .map((a) => ({ ...a, image: safeArticleImage(a.image) }));
-        setArticles([...seedArticles.map((a) => ({ ...a, image: safeArticleImage(a.image) })), ...extras]);
+        nextArticles = [...withSafeImages(), ...extras];
       }
-      if (Array.isArray(parsed.categories)) setCategories(parsed.categories);
+      if (Array.isArray(parsed.categories)) {
+        // Prefer the current seed category list so new topics (Purification, Prayer) are never dropped.
+        const bySlug = new Map(seedCategories.map((c) => [c.slug, { ...c }]));
+        for (const c of parsed.categories) {
+          if (!c?.slug || bySlug.has(c.slug)) continue;
+          bySlug.set(c.slug, c);
+        }
+        setCategories(Array.from(bySlug.values()));
+      }
       if (Array.isArray(parsed.tags)) setTags(parsed.tags);
       if (Array.isArray(parsed.questions)) setQuestions(parsed.questions);
       if (Array.isArray(parsed.notices)) setNotices(parsed.notices);
@@ -282,33 +298,19 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (Array.isArray(parsed.media) && parsed.media.length) setMedia(parsed.media);
       if (parsed.siteSettings) {
         const settings = { ...defaultSiteSettings, ...parsed.siteSettings };
-        setSiteSettings(settings);
-        if (settings.featuredArticleId) {
-          setArticles((arts) =>
-            arts.map((a) => ({
-              ...a,
-              featured: a.id === settings.featuredArticleId && a.status === 'published',
-            })),
-          );
-        }
+        // Keep featured on the current seed featured article when the saved id is stale.
+        const featuredId = nextArticles.some((a) => a.id === settings.featuredArticleId)
+          ? settings.featuredArticleId
+          : defaultSiteSettings.featuredArticleId;
+        setSiteSettings({ ...settings, featuredArticleId: featuredId });
+        nextArticles = nextArticles.map((a) => ({
+          ...a,
+          featured: a.id === featuredId && a.status === 'published',
+        }));
       }
     }
+    setArticles(nextArticles);
     setReady(true);
-
-    // After HMR / stale client state, always re-assert the current seed catalog
-    setArticles((prev) => {
-      const hasLegacy = prev.some((a) => OLD_ARTICLE_SLUGS.has(a.slug));
-      const missingSeed = seedArticles.some((s) => !prev.some((p) => p.slug === s.slug));
-      if (!hasLegacy && !missingSeed) return prev;
-      const extras = prev.filter(
-        (a) => a?.slug && !OLD_ARTICLE_SLUGS.has(a.slug) && !seedBySlug.has(a.slug),
-      );
-      return [
-        ...seedArticles.map((a) => ({ ...a, image: safeArticleImage(a.image) })),
-        ...extras.map((a) => ({ ...a, image: safeArticleImage(a.image) })),
-      ];
-    });
-
     // Optional remote merge (disabled by default — Supabase demo rows were polluting the library)
     if (process.env.NEXT_PUBLIC_MERGE_REMOTE === '1') {
       void (async () => {

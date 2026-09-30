@@ -22,6 +22,13 @@ export const images = {
     'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
   quranHands:
     'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=1200&q=80',
+  /** Article covers — topic-relevant scenes */
+  tayammumEarth:
+    'https://images.unsplash.com/photo-1692221339709-a325c1d68fce?auto=format&fit=crop&w=1200&q=80',
+  sutraPrayer:
+    'https://images.unsplash.com/photo-1744132242267-9aa633fd2f73?auto=format&fit=crop&w=1200&q=80',
+  jamaahCongregation:
+    'https://images.unsplash.com/photo-1740970185537-2ecd0d9ca30f?auto=format&fit=crop&w=1200&q=80',
   /** Distinct Unsplash avatars for authors / murabbiyun (Islamic scenes, no people portraits) */
   scholarQuran:
     'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=800&h=800&q=80',

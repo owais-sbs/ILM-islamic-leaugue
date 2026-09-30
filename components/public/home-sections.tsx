@@ -96,9 +96,13 @@ function FeaturedAndSubjects() {
             />
             <div className="flex flex-col justify-center p-5 sm:p-6 md:px-8 md:py-6">
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-gold-deep">{featured.category}</span>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">{featured.title}</h3>
-              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ilm-navy/55">{featured.excerpt}</p>
-              <p className="mt-4 text-sm font-semibold text-ilm-navy">
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl" suppressHydrationWarning>
+                {featured.title}
+              </h3>
+              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ilm-navy/55" suppressHydrationWarning>
+                {featured.excerpt}
+              </p>
+              <p className="mt-4 text-sm font-semibold text-ilm-navy" suppressHydrationWarning>
                 {featured.author} · {featured.readTime}
               </p>
             </div>

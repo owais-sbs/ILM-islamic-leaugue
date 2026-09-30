@@ -50,10 +50,10 @@ export function ArticleCard({ article, className, isNew = false }: { article: Ca
           <span className="text-ilm-navy/20">·</span>
           {article.date}
         </p>
-        <h3 className="mt-3 line-clamp-2 text-[20px] font-semibold leading-snug tracking-tight text-ilm-navy sm:text-[22px]">
+        <h3 className="mt-3 line-clamp-2 text-[20px] font-semibold leading-snug tracking-tight text-ilm-navy sm:text-[22px]" suppressHydrationWarning>
           {article.title}
         </h3>
-        <p className="mt-2 line-clamp-3 min-h-[3.75rem] flex-1 text-sm leading-relaxed text-ilm-navy/55">
+        <p className="mt-2 line-clamp-3 min-h-[3.75rem] flex-1 text-sm leading-relaxed text-ilm-navy/55" suppressHydrationWarning>
           {article.excerpt || ' '}
         </p>
         <Link
