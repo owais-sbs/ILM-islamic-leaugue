@@ -27,16 +27,16 @@ export function ReviewQueue({
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const isAdmin = canPublish(role);
-  const reviewItems = articles.filter(
-    (a) => a.status === 'submitted' || a.status === 'approved' || a.status === 'returned'
-  );
+  const reviewItems = isAdmin
+    ? articles.filter((a) => a.status === 'submitted' || a.status === 'approved' || a.status === 'returned')
+    : articles.filter((a) => a.status === 'submitted' || a.status === 'returned');
 
   return (
     <div>
       <p className="mb-5 text-sm text-ilm-navy/50">
         {isAdmin
-          ? 'Approve, reject with notes, or publish approved work. Approve & Publish is available in the full editor.'
-          : 'Read, edit if needed, then approve or reject with notes. Publishing is Administrator-only.'}
+          ? 'Articles approved by the editor appear here. Publish to make them live on the website.'
+          : 'Read submitted articles, edit if needed, then approve to forward to the Administrator — or reject with notes to send back to the author.'}
       </p>
 
       <div className="overflow-hidden rounded-2xl border border-ilm-navy/10 bg-white">
@@ -119,11 +119,11 @@ export function ReviewQueue({
                           <button
                             onClick={() => {
                               onApprove(article);
-                              void adminSwal.success('Approved', article.title);
+                              void adminSwal.success('Approved & forwarded to Admin', article.title);
                             }}
                             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-600 px-2.5 py-1.5 text-[10px] font-bold uppercase text-white"
                           >
-                            <CheckCircle2 size={12} /> Approve
+                            <CheckCircle2 size={12} /> Approve & Forward
                           </button>
                         )}
                         {canReject && (

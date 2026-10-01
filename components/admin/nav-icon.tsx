@@ -14,6 +14,8 @@ import {
   Mail,
   Settings,
   ScrollText,
+  LayoutTemplate,
+  Contact,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -31,6 +33,8 @@ const iconMap: Record<string, LucideIcon> = {
   subscribers: Mail,
   settings: Settings,
   activity: ScrollText,
+  'content-manager': LayoutTemplate,
+  'staff-profiles': Contact,
 };
 
 export function NavIcon({ name, size = 18 }: { name: string; size?: number }) {

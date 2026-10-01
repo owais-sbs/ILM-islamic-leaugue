@@ -4,20 +4,27 @@ import Link from 'next/link';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, BookOpen, ChevronDown, MoveUpRight, Sprout } from 'lucide-react';
 import { GeometricOrnament } from './brand';
-import { heroImage } from '@/lib/public-data';
-import { homeContent } from '@/lib/ilm-page-content';
 import { siteConfig } from '@/lib/site';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useContentManager } from '@/lib/content-manager/useContentManager';
 
 const ease = [0.22, 0.61, 0.36, 1] as const;
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const imageY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 72]);
-  const copyY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 36]);
-  const fade = useTransform(scrollYProgress, [0, 0.7], [1, reduce ? 1 : 0.2]);
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, !mounted || reduce ? 0 : 72]);
+  const copyY = useTransform(scrollYProgress, [0, 1], [0, !mounted || reduce ? 0 : 36]);
+  const fade  = useTransform(scrollYProgress, [0, 0.7], [1, !mounted || reduce ? 1 : 0.2]);
+
+  const cm   = useContentManager();
+  const hero = cm.hero;
+
+  // If section is hidden entirely, render nothing
+  if (mounted && !hero.visible) return null;
 
   return (
     <section ref={ref} id="top" className="relative min-h-[100svh] overflow-hidden pt-24 sm:pt-28">
@@ -32,8 +39,9 @@ export function Hero() {
             transition={{ duration: 0.75, delay: 0.08, ease }}
             className="flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep sm:text-[11px] sm:tracking-[0.22em] lg:justify-start"
           >
-            <span className="h-px w-6 bg-ilm-gold sm:w-8" /> {homeContent.tagline}
+            <span className="h-px w-6 bg-ilm-gold sm:w-8" /> {hero.eyebrow}
           </motion.p>
+
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
@@ -41,94 +49,101 @@ export function Hero() {
             className="mt-5 text-[32px] font-semibold leading-[1.08] tracking-[-0.045em] text-ilm-navy sm:mt-6 sm:text-[48px] sm:leading-[1.02] lg:text-[64px]"
           >
             <span className="sr-only">{siteConfig.name}. </span>
-            Islamic League of{' '}
-            <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
+            {hero.heading}{' '}
+            <em className="font-serif italic font-normal text-ilm-gold">{hero.headingHighlight}</em>
           </motion.h1>
+
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.3, ease }}
             className="mx-auto mt-5 max-w-[420px] text-[15px] leading-[1.7] text-ilm-navy/60 sm:mt-6 sm:text-[16px] sm:leading-[1.75] lg:mx-0"
           >
-            {homeContent.supporting}
+            {hero.description}
           </motion.p>
+
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.4, ease }}
             className="mt-7 flex flex-wrap items-center justify-center gap-4 sm:mt-9 sm:gap-6 lg:justify-start"
           >
-            <Link
-              href="/articles"
-              className="inline-flex items-center gap-2.5 rounded-full bg-ilm-navy px-5 py-3 text-[13px] font-semibold text-white shadow-[0_12px_30px_rgba(11,17,82,0.18)] transition-transform duration-300 hover:-translate-y-0.5 sm:px-6 sm:py-3.5"
-            >
-              Explore the Library <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/about"
-              className="inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy transition-colors hover:text-ilm-gold-deep"
-            >
-              Discover Our Story <MoveUpRight size={14} />
-            </Link>
+            {hero.showPrimaryBtn && (
+              <Link
+                href={hero.primaryBtnUrl}
+                className="inline-flex items-center gap-2.5 rounded-full bg-ilm-navy px-5 py-3 text-[13px] font-semibold text-white shadow-[0_12px_30px_rgba(11,17,82,0.18)] transition-transform duration-300 hover:-translate-y-0.5 sm:px-6 sm:py-3.5"
+              >
+                {hero.primaryBtnText} <ArrowRight size={16} />
+              </Link>
+            )}
+            {hero.showSecondaryBtn && (
+              <Link
+                href={hero.secondaryBtnUrl}
+                className="inline-flex items-center gap-1.5 border-b border-ilm-gold pb-1 text-[13px] font-semibold text-ilm-navy transition-colors hover:text-ilm-gold-deep"
+              >
+                {hero.secondaryBtnText} <MoveUpRight size={14} />
+              </Link>
+            )}
           </motion.div>
         </motion.div>
 
-        <motion.div
-          style={{ y: imageY }}
-          className="relative mx-auto h-[300px] w-full max-w-[360px] sm:h-[440px] sm:max-w-[520px] lg:h-[560px] lg:max-w-none"
-        >
+        {hero.showImage && (
           <motion.div
-            initial={reduce ? false : { opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.05, delay: 0.18, ease }}
-            className="absolute inset-0"
+            style={{ y: imageY }}
+            className="relative mx-auto h-[300px] w-full max-w-[360px] sm:h-[440px] sm:max-w-[520px] lg:h-[560px] lg:max-w-none"
           >
             <motion.div
-              className="absolute right-2 top-1 h-[86%] w-[86%] rounded-full border border-ilm-gold/50 sm:right-4 sm:top-2"
-              animate={reduce ? undefined : { rotate: [0, 2, 0] }}
-              transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <div className="hero-blob absolute inset-y-4 right-0 left-4 overflow-hidden shadow-[0_30px_70px_rgba(11,17,82,0.16)] sm:inset-y-6 sm:left-6">
-              <img src={heroImage} alt="Open Qur’an" className="h-full w-full object-cover" />
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={reduce ? false : { opacity: 0, x: 24, y: -10 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.75, delay: 0.55, ease }}
-            className="absolute right-0 top-8 z-10 hidden w-[200px] rounded-[22px] border border-white/80 bg-white/95 p-3 shadow-[0_16px_40px_rgba(11,17,82,0.12)] backdrop-blur sm:top-16 sm:block sm:w-[230px] sm:p-4"
-          >
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-full bg-ilm-cream text-ilm-gold-deep">
-                <Sprout size={15} />
-              </span>
-              <div className="flex-1">
-                <p className="text-[13px] font-semibold text-ilm-navy">{homeContent.tagline}</p>
-                <p className="mt-0.5 text-[11px] leading-snug text-ilm-navy/50">
-                  {homeContent.supporting}
-                </p>
+              initial={reduce ? false : { opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.05, delay: 0.18, ease }}
+              className="absolute inset-0"
+            >
+              <motion.div
+                className="absolute right-2 top-1 h-[86%] w-[86%] rounded-full border border-ilm-gold/50 sm:right-4 sm:top-2"
+                animate={reduce ? undefined : { rotate: [0, 2, 0] }}
+                transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <div className="hero-blob absolute inset-y-4 right-0 left-4 overflow-hidden shadow-[0_30px_70px_rgba(11,17,82,0.16)] sm:inset-y-6 sm:left-6">
+                <img src={hero.heroImage} alt="Open Qur'an" className="h-full w-full object-cover" />
               </div>
-              <ArrowRight size={14} className="mt-1 shrink-0 text-ilm-navy/30" />
-            </div>
-          </motion.div>
+            </motion.div>
 
-          <motion.div
-            initial={reduce ? false : { opacity: 0, x: -20, y: 10 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.75, delay: 0.68, ease }}
-            className="absolute bottom-8 left-0 z-10 hidden max-w-[280px] rounded-[20px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_16px_40px_rgba(11,17,82,0.12)] backdrop-blur sm:bottom-16 sm:block"
-          >
-            <p className="flex items-start gap-2 text-[12px] font-semibold leading-snug text-ilm-navy sm:text-[13px]">
-              <BookOpen size={15} className="mt-0.5 shrink-0 text-ilm-gold-deep" />
-              {homeContent.closing}
-            </p>
+            <motion.div
+              initial={reduce ? false : { opacity: 0, x: 24, y: -10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.55, ease }}
+              className="absolute right-0 top-8 z-10 hidden w-[200px] rounded-[22px] border border-white/80 bg-white/95 p-3 shadow-[0_16px_40px_rgba(11,17,82,0.12)] backdrop-blur sm:top-16 sm:block sm:w-[230px] sm:p-4"
+            >
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-full bg-ilm-cream text-ilm-gold-deep">
+                  <Sprout size={15} />
+                </span>
+                <div className="flex-1">
+                  <p className="text-[13px] font-semibold text-ilm-navy">{hero.eyebrow}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-ilm-navy/50">{hero.description}</p>
+                </div>
+                <ArrowRight size={14} className="mt-1 shrink-0 text-ilm-navy/30" />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={reduce ? false : { opacity: 0, x: -20, y: 10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.68, ease }}
+              className="absolute bottom-8 left-0 z-10 hidden max-w-[280px] rounded-[20px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_16px_40px_rgba(11,17,82,0.12)] backdrop-blur sm:bottom-16 sm:block"
+            >
+              <p className="flex items-start gap-2 text-[12px] font-semibold leading-snug text-ilm-navy sm:text-[13px]">
+                <BookOpen size={15} className="mt-0.5 shrink-0 text-ilm-gold-deep" />
+                {hero.description}
+              </p>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
       </div>
 
       <a
         href="#our-why"
+        suppressHydrationWarning
         className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-2 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.16em] text-ilm-navy/40 sm:bottom-8 sm:gap-3 sm:tracking-[0.2em]"
       >
         <span className="h-6 w-px shrink-0 bg-ilm-gold sm:h-8" />

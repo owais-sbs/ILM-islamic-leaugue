@@ -14,6 +14,8 @@ export const ADMIN_SECTIONS = [
   'subscribers',
   'settings',
   'activity-log',
+  'content-manager',
+  'staff-profiles',
 ] as const;
 
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];

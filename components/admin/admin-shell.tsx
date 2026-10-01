@@ -27,6 +27,8 @@ import { QuestionsScreen } from '@/components/admin/questions-screen';
 import { SubscribersScreen } from '@/components/admin/subscribers-screen';
 import { SettingsScreen } from '@/components/admin/settings-screen';
 import { ActivityLogScreen } from '@/components/admin/activity-log-screen';
+import { ContentManagerLayout } from '@/components/content-manager/ContentManagerLayout';
+import { StaffProfilesScreen } from '@/components/admin/staff-profiles-screen';
 import { cn } from '@/lib/utils';
 
 const ease = [0.22, 0.61, 0.36, 1] as const;
@@ -46,6 +48,8 @@ const titles: Record<string, string> = {
   subscribers: 'Subscribers',
   settings: 'Settings',
   'activity-log': 'Activity Log',
+  'content-manager': 'Content Manager',
+  'staff-profiles': 'Staff Profiles',
 };
 
 type Screen = 'tab' | 'edit' | 'preview';
@@ -183,6 +187,9 @@ export function AdminShell() {
     if (!role || !user) return 0;
     switch (key) {
       case 'review-queue':
+        if (role === 'administrator') {
+          return articles.filter((a) => a.status === 'approved').length;
+        }
         return articles.filter((a) => a.status === 'submitted').length;
       case 'questions':
         if (role === 'author') {
@@ -388,6 +395,10 @@ export function AdminShell() {
         return <SettingsScreen actorName={user.name} />;
       case 'activity-log':
         return <ActivityLogScreen />;
+      case 'content-manager':
+        return <ContentManagerLayout />;
+      case 'staff-profiles':
+        return <StaffProfilesScreen />;
       default:
         return <DashboardScreen role={role} articles={articles} onOpen={openPreview} />;
     }
@@ -708,9 +719,9 @@ export function AdminShell() {
                     backToList();
                   }}
                   onApproveAndPublish={(a) => {
-                    saveArticle({ ...a, status: 'approved' }, user.name, false);
-                    publishArticle(a.id, user.name);
-                    void adminSwal.success('Approved & published', a.title);
+                    // Editor path: approve article → sets status to 'approved', notifies Admin
+                    approveArticle(a.id, user.name);
+                    void adminSwal.success('Approved & forwarded to Admin', a.title);
                     backToList();
                   }}
                 />

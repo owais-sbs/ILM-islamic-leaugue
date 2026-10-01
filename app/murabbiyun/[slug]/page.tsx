@@ -3,8 +3,9 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { murabbiyūn, type MurabbiDetail } from '@/lib/public-data';
+import { murabbiyūn, type MurabbiDetail, type Murabbi } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
+import { safeScholarImage } from '@/lib/images';
 import { ArticleCard } from '@/components/public/article-card';
 import { AskQuestionModal } from '@/components/public/ask-question-modal';
 import { SiteFooter } from '@/components/public/site-footer';
@@ -27,9 +28,7 @@ function DetailBlock({ block }: { block: MurabbiDetail }) {
     return (
       <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-ilm-navy/65 sm:text-base">
         {block.items.map((item) => (
-          <li key={item} className="break-words">
-            {item}
-          </li>
+          <li key={item} className="break-words">{item}</li>
         ))}
       </ul>
     );
@@ -46,9 +45,7 @@ function DetailBlock({ block }: { block: MurabbiDetail }) {
                 <a
                   href={entry.href}
                   className="border-b border-ilm-gold/50 text-ilm-navy transition-colors hover:text-ilm-gold-deep"
-                  {...(entry.href.startsWith('http')
-                    ? { target: '_blank', rel: 'noopener noreferrer' }
-                    : {})}
+                  {...(entry.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 >
                   {entry.value}
                 </a>
@@ -80,12 +77,34 @@ function DetailBlock({ block }: { block: MurabbiDetail }) {
 
 export default function MurabbiProfilePage({ params }: { params: { slug: string } }) {
   const slug = params.slug;
-  const person = murabbiyūn.find((m) => m.id === slug);
-  const { publishedArticles } = useIlm();
+  const { publishedArticles, contributors } = useIlm();
   const [askOpen, setAskOpen] = useState(false);
+
+  // Look up in static murabbiyūn first, then dynamic contributors
+  const person = useMemo((): Murabbi | null => {
+    const staticMatch = murabbiyūn.find((m) => m.id === slug);
+    if (staticMatch) return staticMatch;
+
+    // Dynamic contributor profile
+    const c = contributors.find((c) => c.id === slug && c.showInDirectory && c.active);
+    if (!c) return null;
+    return {
+      id: c.id,
+      name: c.name,
+      role: c.staffTitle || '',
+      bio: c.bio || '',
+      biography: c.biography?.length ? c.biography : [c.bio || ''],
+      madhhab: (c.madhhab as Murabbi['madhhab']) || undefined,
+      focus: c.focus,
+      image: safeScholarImage(c.image),
+      accent: c.accent || 'bg-sky-100 text-sky-700',
+      sections: [],
+    };
+  }, [slug, contributors]);
+
   const works = useMemo(
     () => publishedArticles.filter((a) => a.authorSlug === slug || a.author === person?.name),
-    [publishedArticles, slug, person?.name]
+    [publishedArticles, slug, person?.name],
   );
 
   if (!person) {
@@ -106,6 +125,7 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
     <main className="flex min-h-[100svh] flex-col pt-28">
       <SiteHeader active="murabbiyun" />
       <section className="mx-auto grid w-full max-w-[1100px] flex-1 gap-10 px-4 py-8 sm:px-6 sm:py-16 md:grid-cols-[280px_1fr]">
+        {/* Left column — photo + identity */}
         <div className="text-left">
           <Link
             href="/murabbiyun"
@@ -117,7 +137,10 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
             <img src={person.image} alt={person.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
           </div>
           <h1 className="mt-5 break-words text-2xl font-semibold text-ilm-navy">{person.name}</h1>
-          <p className="mt-1 break-words text-ilm-gold-deep">{person.role}</p>
+          {person.role && <p className="mt-1 break-words text-ilm-gold-deep">{person.role}</p>}
+          {person.madhhab && (
+            <p className="mt-1 text-sm text-ilm-navy/45">Madhhab: {person.madhhab}</p>
+          )}
           <div className="mt-6 flex flex-col items-start gap-3">
             <button
               type="button"
@@ -134,6 +157,8 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
             </Link>
           </div>
         </div>
+
+        {/* Right column — biography + sections + articles */}
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Biography</p>
           <div className="mt-4 space-y-4 text-base leading-relaxed text-ilm-navy/70 sm:text-lg">
@@ -142,25 +167,30 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
             ))}
           </div>
 
-          <div className="mt-10 space-y-8">
-            {person.sections.map((section) => (
-              <section key={section.title} className="min-w-0">
-                <h2 className="text-xl font-semibold text-ilm-navy">{section.title}</h2>
-                <div className="mt-4 space-y-4">
-                  {section.blocks.map((block, index) => (
-                    <DetailBlock key={`${section.title}-${index}`} block={block} />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+          {/* Rich sections (static murabbiyūn only) */}
+          {person.sections.length > 0 && (
+            <div className="mt-10 space-y-8">
+              {person.sections.map((section) => (
+                <section key={section.title} className="min-w-0">
+                  <h2 className="text-xl font-semibold text-ilm-navy">{section.title}</h2>
+                  <div className="mt-4 space-y-4">
+                    {section.blocks.map((block, index) => (
+                      <DetailBlock key={`${section.title}-${index}`} block={block} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
 
           <h2 className="mt-12 text-xl font-semibold text-ilm-navy">Published articles</h2>
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             {works.map((a) => (
               <ArticleCard key={a.id} article={a} />
             ))}
-            {works.length === 0 && <p className="text-sm text-ilm-navy/40">No published articles yet.</p>}
+            {works.length === 0 && (
+              <p className="text-sm text-ilm-navy/40">No published articles yet.</p>
+            )}
           </div>
         </div>
       </section>

@@ -44,16 +44,20 @@ export function DashboardScreen({
           ]
         : [
             { label: 'Published', value: String(published.length).padStart(2, '0'), note: 'Live on the public site', icon: TrendingUp, tone: 'text-green-600' },
-            { label: 'Awaiting review', value: String(submitted.length).padStart(2, '0'), note: 'Needs attention', icon: CheckCircle2, tone: 'text-blue-600' },
-            { label: 'Open leads', value: String(unanswered.length).padStart(2, '0'), note: `${newQuestions.length} unread · ${activeSubs.length} subscribers`, icon: MailQuestion, tone: 'text-ilm-gold-deep' },
+            { label: 'Ready to publish', value: String(articles.filter((a) => a.status === 'approved').length).padStart(2, '0'), note: 'Approved by editor — needs your publish', icon: CheckCircle2, tone: 'text-ilm-gold-deep' },
+            { label: 'Open leads', value: String(unanswered.length).padStart(2, '0'), note: `${newQuestions.length} unread · ${activeSubs.length} subscribers`, icon: MailQuestion, tone: 'text-blue-600' },
           ];
 
   const recent =
     role === 'author'
       ? mine.slice(0, 5)
       : role === 'editor'
-        ? articles.filter((a) => a.status === 'submitted' || a.status === 'approved').slice(0, 5)
-        : articles.slice(0, 5);
+        ? articles.filter((a) => a.status === 'submitted' || a.status === 'returned').slice(0, 5)
+        : [
+            ...articles.filter((a) => a.status === 'approved'),
+            ...articles.filter((a) => a.status === 'submitted'),
+            ...articles.filter((a) => a.status === 'published'),
+          ].slice(0, 5);
 
   const inbox = (role === 'author'
     ? questions.filter((q) => q.assignedTo === profile.name && q.status !== 'answered')
@@ -75,7 +79,7 @@ export function DashboardScreen({
         <p className="mt-2 text-ilm-navy/50">
           {role === 'author' && 'Create, edit, and submit your own work. You cannot publish.'}
           {role === 'editor' && 'Review, edit, approve or return. You cannot publish; the Director has final authority.'}
-          {role === 'administrator' && 'Final publishing authority. Live articles appear on the public website.'}
+          {role === 'administrator' && 'Final publishing authority. Articles approved by the editor will appear here. Only you can publish to the live website.'}
         </p>
       </Reveal>
 
@@ -109,7 +113,7 @@ export function DashboardScreen({
           <div className="overflow-hidden rounded-2xl border border-ilm-navy/8 bg-white">
             <div className="border-b border-ilm-navy/8 px-6 py-4">
               <h3 className="text-lg font-semibold text-ilm-navy">
-                {role === 'author' ? 'Your recent work' : role === 'editor' ? 'Needs your review' : 'Recent articles'}
+                {role === 'author' ? 'Your recent work' : role === 'editor' ? 'Needs your review' : 'Approved — ready to publish'}
               </h3>
             </div>
             <table className="w-full text-left">

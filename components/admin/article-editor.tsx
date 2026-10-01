@@ -75,7 +75,8 @@ export function ArticleEditor({
           >
             <Save size={14} /> Save
           </button>
-          {draft.status !== 'published' && (
+          {/* Authors only: submit draft/returned articles for editor review */}
+          {role === 'author' && (draft.status === 'draft' || draft.status === 'returned') && (
             <button
               onClick={() => persist(true)}
               className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white"
@@ -83,10 +84,11 @@ export function ArticleEditor({
               <Send size={14} /> Submit for review
             </button>
           )}
-          {canPublish(role) && draft.status === 'submitted' && onApproveAndPublish && (
+          {/* Editor: approve a submitted article → forwards it to Admin */}
+          {role === 'editor' && draft.status === 'submitted' && onApproveAndPublish && (
             <button
               onClick={async () => {
-                const res = await adminSwal.confirm('Approve & publish?', draft.title || 'Untitled article', 'Approve & Publish');
+                const res = await adminSwal.confirm('Approve & forward to Admin?', draft.title || 'Untitled article', 'Approve');
                 if (!res.isConfirmed) return;
                 const next = {
                   ...draft,
@@ -94,23 +96,47 @@ export function ArticleEditor({
                   seoTitle: draft.seoTitle || draft.title,
                 };
                 onApproveAndPublish(next);
-                await adminSwal.success('Published', next.title);
+                await adminSwal.success('Approved & forwarded to Admin', next.title);
+              }}
+              className="inline-flex items-center gap-2 rounded-full bg-green-600 px-5 py-2 text-xs font-bold uppercase tracking-wide text-white"
+            >
+              <CheckCircle2 size={14} /> Approve & forward to Admin
+            </button>
+          )}
+          {/* Editor: hint when article is already approved */}
+          {role === 'editor' && draft.status === 'approved' && (
+            <span className="rounded-full border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700">
+              Approved — waiting for Admin to publish
+            </span>
+          )}
+          {/* Admin: publish an approved article */}
+          {canPublish(role) && draft.status === 'approved' && onPublish && (
+            <button
+              onClick={async () => {
+                const res = await adminSwal.confirm('Publish to website?', draft.title || 'Untitled article', 'Publish');
+                if (!res.isConfirmed) return;
+                onPublish(draft);
+                await adminSwal.success('Published', draft.title);
               }}
               className="inline-flex items-center gap-2 rounded-full bg-ilm-gold px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy-deep"
             >
-              <CheckCircle2 size={14} /> Approve & Publish
+              <Upload size={14} /> Publish to website
             </button>
           )}
-          {canPublish(role) && (draft.status === 'approved' || draft.status === 'published') && onPublish && (
+          {/* Admin: update/unpublish a live article */}
+          {canPublish(role) && draft.status === 'published' && onPublish && (
             <button
               onClick={() => onPublish(draft)}
               className="inline-flex items-center gap-2 rounded-full bg-ilm-gold px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy-deep"
             >
-              <Upload size={14} /> {draft.status === 'published' ? 'Update live' : 'Publish to site'}
+              <Upload size={14} /> Update live
             </button>
           )}
-          {canApprove(role) && !canPublish(role) && draft.status === 'submitted' && (
-            <span className="text-[11px] text-ilm-navy/40">Open Review to approve</span>
+          {/* Admin hint when article is still with editor */}
+          {canPublish(role) && draft.status === 'submitted' && (
+            <span className="rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700">
+              Awaiting editor review
+            </span>
           )}
         </div>
       </div>

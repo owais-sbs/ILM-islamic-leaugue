@@ -75,6 +75,12 @@ export interface Contributor {
   inviteToken?: string;
   inviteExpiresAt?: number;
   bio?: string;
+  /** Staff Profiles — extra fields for Murabbiyūn directory */
+  staffTitle?: string;          // display title e.g. "Imām, Masjid al-Nur"
+  biography?: string[];         // full bio paragraphs for profile page
+  focus?: 'Studies' | 'Fiqh' | 'Spiritual' | 'Arabic';
+  accent?: string;              // CSS classes e.g. "bg-sky-100 text-sky-700"
+  showInDirectory?: boolean;    // true → appears in Murabbiyūn section on homepage
 }
 
 export interface Subscriber {
@@ -207,7 +213,7 @@ export const roleUsers: Record<Role, { name: string; initials: string; slug: str
 export interface NavItem {
   label: string;
   key: string;
-  icon: 'dashboard' | 'articles' | 'create' | 'profile' | 'help' | 'review' | 'categories' | 'media' | 'authors' | 'questions' | 'subscribers' | 'settings' | 'activity';
+  icon: 'dashboard' | 'articles' | 'create' | 'profile' | 'help' | 'review' | 'categories' | 'media' | 'authors' | 'questions' | 'subscribers' | 'settings' | 'activity' | 'content-manager' | 'staff-profiles';
 }
 export interface NavGroup {
   label: string;
@@ -246,12 +252,14 @@ export const navConfig: Record<Role, NavGroup[]> = {
   administrator: [
     { label: 'Content', items: [
       { label: 'Dashboard', key: 'dashboard', icon: 'dashboard' },
+      { label: 'Content Manager', key: 'content-manager', icon: 'content-manager' },
       { label: 'Articles', key: 'articles', icon: 'articles' },
       { label: 'Review', key: 'review-queue', icon: 'review' },
       { label: 'Categories & Tags', key: 'categories-tags', icon: 'categories' },
     ]},
     { label: 'People', items: [
       { label: 'Authors', key: 'authors', icon: 'authors' },
+      { label: 'Staff Profiles', key: 'staff-profiles', icon: 'staff-profiles' },
     ]},
     { label: 'Engagement', items: [
       { label: 'Media', key: 'media', icon: 'media' },

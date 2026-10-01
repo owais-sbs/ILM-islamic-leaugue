@@ -9,50 +9,41 @@ import { Brand } from './brand';
 import { AskQuestionModal } from './ask-question-modal';
 import { NewArticleBanner } from './new-article-banner';
 import { libraryCategories } from '@/lib/public-data';
+import { useContentManager } from '@/lib/content-manager/useContentManager';
 import { cn } from '@/lib/utils';
 
 const articleCategoryLinks = libraryCategories
   .filter((cat) => cat !== 'All')
-  .map((cat) => ({
-    href: `/articles?category=${encodeURIComponent(cat)}`,
-    label: cat,
-  }));
+  .map((cat) => ({ href: `/articles?category=${encodeURIComponent(cat)}`, label: cat }));
 
-const nav = [
-  { href: '/', label: 'Home', id: 'home' },
-  {
-    href: '/about',
-    label: 'About Us',
-    id: 'about',
-    children: [
-      { href: '/about', label: 'About Us' },
-      { href: '/mission-vision', label: 'Mission & Vision' },
-    ],
-  },
-  {
-    href: '/articles',
-    label: 'Articles',
-    id: 'articles',
-    children: [
-      { href: '/articles', label: 'Article library' },
-      ...articleCategoryLinks,
-      { href: '/search', label: 'Search' },
-    ],
-  },
-  { href: '/murabbiyun', label: 'Murabbiyūn', id: 'murabbiyun' },
-  {
-    href: '/contact',
-    label: 'Connect',
-    id: 'connect',
-    children: [
-      { href: '/ask', label: 'Ask a question' },
-      { href: '/contact', label: 'Contact' },
-      { href: '/donation', label: 'Donation' },
-    ],
-  },
-];
+// Static sub-menus keyed by nav-id
+const staticSubMenus: Record<string, { href: string; label: string }[]> = {
+  about: [
+    { href: '/about', label: 'About Us' },
+    { href: '/mission-vision', label: 'Mission & Vision' },
+  ],
+  articles: [
+    { href: '/articles', label: 'Article library' },
+    ...articleCategoryLinks,
+    { href: '/search', label: 'Search' },
+  ],
+  connect: [
+    { href: '/ask', label: 'Ask a question' },
+    { href: '/contact', label: 'Contact' },
+    { href: '/donation', label: 'Donation' },
+  ],
+};
 
-function navActiveFromPath(pathname: string): 'home' | 'about' | 'articles' | 'murabbiyun' | 'connect' {
+function getNavId(href: string): string {
+  if (href === '/') return 'home';
+  if (href.startsWith('/about') || href.startsWith('/mission')) return 'about';
+  if (href.startsWith('/articles') || href.startsWith('/search')) return 'articles';
+  if (href.startsWith('/murabbiyun')) return 'murabbiyun';
+  if (href.startsWith('/ask') || href.startsWith('/contact') || href.startsWith('/donation')) return 'connect';
+  return href;
+}
+
+function navActiveFromPath(pathname: string): string {
   if (pathname === '/') return 'home';
   if (pathname.startsWith('/articles') || pathname.startsWith('/search') || pathname.startsWith('/library')) return 'articles';
   if (pathname.startsWith('/murabbiyun')) return 'murabbiyun';
@@ -61,8 +52,11 @@ function navActiveFromPath(pathname: string): 'home' | 'about' | 'articles' | 'm
   return 'home';
 }
 
-export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' | 'murabbiyun' | 'connect' }) {
+export function SiteHeader({ active }: { active?: string }) {
   const pathname = usePathname();
+  const cm = useContentManager();
+  const header = cm.header;
+
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -83,27 +77,29 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
   }, []);
 
   useEffect(() => {
-    setMenuOpen(false);
-    setOpenMenu(null);
-    setMobileOpen(null);
-    setSearchOpen(false);
+    setMenuOpen(false); setOpenMenu(null); setMobileOpen(null); setSearchOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
-    if (current === 'articles') setMobileOpen('Articles');
-    else if (current === 'connect') setMobileOpen('Connect');
-    else if (current === 'about') setMobileOpen('About Us');
-  }, [menuOpen, current]);
+    const pathId = navActiveFromPath(pathname);
+    if (pathId === 'articles') setMobileOpen('Articles');
+    else if (pathId === 'connect') setMobileOpen('Connect');
+    else if (pathId === 'about') setMobileOpen('About Us');
+  }, [menuOpen, pathname]);
 
   useEffect(() => {
     if (!menuOpen && !searchOpen && !askOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [menuOpen, searchOpen, askOpen]);
+
+  const cmNavItems = header.navItems
+    .filter((n) => n.visible)
+    .sort((a, b) => a.order - b.order);
+
+  const getSubMenu = (href: string) => staticSubMenus[getNavId(href)] ?? null;
 
   return (
     <>
@@ -117,9 +113,7 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
           <motion.div
             className="flex h-[60px] items-center justify-between gap-2 rounded-full border border-ilm-navy/[0.06] bg-white px-3 shadow-[0_10px_40px_rgba(11,17,82,0.06)] sm:h-[68px] sm:gap-4 sm:px-5 lg:px-6"
             animate={{
-              boxShadow: scrolled
-                ? '0 14px 40px rgba(11,17,82,0.10)'
-                : '0 10px 40px rgba(11,17,82,0.06)',
+              boxShadow: scrolled ? '0 14px 40px rgba(11,17,82,0.10)' : '0 10px 40px rgba(11,17,82,0.06)',
               height: scrolled ? 56 : undefined,
             }}
             transition={{ duration: 0.35, ease: [0.22, 0.61, 0.36, 1] }}
@@ -127,42 +121,40 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
             <Brand />
 
             <nav className="hidden items-center gap-7 lg:flex">
-              {nav.map((item) => {
-                const isActive = current === item.id;
+              {cmNavItems.map((item) => {
+                const navId = getNavId(item.href);
+                const isActive = current === navId;
+                const subMenu = getSubMenu(item.href);
                 return (
                   <div
-                    key={item.label}
+                    key={item.id}
                     className="relative"
-                    onMouseEnter={() => item.children && setOpenMenu(item.label)}
+                    onMouseEnter={() => subMenu && setOpenMenu(item.id)}
                     onMouseLeave={() => setOpenMenu(null)}
                   >
                     <Link
                       href={item.href}
                       className={cn(
                         'relative flex items-center gap-1 pb-1 text-[13.5px] font-medium transition-colors',
-                        isActive ? 'text-ilm-navy' : 'text-ilm-navy/55 hover:text-ilm-navy'
+                        isActive ? 'text-ilm-navy' : 'text-ilm-navy/55 hover:text-ilm-navy',
                       )}
                     >
                       {item.label}
-                      {item.children && <ChevronDown size={13} className="opacity-50" />}
+                      {subMenu && <ChevronDown size={13} className="opacity-50" />}
                       {isActive && (
                         <span className="absolute -bottom-0.5 left-0 right-0 mx-auto h-[2px] w-8 rounded-full bg-ilm-gold" />
                       )}
                     </Link>
                     <AnimatePresence>
-                      {item.children && openMenu === item.label && (
+                      {subMenu && openMenu === item.id && (
                         <motion.div
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 8 }}
                           className="absolute left-1/2 top-full z-20 mt-3 max-h-[70vh] w-56 -translate-x-1/2 overflow-y-auto rounded-2xl border border-ilm-navy/8 bg-white p-2 shadow-xl"
                         >
-                          {item.children.map((child) => (
-                            <Link
-                              key={child.label}
-                              href={child.href}
-                              className="block rounded-xl px-3 py-2 text-sm text-ilm-navy/70 hover:bg-ilm-cream hover:text-ilm-navy"
-                            >
+                          {subMenu.map((child) => (
+                            <Link key={child.label} href={child.href} className="block rounded-xl px-3 py-2 text-sm text-ilm-navy/70 hover:bg-ilm-cream hover:text-ilm-navy">
                               {child.label}
                             </Link>
                           ))}
@@ -186,7 +178,7 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
                 onClick={() => setAskOpen(true)}
                 className="hidden items-center gap-2 rounded-full bg-ilm-navy px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5 sm:inline-flex"
               >
-                Ask a Question <ArrowRight size={15} />
+                {header.ctaText} <ArrowRight size={15} />
               </button>
               <button
                 className="grid h-10 w-10 place-items-center rounded-full text-ilm-navy lg:hidden"
@@ -200,6 +192,7 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
         </motion.div>
       </header>
 
+      {/* Mobile menu */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -209,39 +202,36 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
             className="fixed inset-x-3 top-[84px] z-40 max-h-[calc(100svh-100px)] overflow-y-auto rounded-3xl border border-ilm-navy/10 bg-white p-4 shadow-2xl sm:inset-x-4 sm:top-[92px] sm:p-5 lg:hidden"
           >
             <div className="flex flex-col gap-1">
-              {nav.map((item) => {
-                const hasChildren = Boolean(item.children?.length);
+              {cmNavItems.map((item) => {
+                const subMenu = getSubMenu(item.href);
                 const expanded = mobileOpen === item.label;
                 return (
-                  <div key={item.label} className="flex flex-col">
+                  <div key={item.id} className="flex flex-col">
                     <div className="flex items-center gap-1">
                       <Link
                         href={item.href}
                         onClick={() => setMenuOpen(false)}
                         className={cn(
                           'min-w-0 flex-1 rounded-xl px-3 py-2.5 text-sm font-medium',
-                          current === item.id ? 'bg-ilm-cream text-ilm-navy' : 'text-ilm-navy/70'
+                          current === getNavId(item.href) ? 'bg-ilm-cream text-ilm-navy' : 'text-ilm-navy/70',
                         )}
                       >
                         {item.label}
                       </Link>
-                      {hasChildren && (
+                      {subMenu && (
                         <button
                           type="button"
-                          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${item.label} menu`}
+                          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${item.label}`}
                           aria-expanded={expanded}
                           onClick={() => setMobileOpen(expanded ? null : item.label)}
                           className="grid h-10 w-10 place-items-center rounded-xl text-ilm-navy/50 hover:bg-ilm-cream hover:text-ilm-navy"
                         >
-                          <ChevronDown
-                            size={16}
-                            className={cn('transition-transform duration-200', expanded && 'rotate-180')}
-                          />
+                          <ChevronDown size={16} className={cn('transition-transform duration-200', expanded && 'rotate-180')} />
                         </button>
                       )}
                     </div>
                     <AnimatePresence initial={false}>
-                      {hasChildren && expanded && (
+                      {subMenu && expanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
@@ -250,9 +240,9 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
                           className="overflow-hidden"
                         >
                           <div className="mb-1 ml-2 flex flex-col gap-0.5 border-l border-ilm-navy/10 py-1 pl-3">
-                            {item.children!.map((child) => (
+                            {subMenu.map((child) => (
                               <Link
-                                key={`${item.label}-${child.label}`}
+                                key={`${item.id}-${child.label}`}
                                 href={child.href}
                                 onClick={() => setMenuOpen(false)}
                                 className="rounded-lg px-3 py-2 text-[13px] text-ilm-navy/55 hover:bg-ilm-cream hover:text-ilm-navy"
@@ -268,19 +258,17 @@ export function SiteHeader({ active }: { active?: 'home' | 'about' | 'articles' 
                 );
               })}
               <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setAskOpen(true);
-                }}
+                onClick={() => { setMenuOpen(false); setAskOpen(true); }}
                 className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-ilm-navy px-4 py-3 text-sm font-semibold text-white"
               >
-                Ask a Question <ArrowRight size={15} />
+                {header.ctaText} <ArrowRight size={15} />
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Search overlay */}
       <AnimatePresence>
         {searchOpen && (
           <motion.div

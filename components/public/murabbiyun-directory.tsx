@@ -3,11 +3,16 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, GraduationCap, Sparkles, UserRound } from 'lucide-react';
-import { mosqueArchImage, murabbiFilters, murabbiyūn, type MurabbiFilter } from '@/lib/public-data';
+import { murabbiFilters, murabbiyūn, type Murabbi, type MurabbiFilter } from '@/lib/public-data';
+import type { CMDirectory } from '@/lib/content-manager/types';
+import { useContentManager } from '@/lib/content-manager/useContentManager';
+import { useIlm } from '@/lib/ilm-store';
+import { safeScholarImage } from '@/lib/images';
 import { FilterPills, ViewToggle } from './library-explorer';
 import { ScrollReveal, StaggerChild, StaggerIn } from './scroll-reveal';
 import { GeometricOrnament } from './brand';
 import { cn } from '@/lib/utils';
+import type { Contributor } from '@/lib/admin-data';
 
 const focusIcon = {
   Studies: GraduationCap,
@@ -16,17 +21,60 @@ const focusIcon = {
   Arabic: BookOpen,
 };
 
+/** Convert a Contributor with showInDirectory=true into a Murabbi-compatible shape */
+function contributorToMurabbi(c: Contributor): Murabbi {
+  return {
+    id: c.id,
+    name: c.name,
+    role: c.staffTitle || '',
+    bio: c.bio || `${c.name} is a contributor at ILM.`,
+    biography: c.biography?.length ? c.biography : [c.bio || `${c.name} is a contributor at ILM.`],
+    madhhab: (c.madhhab as Murabbi['madhhab']) || undefined,
+    focus: c.focus,
+    image: safeScholarImage(c.image),
+    accent: c.accent || 'bg-sky-100 text-sky-700',
+    sections: [],
+  };
+}
+
 export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) {
+  const cm = useContentManager();
+  const dir: CMDirectory = cm.directory;
+  const { contributors } = useIlm();
+
   const [filter, setFilter] = useState<MurabbiFilter>('All');
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const list = useMemo(() => {
-    return murabbiyūn.filter((m) => {
+    // 1. Dynamic contributors marked showInDirectory
+    const dynamicMurabbis: Murabbi[] = contributors
+      .filter((c) => c.showInDirectory && c.active)
+      .map(contributorToMurabbi);
+
+    // 2. Combine: static murabbiyūn + dynamic (no duplicates by id)
+    const staticIds = new Set(murabbiyūn.map((m) => m.id));
+    const allMurabbis = [
+      ...murabbiyūn,
+      ...dynamicMurabbis.filter((d) => !staticIds.has(d.id)),
+    ];
+
+    // 3. Apply CM visibility/order for configured ids; append unconfigured dynamic entries
+    const cmConfiguredIds = new Set(dir.murabbiyun.items.map((i) => i.id));
+    const ordered = dir.murabbiyun.items
+      .filter((ci) => ci.visible)
+      .sort((a, b) => a.order - b.order)
+      .map((ci) => allMurabbis.find((m) => m.id === ci.id))
+      .filter(Boolean) as Murabbi[];
+
+    const dynamicNotConfigured = dynamicMurabbis.filter((d) => !cmConfiguredIds.has(d.id));
+    const base = [...ordered, ...dynamicNotConfigured];
+
+    return base.filter((m) => {
       if (filter === 'All') return true;
       if (filter === 'Studies') return m.focus === 'Studies';
       return true;
     });
-  }, [filter]);
+  }, [filter, dir.murabbiyun.items, contributors]);
 
   return (
     <section className="relative overflow-x-hidden pb-8">
@@ -34,32 +82,25 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
         <div className="relative mx-auto grid max-w-[1280px] items-start gap-8 px-4 pt-4 sm:gap-10 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <ScrollReveal>
             <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-ilm-gold-deep">
-              <span className="h-px w-8 bg-ilm-gold" /> Directory
+              <span className="h-px w-8 bg-ilm-gold" /> {dir.sectionLabel}
             </p>
             <h1 className="mt-4 text-[36px] font-semibold leading-[1.08] tracking-[-0.04em] text-ilm-navy sm:text-[48px] lg:text-[58px]">
-              Meet the <em className="font-serif italic font-normal text-ilm-gold">Murabbiyūn</em>
+              {dir.heading}{' '}
+              <em className="font-serif italic font-normal text-ilm-gold">{dir.headingHighlight}</em>
             </h1>
-            <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-ilm-navy/55">
-              The contributors who sacrifice their time by authoring beneficial and knowledge-based articles are all upon the way of Ahlus Sunnah wa al-Jamā’ah.
-            </p>
-            <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-ilm-navy/50">
-              In specific matters one mentor’s position may differ from another. Every mentor represents himself, and his view should not be construed to be reflective of other mentors.
-            </p>
+            <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-ilm-navy/55">{dir.description1}</p>
+            <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-ilm-navy/50">{dir.description2}</p>
           </ScrollReveal>
 
           <ScrollReveal delay={0.12} className="relative mx-auto w-full max-w-[420px]">
             <GeometricOrnament className="absolute -right-10 -top-6 hidden h-40 w-28 lg:block" />
             <div className="relative">
               <div className="mosque-arch overflow-hidden shadow-[0_24px_50px_rgba(11,17,82,0.14)]">
-                <img src={mosqueArchImage} alt="Mosque at sunrise" className="h-[200px] w-full object-cover sm:h-[280px]" />
+                <img src={dir.image} alt={dir.imageAlt} className="h-[200px] w-full object-cover sm:h-[280px]" />
               </div>
               <Sparkles size={14} className="absolute right-8 top-3 text-ilm-gold" />
               <p className="absolute -right-1 bottom-6 rotate-[-12deg] font-serif italic text-[18px] leading-tight text-white drop-shadow-[0_2px_12px_rgba(11,17,82,0.45)] sm:-right-2 sm:bottom-8 sm:text-[22px]">
-                Knowledge
-                <br />
-                Builds
-                <br />
-                Character
+                {dir.overlayLine1}<br />{dir.overlayLine2}<br />{dir.overlayLine3}
               </p>
             </div>
           </ScrollReveal>
@@ -78,7 +119,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
         mode="animate"
         className={cn(
           'murabbi-grid mx-auto mt-8 w-full max-w-[1400px] px-4 sm:px-6 lg:px-8',
-          view === 'grid' ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5' : 'flex flex-col gap-4'
+          view === 'grid' ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5' : 'flex flex-col gap-4',
         )}
       >
         {list.map((person, index) => {
@@ -89,7 +130,7 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
               <article
                 className={cn(
                   'flex h-full min-h-[440px] flex-col rounded-[24px] border border-ilm-navy/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(11,17,82,0.04)] transition-shadow duration-300 hover:shadow-[0_18px_40px_rgba(11,17,82,0.08)] sm:min-h-[460px] sm:p-6',
-                  view === 'list' && 'min-h-0 flex-row items-center gap-6 sm:min-h-[180px]'
+                  view === 'list' && 'min-h-0 flex-row items-center gap-6 sm:min-h-[180px]',
                 )}
               >
                 <div className={cn('flex items-start justify-between', view === 'list' && 'contents')}>
@@ -108,7 +149,9 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
                 <div className={cn('flex min-w-0 flex-1 flex-col', view === 'grid' ? 'text-center' : '')}>
                   <h3 className="break-words text-[18px] font-semibold text-ilm-navy">{person.name}</h3>
                   <p className="mt-1 break-words text-[13px] text-ilm-gold-deep">{person.role}</p>
-                  <p className="mt-3 min-h-[4.5rem] flex-1 text-[13px] leading-relaxed text-ilm-navy/50 line-clamp-4">{person.bio || '\u00A0'}</p>
+                  <p className="mt-3 min-h-[4.5rem] flex-1 text-[13px] leading-relaxed text-ilm-navy/50 line-clamp-4">
+                    {person.bio || '\u00A0'}
+                  </p>
                   <Link
                     href={`/murabbiyun/${person.id}`}
                     className="mt-5 inline-flex items-center justify-center gap-1.5 self-center rounded-full border border-ilm-navy/10 px-4 py-2 text-[13px] font-medium text-ilm-navy transition-colors hover:bg-ilm-cream"
@@ -129,12 +172,6 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
             <span className="h-px w-10 bg-ilm-navy/15" />
             ILM / Murabbiyūn
           </p>
-          <a
-            href="#directory"
-            className="mt-4 flex items-center justify-center gap-2 sm:absolute sm:left-1/2 sm:top-1/2 sm:mt-0 sm:-translate-x-1/2 sm:-translate-y-1/2"
-          >
-            Scroll to explore <span className="text-ilm-navy">↓</span>
-          </a>
         </div>
       )}
     </section>

@@ -47,7 +47,7 @@ const SEED_TAGS = [
 ] as const;
 import { images, safeArticleImage, safeScholarImage } from '@/lib/images';
 
-const KEY = 'ilm-demo-state-v12';
+const KEY = 'ilm-demo-state-v13';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
 const LEGACY_KEYS = [
   'ilm-demo-state-v1',
@@ -61,6 +61,7 @@ const LEGACY_KEYS = [
   'ilm-demo-state-v9',
   'ilm-demo-state-v10',
   'ilm-demo-state-v11',
+  'ilm-demo-state-v12',
 ];
 
 interface Store {
@@ -103,6 +104,7 @@ interface Store {
     role?: Role;
     madhhab?: string;
     bio?: string;
+    staffTitle?: string;
     inviteToken?: string;
     inviteExpiresAt?: number;
     inviteStatus?: 'pending' | 'active';
@@ -110,6 +112,7 @@ interface Store {
   activateInvitedAuthor: (email: string) => void;
   markInviteResent: (id: string, token: string, expiresAt: number) => void;
   toggleAuthorActive: (id: string, active: boolean) => void;
+  updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>) => void;
   markNoticeRead: (id: string) => void;
   markAllNoticesRead: (role: Role, authorName?: string) => void;
   addMedia: (item: Omit<MediaItem, 'id' | 'createdAt'>) => MediaItem | null;
@@ -743,16 +746,21 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (!trimmed) return null;
       const slug = slugify(trimmed);
       if (!slug) return null;
-      let created: Category | null = null;
+      // Check for duplicate before calling setState so we can return synchronously
+      const isDuplicate = categories.some(
+        (c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase(),
+      );
+      if (isDuplicate) return null;
+      const created: Category = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
       setCategories((prev) => {
+        // Guard again inside setState in case of concurrent calls
         if (prev.some((c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
-        created = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
         return [...prev, created];
       });
-      if (created) log('Added category', 'Administrator', trimmed);
+      log('Added category', 'Administrator', trimmed);
       return created;
     },
-    [log],
+    [categories, log],
   );
 
   const removeCategory = useCallback(
@@ -897,6 +905,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       role?: Role;
       madhhab?: string;
       bio?: string;
+      staffTitle?: string;
       inviteToken?: string;
       inviteExpiresAt?: number;
       inviteStatus?: 'pending' | 'active';
@@ -927,6 +936,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         active: !pending,
         image: avatarPool[contributors.length % avatarPool.length],
         bio: input.bio,
+        staffTitle: input.staffTitle,
         inviteStatus: pending ? 'pending' : 'active',
         inviteToken: input.inviteToken,
         inviteExpiresAt: input.inviteExpiresAt,
@@ -974,6 +984,18 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     setContributors((prev) => prev.map((c) => (c.id === id ? { ...c, active } : c)));
   }, []);
 
+  const updateContributorProfile = useCallback(
+    (
+      id: string,
+      patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>,
+    ) => {
+      setContributors((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      );
+    },
+    [],
+  );
+
   const value = useMemo<Store>(
     () => ({
       articles,
@@ -1020,6 +1042,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       activateInvitedAuthor,
       markInviteResent,
       toggleAuthorActive,
+      updateContributorProfile,
       markNoticeRead,
       markAllNoticesRead,
       addMedia,
@@ -1063,6 +1086,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       activateInvitedAuthor,
       markInviteResent,
       toggleAuthorActive,
+      updateContributorProfile,
       markNoticeRead,
       markAllNoticesRead,
       addMedia,
