@@ -115,7 +115,7 @@ interface Store {
   updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>) => void;
   markNoticeRead: (id: string) => void;
   markAllNoticesRead: (role: Role, authorName?: string) => void;
-  addMedia: (item: Omit<MediaItem, 'id' | 'createdAt'>) => MediaItem | null;
+  addMedia: (item: Omit<MediaItem, 'id' | 'createdAt'>, id?: string) => MediaItem | null;
   removeMedia: (id: string) => void;
   updateSiteSettings: (patch: Partial<SiteSettings>, actor: string) => void;
 }
@@ -314,32 +314,91 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     }
     setArticles(nextArticles);
     setReady(true);
-    // Optional remote merge (disabled by default — Supabase demo rows were polluting the library)
-    if (process.env.NEXT_PUBLIC_MERGE_REMOTE === '1') {
+
+    // Live merge on Vercel/production: published articles, categories, settings from Supabase.
+    // Seeds always win for their slugs; remote fills everything else. Disable with NEXT_PUBLIC_MERGE_REMOTE=0.
+    const mergeRemote = process.env.NEXT_PUBLIC_MERGE_REMOTE !== '0';
+    if (mergeRemote) {
       void (async () => {
         try {
-          const res = await fetch('/api/articles/published', { cache: 'no-store' });
-          if (!res.ok) return;
-          const json = (await res.json()) as { ok?: boolean; articles?: Article[] };
-          if (!json.ok || !Array.isArray(json.articles) || json.articles.length === 0) return;
-          setArticles((prev) => {
-            const bySlug = new Map(prev.map((a) => [a.slug, a]));
-            for (const remote of json.articles!) {
-              if (!remote?.slug || OLD_ARTICLE_SLUGS.has(remote.slug)) continue;
-              if (seedBySlug.has(remote.slug)) continue;
-              if (!remote.title?.trim()) continue;
-              const local = bySlug.get(remote.slug);
-              bySlug.set(
-                remote.slug,
-                local
-                  ? { ...local, ...remote, status: 'published', image: safeArticleImage(remote.image || local.image) }
-                  : { ...remote, status: 'published', image: safeArticleImage(remote.image) },
-              );
+          const [artsRes, catsRes, settingsRes] = await Promise.all([
+            fetch('/api/articles/published', { cache: 'no-store' }),
+            fetch('/api/admin/categories', { cache: 'no-store' }),
+            fetch('/api/admin/settings', { cache: 'no-store' }),
+          ]);
+
+          if (artsRes.ok) {
+            const json = (await artsRes.json()) as { ok?: boolean; articles?: Article[] };
+            if (json.ok && Array.isArray(json.articles) && json.articles.length > 0) {
+              setArticles((prev) => {
+                const bySlug = new Map(prev.map((a) => [a.slug, a]));
+                for (const remote of json.articles!) {
+                  if (!remote?.slug || OLD_ARTICLE_SLUGS.has(remote.slug)) continue;
+                  if (seedBySlug.has(remote.slug)) continue;
+                  if (!remote.title?.trim()) continue;
+                  const local = bySlug.get(remote.slug);
+                  bySlug.set(
+                    remote.slug,
+                    local
+                      ? { ...local, ...remote, status: 'published', image: safeArticleImage(remote.image || local.image) }
+                      : { ...remote, status: 'published', image: safeArticleImage(remote.image) },
+                  );
+                }
+                return Array.from(bySlug.values());
+              });
             }
-            return Array.from(bySlug.values());
-          });
+          }
+
+          if (catsRes.ok) {
+            const json = (await catsRes.json()) as {
+              ok?: boolean;
+              categories?: Category[];
+              tags?: string[];
+            };
+            if (json.ok && Array.isArray(json.categories) && json.categories.length > 0) {
+              setCategories((prev) => {
+                const bySlug = new Map(prev.map((c) => [c.slug, c]));
+                for (const remote of json.categories!) {
+                  if (!remote?.slug) continue;
+                  const local = bySlug.get(remote.slug);
+                  bySlug.set(remote.slug, local ? { ...local, ...remote, name: remote.name || local.name } : remote);
+                }
+                return Array.from(bySlug.values());
+              });
+            }
+            if (json.ok && Array.isArray(json.tags) && json.tags.length > 0) {
+              setTags((prev) => Array.from(new Set([...prev, ...json.tags!.map((t) => t.toLowerCase())])));
+            }
+          }
+
+          if (settingsRes.ok) {
+            const json = (await settingsRes.json()) as {
+              ok?: boolean;
+              settings?: Partial<SiteSettings>;
+            };
+            if (json.ok && json.settings) {
+              setSiteSettings((prev) => ({ ...prev, ...json.settings }));
+            }
+          }
+
+          const mediaRes = await fetch('/api/admin/media', { cache: 'no-store' });
+          if (mediaRes.ok) {
+            const json = (await mediaRes.json()) as {
+              ok?: boolean;
+              media?: MediaItem[];
+            };
+            if (json.ok && Array.isArray(json.media) && json.media.length > 0) {
+              setMedia((prev) => {
+                const byId = new Map(prev.map((m) => [m.id, m]));
+                for (const remote of json.media!) {
+                  byId.set(remote.id, remote);
+                }
+                return Array.from(byId.values());
+              });
+            }
+          }
         } catch {
-          /* offline / misconfigured — keep local demo */
+          /* offline / misconfigured — keep local */
         }
       })();
     }
@@ -746,18 +805,29 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (!trimmed) return null;
       const slug = slugify(trimmed);
       if (!slug) return null;
-      // Check for duplicate before calling setState so we can return synchronously
       const isDuplicate = categories.some(
         (c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase(),
       );
       if (isDuplicate) return null;
       const created: Category = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
       setCategories((prev) => {
-        // Guard again inside setState in case of concurrent calls
         if (prev.some((c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
         return [...prev, created];
       });
       log('Added category', 'Administrator', trimmed);
+      void fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed, type: 'category' }),
+      })
+        .then(async (res) => {
+          const json = (await res.json()) as { ok?: boolean; category?: Category };
+          if (!json.ok || !json.category) return;
+          setCategories((prev) =>
+            prev.map((c) => (c.slug === slug ? { ...c, id: json.category!.id, name: json.category!.name } : c)),
+          );
+        })
+        .catch(() => undefined);
       return created;
     },
     [categories, log],
@@ -770,6 +840,9 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         if (target) log('Removed category', 'Administrator', target.name);
         return prev.filter((c) => c.id !== id);
       });
+      void fetch(`/api/admin/categories?id=${encodeURIComponent(id)}&type=category`, { method: 'DELETE' }).catch(
+        () => undefined,
+      );
     },
     [log],
   );
@@ -783,12 +856,22 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       added = true;
       return [...prev, trimmed];
     });
+    if (added) {
+      void fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed, type: 'tag' }),
+      }).catch(() => undefined);
+    }
     return added;
   }, []);
 
   const removeTag = useCallback((name: string) => {
     const trimmed = name.trim().toLowerCase();
     setTags((prev) => prev.filter((t) => t !== trimmed));
+    void fetch(`/api/admin/categories?type=tag&name=${encodeURIComponent(trimmed)}`, { method: 'DELETE' }).catch(
+      () => undefined,
+    );
   }, []);
 
   const addSubscriber = useCallback((email: string) => {
@@ -857,13 +940,13 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const addMedia = useCallback((item: Omit<MediaItem, 'id' | 'createdAt'>) => {
+  const addMedia = useCallback((item: Omit<MediaItem, 'id' | 'createdAt'>, id?: string) => {
     const created: MediaItem = {
       ...item,
-      id: `m${Date.now()}`,
+      id: id || `m${Date.now()}`,
       createdAt: shortDate(),
     };
-    setMedia((prev) => [created, ...prev]);
+    setMedia((prev) => [created, ...prev.filter((m) => m.id !== created.id)]);
     log('Uploaded media', 'Staff', created.name);
     return created;
   }, [log]);
@@ -875,6 +958,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         if (target) log('Deleted media', 'Staff', target.name);
         return prev.filter((m) => m.id !== id);
       });
+      void fetch(`/api/admin/media?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => undefined);
     },
     [log],
   );
@@ -894,6 +978,11 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         return next;
       });
       log('Updated settings', actor, Object.keys(patch).join(', '));
+      void fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      }).catch(() => undefined);
     },
     [log],
   );

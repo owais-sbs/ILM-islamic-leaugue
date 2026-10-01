@@ -1,7 +1,6 @@
 /** ============================================================
- *  ILM Content Manager — Repository / Adapter (Phase 1)
- *  UI talks ONLY to this layer. In Phase 2 swap localStorage
- *  calls here for Supabase calls — no UI changes needed.
+ *  ILM Content Manager — Repository / Adapter
+ *  UI talks ONLY to this layer. Live sync goes through remote.ts.
  * ============================================================ */
 
 export {
@@ -10,7 +9,15 @@ export {
   updateCMSection as updateSection,
   resetCMSection as resetSection,
   clearCMContent as clearContent,
+  mergeHomepage,
 } from './storage';
+
+export {
+  loadHomepageLive,
+  loadPagesLive,
+  saveHomepageLive,
+  savePagesLive,
+} from './remote';
 
 export { CM_DEFAULTS as getDefaults } from './defaults';
 export type { CMHomepageContent, CMSection } from './types';

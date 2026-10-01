@@ -1,6 +1,6 @@
 /** ============================================================
- *  ILM Content Manager — localStorage persistence (Phase 1)
- *  Single key. No Supabase. Safe on SSR.
+ *  ILM Content Manager — local cache + merge helpers
+ *  Source of truth on production: Supabase via /api/cms
  * ============================================================ */
 
 import type { CMHomepageContent, CMSection } from './types';
@@ -15,55 +15,57 @@ function isBrowser() {
   return typeof window !== 'undefined';
 }
 
+/** Deep-merge partial CMS payload with defaults. */
+export function mergeHomepage(parsed: Partial<CMHomepageContent> | Record<string, unknown> = {}): CMHomepageContent {
+  const p = parsed as Partial<CMHomepageContent> & { directory?: CMHomepageContent['directory'] };
+  return {
+    header: { ...CM_DEFAULTS.header, ...p.header },
+    hero: { ...CM_DEFAULTS.hero, ...p.hero },
+    about: {
+      ...CM_DEFAULTS.about,
+      ...p.about,
+      pillars: p.about?.pillars ?? CM_DEFAULTS.about.pillars,
+    },
+    featuredArticles: { ...CM_DEFAULTS.featuredArticles, ...p.featuredArticles },
+    directory: {
+      ...CM_DEFAULTS.directory,
+      ...p.directory,
+      murabbiyun: {
+        ...CM_DEFAULTS.directory.murabbiyun,
+        ...p.directory?.murabbiyun,
+        items: p.directory?.murabbiyun?.items ?? CM_DEFAULTS.directory.murabbiyun.items,
+      },
+      categories: {
+        ...CM_DEFAULTS.directory.categories,
+        ...p.directory?.categories,
+        items: p.directory?.categories?.items ?? CM_DEFAULTS.directory.categories.items,
+      },
+    },
+    learningJourney: {
+      ...CM_DEFAULTS.learningJourney,
+      ...p.learningJourney,
+      steps: p.learningJourney?.steps ?? CM_DEFAULTS.learningJourney.steps,
+    },
+    quote: { ...CM_DEFAULTS.quote, ...p.quote },
+    newsletter: { ...CM_DEFAULTS.newsletter, ...p.newsletter },
+    footer: {
+      ...CM_DEFAULTS.footer,
+      ...p.footer,
+      exploreLinks: p.footer?.exploreLinks ?? CM_DEFAULTS.footer.exploreLinks,
+      connectLinks: p.footer?.connectLinks ?? CM_DEFAULTS.footer.connectLinks,
+      socialLinks: p.footer?.socialLinks ?? CM_DEFAULTS.footer.socialLinks,
+    },
+  };
+}
+
 /** Read the full homepage content from localStorage, falling back to defaults. */
 export function readCMContent(): CMHomepageContent {
   if (!isBrowser()) return CM_DEFAULTS;
   try {
-    // Clear legacy key (old schema had top-level categories/murabbiyun)
     localStorage.removeItem(CM_LEGACY_KEY);
-
     const raw = localStorage.getItem(CM_STORAGE_KEY);
     if (!raw) return CM_DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<CMHomepageContent>;
-    // Deep-merge with defaults so new sections added in future releases still appear
-    return {
-      header: { ...CM_DEFAULTS.header, ...parsed.header },
-      hero: { ...CM_DEFAULTS.hero, ...parsed.hero },
-      about: {
-        ...CM_DEFAULTS.about,
-        ...parsed.about,
-        pillars: parsed.about?.pillars ?? CM_DEFAULTS.about.pillars,
-      },
-      featuredArticles: { ...CM_DEFAULTS.featuredArticles, ...parsed.featuredArticles },
-      directory: {
-        ...CM_DEFAULTS.directory,
-        ...(parsed as any).directory,
-        murabbiyun: {
-          ...CM_DEFAULTS.directory.murabbiyun,
-          ...(parsed as any).directory?.murabbiyun,
-          items: (parsed as any).directory?.murabbiyun?.items ?? CM_DEFAULTS.directory.murabbiyun.items,
-        },
-        categories: {
-          ...CM_DEFAULTS.directory.categories,
-          ...(parsed as any).directory?.categories,
-          items: (parsed as any).directory?.categories?.items ?? CM_DEFAULTS.directory.categories.items,
-        },
-      },
-      learningJourney: {
-        ...CM_DEFAULTS.learningJourney,
-        ...parsed.learningJourney,
-        steps: parsed.learningJourney?.steps ?? CM_DEFAULTS.learningJourney.steps,
-      },
-      quote: { ...CM_DEFAULTS.quote, ...parsed.quote },
-      newsletter: { ...CM_DEFAULTS.newsletter, ...parsed.newsletter },
-      footer: {
-        ...CM_DEFAULTS.footer,
-        ...parsed.footer,
-        exploreLinks: parsed.footer?.exploreLinks ?? CM_DEFAULTS.footer.exploreLinks,
-        connectLinks: parsed.footer?.connectLinks ?? CM_DEFAULTS.footer.connectLinks,
-        socialLinks: parsed.footer?.socialLinks ?? CM_DEFAULTS.footer.socialLinks,
-      },
-    };
+    return mergeHomepage(JSON.parse(raw) as Partial<CMHomepageContent>);
   } catch {
     return CM_DEFAULTS;
   }
@@ -79,7 +81,7 @@ export function writeCMContent(data: CMHomepageContent): void {
   }
 }
 
-/** Update a single section and persist. Returns the updated full content. */
+/** Update a single section and persist locally. Returns the updated full content. */
 export function updateCMSection<K extends CMSection>(
   section: K,
   value: CMHomepageContent[K],

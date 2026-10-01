@@ -6,12 +6,6 @@ import { Reveal, StaggerContainer, StaggerItem } from './reveal';
 import { useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export function MediaScreen() {
   const { media, addMedia, removeMedia } = useIlm();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,20 +18,32 @@ export function MediaScreen() {
         await adminSwal.error('Images only', 'Upload JPG, PNG, WebP, or GIF files.');
         return;
       }
+      let okCount = 0;
       for (const file of list) {
         if (file.size > 4.5 * 1024 * 1024) {
-          await adminSwal.error('File too large', `${file.name} exceeds 4.5 MB for demo storage.`);
+          await adminSwal.error('File too large', `${file.name} exceeds 4.5 MB.`);
           continue;
         }
-        const src = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = () => reject(new Error('read failed'));
-          reader.readAsDataURL(file);
-        });
-        addMedia({ name: file.name, size: formatBytes(file.size), src });
+        const form = new FormData();
+        form.append('file', file);
+        try {
+          const res = await fetch('/api/admin/media', { method: 'POST', body: form });
+          const json = (await res.json()) as {
+            ok?: boolean;
+            item?: { id: string; name: string; size: string; src: string; createdAt: string };
+            error?: string;
+          };
+          if (!res.ok || !json.ok || !json.item) {
+            await adminSwal.error('Upload failed', json.error || file.name);
+            continue;
+          }
+          addMedia({ name: json.item.name, size: json.item.size, src: json.item.src }, json.item.id);
+          okCount += 1;
+        } catch {
+          await adminSwal.error('Upload failed', file.name);
+        }
       }
-      await adminSwal.success('Uploaded', `${list.length} file(s) added to the library.`);
+      if (okCount) await adminSwal.success('Uploaded live', `${okCount} file(s) saved to Supabase storage.`);
     },
     [addMedia],
   );

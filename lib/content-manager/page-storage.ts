@@ -1,33 +1,39 @@
 /** ============================================================
- *  ILM Content Manager — Pages localStorage persistence (Phase 1)
+ *  ILM Content Manager — Pages local cache + merge helpers
  * ============================================================ */
 
 import type { CMPagesContent, CMPageSection } from './types';
 import { CM_PAGE_DEFAULTS, CM_PAGE_STORAGE_KEY } from './page-defaults';
 
-function isBrowser() { return typeof window !== 'undefined'; }
+function isBrowser() {
+  return typeof window !== 'undefined';
+}
+
+export function mergePages(parsed: Partial<CMPagesContent> | Record<string, unknown> = {}): CMPagesContent {
+  const p = parsed as Partial<CMPagesContent>;
+  return {
+    aboutPage: {
+      ...CM_PAGE_DEFAULTS.aboutPage,
+      ...p.aboutPage,
+      introParagraphs: p.aboutPage?.introParagraphs ?? CM_PAGE_DEFAULTS.aboutPage.introParagraphs,
+      principles: p.aboutPage?.principles ?? CM_PAGE_DEFAULTS.aboutPage.principles,
+      founderParagraphs: p.aboutPage?.founderParagraphs ?? CM_PAGE_DEFAULTS.aboutPage.founderParagraphs,
+    },
+    missionVisionPage: {
+      ...CM_PAGE_DEFAULTS.missionVisionPage,
+      ...p.missionVisionPage,
+      visionNotes: p.missionVisionPage?.visionNotes ?? CM_PAGE_DEFAULTS.missionVisionPage.visionNotes,
+      objectives: p.missionVisionPage?.objectives ?? CM_PAGE_DEFAULTS.missionVisionPage.objectives,
+    },
+  };
+}
 
 export function readCMPages(): CMPagesContent {
   if (!isBrowser()) return CM_PAGE_DEFAULTS;
   try {
     const raw = localStorage.getItem(CM_PAGE_STORAGE_KEY);
     if (!raw) return CM_PAGE_DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<CMPagesContent>;
-    return {
-      aboutPage: {
-        ...CM_PAGE_DEFAULTS.aboutPage,
-        ...parsed.aboutPage,
-        introParagraphs: parsed.aboutPage?.introParagraphs ?? CM_PAGE_DEFAULTS.aboutPage.introParagraphs,
-        principles: parsed.aboutPage?.principles ?? CM_PAGE_DEFAULTS.aboutPage.principles,
-        founderParagraphs: parsed.aboutPage?.founderParagraphs ?? CM_PAGE_DEFAULTS.aboutPage.founderParagraphs,
-      },
-      missionVisionPage: {
-        ...CM_PAGE_DEFAULTS.missionVisionPage,
-        ...parsed.missionVisionPage,
-        visionNotes: parsed.missionVisionPage?.visionNotes ?? CM_PAGE_DEFAULTS.missionVisionPage.visionNotes,
-        objectives: parsed.missionVisionPage?.objectives ?? CM_PAGE_DEFAULTS.missionVisionPage.objectives,
-      },
-    };
+    return mergePages(JSON.parse(raw) as Partial<CMPagesContent>);
   } catch {
     return CM_PAGE_DEFAULTS;
   }
@@ -35,7 +41,11 @@ export function readCMPages(): CMPagesContent {
 
 export function writeCMPages(data: CMPagesContent): void {
   if (!isBrowser()) return;
-  try { localStorage.setItem(CM_PAGE_STORAGE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(CM_PAGE_STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function updateCMPage<K extends CMPageSection>(

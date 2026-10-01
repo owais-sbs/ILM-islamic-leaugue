@@ -19,7 +19,7 @@ export function CategoriesScreen() {
   return (
     <Reveal>
       <p className="mb-6 text-sm text-ilm-navy/50">
-        Organise the public library. Categories appear in filters; tags help editors group related writing.
+        Organise the public library. Changes sync to Supabase so filters stay correct on the live Vercel site.
       </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

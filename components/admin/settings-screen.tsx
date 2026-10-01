@@ -33,7 +33,7 @@ export function SettingsScreen({ actorName = 'Administrator' }: { actorName?: st
       },
       actorName,
     );
-    await adminSwal.success('Settings saved', 'Site settings are live for this workspace.');
+    await adminSwal.success('Settings saved', 'Site settings synced to Supabase for the live site.');
   };
 
   return (
