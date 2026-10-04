@@ -46,17 +46,20 @@ export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) 
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const list = useMemo(() => {
-    // 1. Dynamic contributors marked showInDirectory
+    const staticIds = new Set(murabbiyūn.map((person) => person.id));
+    const contributorsById = new Map(contributors.map((person) => [person.id, person]));
+
+    const staticMurabbis = murabbiyūn.flatMap((person) => {
+      const profile = contributorsById.get(person.id);
+      if (!profile) return [person];
+      if (!profile.active || !profile.showInDirectory) return [];
+      return [{ ...person, ...contributorToMurabbi(profile), sections: person.sections }];
+    });
     const dynamicMurabbis: Murabbi[] = contributors
-      .filter((c) => c.showInDirectory && c.active)
+      .filter((person) => person.showInDirectory && person.active && !staticIds.has(person.id))
       .map(contributorToMurabbi);
 
-    // 2. Combine: static murabbiyūn + dynamic (no duplicates by id)
-    const staticIds = new Set(murabbiyūn.map((m) => m.id));
-    const allMurabbis = [
-      ...murabbiyūn,
-      ...dynamicMurabbis.filter((d) => !staticIds.has(d.id)),
-    ];
+    const allMurabbis = [...staticMurabbis, ...dynamicMurabbis];
 
     // 3. Apply CM visibility/order for configured ids; append unconfigured dynamic entries
     const cmConfiguredIds = new Set(dir.murabbiyun.items.map((i) => i.id));

@@ -27,6 +27,9 @@ export function ReviewQueue({
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const isAdmin = canPublish(role);
+
+  // Admin sees: submitted (from editor), approved (from editor review), returned
+  // Editor sees: submitted (from author), returned (from admin)
   const reviewItems = isAdmin
     ? articles.filter((a) => a.status === 'submitted' || a.status === 'approved' || a.status === 'returned')
     : articles.filter((a) => a.status === 'submitted' || a.status === 'returned');
@@ -35,7 +38,7 @@ export function ReviewQueue({
     <div>
       <p className="mb-5 text-sm text-ilm-navy/50">
         {isAdmin
-          ? 'Articles approved by the editor appear here. Publish to make them live on the website.'
+          ? 'Approved articles are ready to publish. Submitted articles from editors can be published directly or returned with notes.'
           : 'Read submitted articles, edit if needed, then approve to forward to the Administrator — or reject with notes to send back to the author.'}
       </p>
 
@@ -141,6 +144,20 @@ export function ReviewQueue({
                           <button
                             onClick={async () => {
                               const res = await adminSwal.confirm('Publish to website?', article.title, 'Publish');
+                              if (!res.isConfirmed) return;
+                              onPublish(article);
+                              await adminSwal.success('Published', article.title);
+                            }}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ilm-gold px-2.5 py-1.5 text-[10px] font-bold uppercase text-ilm-navy-deep"
+                          >
+                            <Upload size={12} /> Publish
+                          </button>
+                        )}
+                        {/* Admin can also publish submitted articles (from editors) directly */}
+                        {isAdmin && article.status === 'submitted' && (
+                          <button
+                            onClick={async () => {
+                              const res = await adminSwal.confirm('Publish directly to website?', article.title, 'Publish');
                               if (!res.isConfirmed) return;
                               onPublish(article);
                               await adminSwal.success('Published', article.title);

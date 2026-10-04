@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { accountWelcomeEmail } from '@/lib/email-templates';
 import { sendMail } from '@/lib/mail';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
+import { tryCreateServerSupabase } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { siteConfig } from '@/lib/site';
+import { getPublicSiteUrl } from '@/lib/public-site-url';
 import type { Role } from '@/lib/admin-data';
 
 export const dynamic = 'force-dynamic';
@@ -18,9 +20,6 @@ type Body = {
   role?: Role;
 };
 
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
-}
 
 function roleIdFromUi(role: Role | undefined, roleId: number | undefined): number {
   if (typeof roleId === 'number' && roleId >= 1 && roleId <= 3) return roleId;
@@ -44,6 +43,57 @@ function slugify(value: string) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'user'
   );
+}
+
+export async function GET() {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ ok: true, contributors: [] });
+  }
+
+  const session = tryCreateServerSupabase();
+  if (!session) {
+    return NextResponse.json({ ok: false, error: 'Session unavailable' }, { status: 503 });
+  }
+  const {
+    data: { user },
+  } = await session.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ ok: false, error: 'Sign in to view staff accounts' }, { status: 401 });
+  }
+
+  const admin = tryCreateServiceClient();
+  if (!admin) {
+    return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 503 });
+  }
+  const { data: requester, error: requesterError } = await admin
+    .from('profiles')
+    .select('role, is_active')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (requesterError) {
+    return NextResponse.json({ ok: false, error: requesterError.message }, { status: 500 });
+  }
+  if (!requester?.is_active || (requester.role !== 'admin' && requester.role !== 'editor')) {
+    return NextResponse.json({ ok: false, error: 'Only editors and administrators can view staff accounts' }, { status: 403 });
+  }
+
+  const { data, error } = await admin
+    .from('profiles')
+    .select('id, email, full_name, role, is_active')
+    .order('full_name', { ascending: true });
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  }
+
+  const contributors = (data || []).map((profile) => ({
+    id: profile.id,
+    name: profile.full_name,
+    email: profile.email,
+    role: profile.role === 'admin' ? 'administrator' : profile.role,
+    active: profile.is_active,
+  }));
+
+  return NextResponse.json({ ok: true, contributors });
 }
 
 export async function POST(req: Request) {
@@ -184,7 +234,7 @@ export async function POST(req: Request) {
     fullName,
     email,
     roleName,
-    loginUrl: `${siteUrl()}/login`,
+    loginUrl: `${getPublicSiteUrl()}/login`,
     temporaryPassword: TEMP_PASSWORD,
   });
 

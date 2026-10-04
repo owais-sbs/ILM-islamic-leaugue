@@ -75,6 +75,8 @@ export interface Contributor {
   inviteToken?: string;
   inviteExpiresAt?: number;
   bio?: string;
+  /** Static public scholar profile rather than a login account. */
+  directoryOnly?: boolean;
   /** Staff Profiles — extra fields for Murabbiyūn directory */
   staffTitle?: string;          // display title e.g. "Imām, Masjid al-Nur"
   biography?: string[];         // full bio paragraphs for profile page

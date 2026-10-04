@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
+import { tryCreateServerSupabase } from '@/lib/supabase/server';
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/env';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,38 @@ function slugify(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+type CategoryAccess =
+  | { ok: true; admin: NonNullable<ReturnType<typeof tryCreateServiceClient>> }
+  | { ok: false; response: NextResponse };
+
+async function authorizeCategoryWrite(): Promise<CategoryAccess> {
+  const session = tryCreateServerSupabase();
+  if (!session) {
+    return { ok: false, response: NextResponse.json({ ok: false, error: 'Session unavailable' }, { status: 503 }) };
+  }
+  const { data: { user } } = await session.auth.getUser();
+  if (!user) {
+    return { ok: false, response: NextResponse.json({ ok: false, localOnly: true, error: 'No authenticated Supabase session.' }, { status: 401 }) };
+  }
+
+  const admin = tryCreateServiceClient();
+  if (!admin) {
+    return { ok: false, response: NextResponse.json({ ok: false, error: 'Service role unavailable' }, { status: 503 }) };
+  }
+  const { data: profile, error } = await admin
+    .from('profiles')
+    .select('role, is_active')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (error) {
+    return { ok: false, response: NextResponse.json({ ok: false, error: error.message }, { status: 500 }) };
+  }
+  if (!profile?.is_active || (profile.role !== 'admin' && profile.role !== 'editor')) {
+    return { ok: false, response: NextResponse.json({ ok: false, error: 'Only editors and administrators can manage categories.' }, { status: 403 }) };
+  }
+  return { ok: true, admin };
 }
 
 export async function GET() {
@@ -46,8 +79,9 @@ export async function POST(req: Request) {
   if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
     return NextResponse.json({ ok: false, error: 'Supabase admin not configured on Vercel' }, { status: 503 });
   }
-  const admin = tryCreateServiceClient();
-  if (!admin) return NextResponse.json({ ok: false, error: 'Service role unavailable' }, { status: 503 });
+  const access = await authorizeCategoryWrite();
+  if (!access.ok) return access.response;
+  const { admin } = access;
 
   let body: { name?: string; type?: 'category' | 'tag' };
   try {
@@ -84,8 +118,9 @@ export async function DELETE(req: Request) {
   if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
     return NextResponse.json({ ok: false, error: 'Supabase admin not configured on Vercel' }, { status: 503 });
   }
-  const admin = tryCreateServiceClient();
-  if (!admin) return NextResponse.json({ ok: false, error: 'Service role unavailable' }, { status: 503 });
+  const access = await authorizeCategoryWrite();
+  if (!access.ok) return access.response;
+  const { admin } = access;
 
   const url = new URL(req.url);
   const id = url.searchParams.get('id');

@@ -279,6 +279,15 @@ export function AdminShell() {
     setActive(article);
     setScreen('preview');
   };
+  const handleDeleteArticle = async (article: Article) => {
+    if (!user) return;
+    const result = await deleteArticle(article.id, article.slug, user.name);
+    if (result.ok) {
+      void adminSwal.success('Deleted', article.title);
+    } else {
+      void adminSwal.error('Delete failed', result.error || 'Please try again.');
+    }
+  };
   const goCreate = () => {
     if (!role) return;
     keepOverlay.current = true;
@@ -337,8 +346,7 @@ export function AdminShell() {
             onPreview={openPreview}
             onEdit={openEdit}
             onDelete={(a) => {
-              deleteArticle(a.id, user.name);
-              void adminSwal.success('Deleted', a.title);
+              void handleDeleteArticle(a);
             }}
           />
         );
@@ -351,8 +359,7 @@ export function AdminShell() {
             onPreview={openPreview}
             onEdit={openEdit}
             onDelete={(a) => {
-              deleteArticle(a.id, user.name);
-              void adminSwal.success('Deleted', a.title);
+              void handleDeleteArticle(a);
             }}
           />
         );
@@ -377,6 +384,11 @@ export function AdminShell() {
               returnArticle(a.id, user.name, notes);
             }}
             onPublish={(a) => {
+              // Admin can publish from 'approved' or 'submitted' (editor's own article)
+              if (a.status !== 'approved') {
+                // Force through approved state first so store triggers work correctly
+                approveArticle(a.id, user.name);
+              }
               publishArticle(a.id, user.name);
             }}
           />
@@ -672,16 +684,30 @@ export function AdminShell() {
                   </button>
                   <div className="mb-5 flex flex-wrap gap-2">
                     <button onClick={() => openEdit(active)} className="rounded-full bg-ilm-navy px-4 py-2 text-xs font-bold uppercase text-white">Edit</button>
-                    {canPublish(role) && active.status === 'approved' && (
+                    {canPublish(role) && (active.status === 'approved' || active.status === 'submitted') && (
                       <button
                         onClick={() => {
+                          if (active.status !== 'approved') approveArticle(active.id, user.name);
                           publishArticle(active.id, user.name);
-                          ping(`Published. “${active.title}” is live on the site.`);
+                          ping(`Published. "${active.title}" is live on the site.`);
                           backToList();
                         }}
                         className="rounded-full bg-ilm-gold px-4 py-2 text-xs font-bold uppercase text-ilm-navy-deep"
                       >
                         Publish to website
+                      </button>
+                    )}
+                    {canPublish(role) && (active.status === 'draft' || active.status === 'returned') && (
+                      <button
+                        onClick={() => {
+                          approveArticle(active.id, user.name);
+                          publishArticle(active.id, user.name);
+                          ping(`Published. "${active.title}" is live on the site.`);
+                          backToList();
+                        }}
+                        className="rounded-full bg-ilm-gold px-4 py-2 text-xs font-bold uppercase text-ilm-navy-deep"
+                      >
+                        Publish directly
                       </button>
                     )}
                     {canPublish(role) && active.status === 'published' && (
@@ -713,9 +739,11 @@ export function AdminShell() {
                     if (submit) backToList();
                   }}
                   onPublish={(a) => {
-                    saveArticle(a, user.name, false);
-                    publishArticle(a.id, user.name);
-                    void adminSwal.success('Published', a.title);
+                    // Admin publishing — works from any status (draft, returned, approved, published)
+                    const next = { ...a, slug: a.slug || a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') };
+                    saveArticle({ ...next, status: 'approved' }, user.name, false);
+                    publishArticle(next.id, user.name);
+                    void adminSwal.success('Published', next.title);
                     backToList();
                   }}
                   onApproveAndPublish={(a) => {

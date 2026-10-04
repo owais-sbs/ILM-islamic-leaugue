@@ -28,14 +28,17 @@ export function CategoriesScreen() {
             <h3 className="text-xs uppercase tracking-[0.14em] text-ilm-navy/45">Categories</h3>
             <form
               className="flex flex-1 max-w-xs gap-2"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const created = addCategory(categoryName);
-                if (created) {
-                  void adminSwal.success('Category added', created.name);
+                const result = await addCategory(categoryName);
+                if (result.ok && result.category) {
                   setCategoryName('');
+                  void adminSwal.success(
+                    result.localOnly ? 'Category saved locally only' : 'Category added',
+                    result.localOnly ? `${result.category.name} is only available in this browser until Supabase is reachable.` : result.category.name,
+                  );
                 } else {
-                  void adminSwal.error('Could not add', 'Enter a unique category name.');
+                  void adminSwal.error('Could not add category', result.error || 'Please try again.');
                 }
               }}
             >
@@ -64,7 +67,11 @@ export function CategoriesScreen() {
                     aria-label={`Remove ${cat.name}`}
                     onClick={async () => {
                       const res = await adminSwal.confirm('Remove category?', cat.name, 'Remove');
-                      if (res.isConfirmed) removeCategory(cat.id);
+                      if (res.isConfirmed) {
+                        const result = await removeCategory(cat.id);
+                        if (!result.ok) void adminSwal.error('Could not remove category', result.error || 'Please try again.');
+                        else if (result.localOnly) void adminSwal.success('Removed locally only', 'Supabase could not be reached.');
+                      }
                     }}
                     className="text-ilm-navy/30 transition-colors hover:text-red-500"
                   >
@@ -84,7 +91,12 @@ export function CategoriesScreen() {
                 <button
                   key={tag}
                   type="button"
-                  onClick={() => removeTag(tag)}
+                  onClick={() => {
+                    void removeTag(tag).then((result) => {
+                      if (!result.ok) void adminSwal.error('Could not remove tag', result.error || 'Please try again.');
+                      else if (result.localOnly) void adminSwal.success('Removed locally only', 'Supabase could not be reached.');
+                    });
+                  }}
                   className="rounded-full border border-ilm-navy/8 bg-ilm-cream px-3 py-1.5 text-xs text-ilm-navy/60 transition-colors hover:border-red-200 hover:text-red-600"
                   title="Click to remove"
                 >
@@ -94,13 +106,17 @@ export function CategoriesScreen() {
             </div>
             <form
               className="mt-4 flex gap-2"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (addTag(tagName)) {
+                const result = await addTag(tagName);
+                if (result.ok) {
                   setTagName('');
-                  void adminSwal.success('Tag added');
+                  void adminSwal.success(
+                    result.localOnly ? 'Tag saved locally only' : 'Tag added',
+                    result.localOnly ? 'Supabase could not be reached.' : undefined,
+                  );
                 } else {
-                  void adminSwal.error('Could not add tag', 'Enter a unique tag name.');
+                  void adminSwal.error('Could not add tag', result.error || 'Please try again.');
                 }
               }}
             >

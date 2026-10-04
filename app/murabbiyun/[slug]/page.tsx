@@ -80,25 +80,25 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
   const { publishedArticles, contributors } = useIlm();
   const [askOpen, setAskOpen] = useState(false);
 
-  // Look up in static murabbiyūn first, then dynamic contributors
   const person = useMemo((): Murabbi | null => {
-    const staticMatch = murabbiyūn.find((m) => m.id === slug);
-    if (staticMatch) return staticMatch;
+    const staticMatch = murabbiyūn.find((item) => item.id === slug);
+    const contributor = contributors.find((item) => item.id === slug);
+    if (!contributor) return staticMatch || null;
+    if (!contributor.active || !contributor.showInDirectory) return null;
 
-    // Dynamic contributor profile
-    const c = contributors.find((c) => c.id === slug && c.showInDirectory && c.active);
-    if (!c) return null;
     return {
-      id: c.id,
-      name: c.name,
-      role: c.staffTitle || '',
-      bio: c.bio || '',
-      biography: c.biography?.length ? c.biography : [c.bio || ''],
-      madhhab: (c.madhhab as Murabbi['madhhab']) || undefined,
-      focus: c.focus,
-      image: safeScholarImage(c.image),
-      accent: c.accent || 'bg-sky-100 text-sky-700',
-      sections: [],
+      id: contributor.id,
+      name: contributor.name,
+      role: contributor.staffTitle || staticMatch?.role || '',
+      bio: contributor.bio || staticMatch?.bio || '',
+      biography: contributor.biography?.length
+        ? contributor.biography
+        : staticMatch?.biography || [contributor.bio || ''],
+      madhhab: (contributor.madhhab as Murabbi['madhhab']) || staticMatch?.madhhab,
+      focus: contributor.focus || staticMatch?.focus,
+      image: safeScholarImage(contributor.image || staticMatch?.image),
+      accent: contributor.accent || staticMatch?.accent || 'bg-sky-100 text-sky-700',
+      sections: staticMatch?.sections || [],
     };
   }, [slug, contributors]);
 

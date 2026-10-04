@@ -71,4 +71,46 @@ export const CM_PAGE_DEFAULTS: CMPagesContent = {
       'Represent Islam responsibly in appropriate media and institutional settings when clarification from qualified Muslim educators is needed.',
     ],
   },
+
+  privacyPage: {
+    eyebrow: 'Legal',
+    title: 'Privacy Policy',
+    lastUpdated: 'September 2026',
+    sections: [
+      { heading: '', body: 'ILM respects your privacy. This policy explains what information we collect when you use the public site, how we use it, and the choices available to you.' },
+      { heading: 'Information we collect', body: 'When you ask a question, write via the contact form, or subscribe to updates, you may provide a name, email address, and message content. We also receive standard technical data such as browser type and approximate usage logs needed to keep the site reliable.' },
+      { heading: 'How we use information', body: 'We use contact details to reply to questions and correspondence, to operate the contributor portal, and to send newsletter notes only when you have subscribed. We do not sell personal information.' },
+      { heading: 'Storage and access', body: 'Submissions may be stored in our systems so administrators, editors, and assigned Murabbiyūn can respond. Access is limited to people who need it to serve the request.' },
+      { heading: 'Cookies and local storage', body: 'The site may use cookies or browser storage for session preferences and demo/admin state. You can clear these through your browser settings.' },
+      { heading: 'Contact', body: 'For privacy requests, write to salam@ilm.org or use the contact page.' },
+    ],
+  },
+
+  disclaimerPage: {
+    eyebrow: 'Disclaimer',
+    title: 'A note on this content',
+    lastUpdated: '',
+    sections: [
+      { heading: '', body: 'The writings on the Islamic League of Murabbiyūn (ILM) website are offered for educational and spiritual guidance. They are intended to support thoughtful learning, character formation, and respectful conversation.' },
+      { heading: '', body: 'This content is not a substitute for asking a qualified scholar about your specific circumstances. Religious rulings (fatwa), personal advice, and decisions that apply to your life should be sought from people of knowledge who understand your context.' },
+      { heading: '', body: 'Authors and Murabbiyūn write in good faith. Editors and administrators review material for clarity and care, but ILM does not guarantee completeness, and readers remain responsible for how they apply what they read.' },
+      { heading: '', body: 'External links, quotations, and references are provided for learning. Their presence does not imply endorsement of every view associated with a linked source. Where scholarly disagreement (ikhtilāf) appears, we aim to present it with adab rather than to settle every dispute.' },
+      { heading: '', body: 'By using this site you acknowledge that ILM, its contributors, and affiliated organizers are not liable for decisions made solely on the basis of published articles, directory profiles, or answers offered through the Ask a Question flow.' },
+    ],
+  },
+
+  termsPage: {
+    eyebrow: 'Legal',
+    title: 'Terms & Conditions',
+    lastUpdated: 'September 2026',
+    sections: [
+      { heading: '', body: 'By accessing the Islamic League of Murabbiyūn website, you agree to these terms. If you do not agree, please do not use the site.' },
+      { heading: 'Educational purpose', body: 'Content is provided for learning and spiritual reflection. It is not professional, legal, medical, or individualized religious counsel. Always consult qualified scholars for matters that apply to your situation.' },
+      { heading: 'Acceptable use', body: 'You agree not to misuse the site, attempt unauthorized access to contributor systems, submit abusive or unlawful content, or scrape the library in a way that harms service for others.' },
+      { heading: 'Submissions', body: 'Questions and messages you send may be reviewed by ILM staff and assigned Murabbiyūn. Do not include sensitive personal data you are not comfortable sharing for that purpose.' },
+      { heading: 'Intellectual property', body: 'Articles, branding, and site design are protected. You may share links and brief quotations with attribution for personal, non-commercial learning. Reproduction of full articles without permission is not allowed.' },
+      { heading: 'Limitation of liability', body: 'To the fullest extent permitted by law, ILM and its contributors are not liable for indirect or consequential loss arising from use of the site or reliance on published content.' },
+      { heading: 'Changes', body: 'We may update these terms as the platform grows. Continued use after changes means you accept the revised terms. Related pages include our Privacy Policy and Disclaimer.' },
+    ],
+  },
 };

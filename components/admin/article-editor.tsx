@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock, Eye, Save, Send, Upload } from 'lucide-react';
 import { Reveal } from './reveal';
 import type { Article, Role } from '@/lib/admin-data';
-import { canApprove, canPublish } from '@/lib/ilm-store';
-import { categories } from '@/lib/admin-data';
+import { canApprove, canPublish, useIlm } from '@/lib/ilm-store';
 import { images } from '@/lib/images';
 import { adminSwal } from '@/lib/admin-swal';
 
@@ -28,6 +27,7 @@ export function ArticleEditor({
   onPublish?: (article: Article) => void;
   onApproveAndPublish?: (article: Article) => void;
 }) {
+  const { categories } = useIlm();
   const [draft, setDraft] = useState(article);
   const [saved, setSaved] = useState('');
 
@@ -84,6 +84,17 @@ export function ArticleEditor({
               <Send size={14} /> Submit for review
             </button>
           )}
+
+          {/* Editor writing their OWN article: submit directly to Admin */}
+          {role === 'editor' && (draft.status === 'draft' || draft.status === 'returned') && (
+            <button
+              onClick={() => persist(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white"
+            >
+              <Send size={14} /> Submit to Admin
+            </button>
+          )}
+
           {/* Editor: approve a submitted article → forwards it to Admin */}
           {role === 'editor' && draft.status === 'submitted' && onApproveAndPublish && (
             <button
@@ -108,6 +119,26 @@ export function ArticleEditor({
             <span className="rounded-full border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700">
               Approved — waiting for Admin to publish
             </span>
+          )}
+
+          {/* Admin: publish own draft/returned directly — no review needed */}
+          {canPublish(role) && (draft.status === 'draft' || draft.status === 'returned') && onPublish && (
+            <button
+              onClick={async () => {
+                const res = await adminSwal.confirm('Publish directly to website?', draft.title || 'Untitled article', 'Publish');
+                if (!res.isConfirmed) return;
+                const next = {
+                  ...draft,
+                  slug: draft.slug || slugify(draft.title || 'untitled'),
+                  seoTitle: draft.seoTitle || draft.title,
+                };
+                onPublish(next);
+                await adminSwal.success('Published', next.title);
+              }}
+              className="inline-flex items-center gap-2 rounded-full bg-ilm-gold px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy-deep"
+            >
+              <Upload size={14} /> Publish directly
+            </button>
           )}
           {/* Admin: publish an approved article */}
           {canPublish(role) && draft.status === 'approved' && onPublish && (
@@ -179,8 +210,11 @@ export function ArticleEditor({
               onChange={(e) => update({ category: e.target.value })}
               className="mb-4 w-full rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm outline-none"
             >
-              {categories.map((c) => (
-                <option key={c.id}>{c.name}</option>
+              {draft.category && !categories.some((category) => category.name === draft.category) && (
+                <option value={draft.category}>{draft.category}</option>
+              )}
+              {categories.map((category) => (
+                <option key={category.id} value={category.name}>{category.name}</option>
               ))}
             </select>
             <label className="mb-2 block text-sm text-ilm-navy/70">Tags</label>

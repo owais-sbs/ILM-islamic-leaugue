@@ -5,6 +5,7 @@ import { sendMail, staffInboxEmails } from '@/lib/mail';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { roleLabels, type Role } from '@/lib/admin-data';
+import { getPublicSiteUrl } from '@/lib/public-site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +20,6 @@ type Body = {
   resendForEmail?: string;
 };
 
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
-}
 
 function toDbRole(role: Role): 'author' | 'editor' | 'admin' {
   if (role === 'administrator') return 'admin';
@@ -60,7 +58,7 @@ export async function POST(req: Request) {
 
   const token = newToken();
   const expiresAt = new Date(Date.now() + INVITE_HOURS * 60 * 60 * 1000);
-  const inviteUrl = `${siteUrl()}/author/set-password?token=${token}`;
+  const inviteUrl = `${getPublicSiteUrl()}/author/set-password?token=${token}`;
   const roleLabel = roleLabels[role];
   let inviteName = name;
 

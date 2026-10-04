@@ -1,19 +1,22 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Eye, MailQuestion, Search, Send, X } from 'lucide-react';
-import { contributors } from '@/lib/admin-data';
+import { roleLabels } from '@/lib/admin-data';
 import { useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
 import { Reveal } from './reveal';
-import type { Question, Role } from '@/lib/admin-data';
+import type { Contributor, Question, Role } from '@/lib/admin-data';
+import { safeScholarImage } from '@/lib/images';
 
 export function QuestionsScreen({ role, userName }: { role: Role; userName: string }) {
-  const { questions, assignQuestion, authorSubmitAnswer, answerQuestion } = useIlm();
+  const { questions, contributors, assignQuestion, authorSubmitAnswer, answerQuestion } = useIlm();
   const isAuthor = role === 'author';
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState<Question | null>(null);
   const [assignTo, setAssignTo] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const [remoteStaff, setRemoteStaff] = useState<Contributor[]>([]);
   const [answer, setAnswer] = useState('');
 
   const list = useMemo(() => {
@@ -29,18 +32,78 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
       : base.filter((item) =>
           `${item.question} ${item.asker} ${item.email || ''} ${item.subject || ''}`.toLowerCase().includes(needle),
         );
-    const rank = (s: Question['status']) =>
-      s === 'new' ? 0 : s === 'author_ready' ? 1 : s === 'assigned' ? 2 : 3;
-    return filtered.slice().sort((a, b) => {
-      const r = rank(a.status) - rank(b.status);
-      if (r !== 0) return r;
-      return b.date.localeCompare(a.date);
-    });
+    const receivedAt = (item: Question) => {
+      if (typeof item.createdAt === 'number') return item.createdAt;
+      const parsedDate = Date.parse(item.date);
+      if (Number.isFinite(parsedDate)) return parsedDate;
+      return Number.parseInt(item.id.replace(/\D/g, ''), 10) || 0;
+    };
+    return filtered.slice().sort((a, b) => receivedAt(b) - receivedAt(a));
   }, [questions, q, isAuthor, userName]);
+
+  useEffect(() => {
+    if (isAuthor) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch('/api/admin/accounts', { cache: 'no-store' });
+        if (!response.ok) return;
+        const result = (await response.json()) as {
+          ok?: boolean;
+          contributors?: Array<{
+            id: string;
+            name: string;
+            email: string;
+            role: Role;
+            active: boolean;
+            madhhab?: string;
+            bio?: string;
+            staffTitle?: string;
+            image?: string;
+          }>;
+        };
+        if (!result.ok || !Array.isArray(result.contributors) || cancelled) return;
+        setRemoteStaff(result.contributors.map((person) => {
+          const initials = person.name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0])
+            .join('')
+            .toUpperCase();
+          return {
+            ...person,
+            initials: initials || 'ILM',
+            articles: 0,
+            madhhab: person.madhhab || 'Hanafi',
+            image: safeScholarImage(person.image),
+          };
+        }));
+      } catch {
+        /* locally stored staff remains available */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthor]);
+
+  const assignableStaff = useMemo(() => {
+    const byEmail = new Map(contributors.map((person) => [person.email.toLowerCase(), person]));
+    for (const person of remoteStaff) {
+      const local = byEmail.get(person.email.toLowerCase());
+      byEmail.set(person.email.toLowerCase(), local ? { ...local, ...person } : person);
+    }
+    return Array.from(byEmail.values())
+      .filter((person) => person.active && person.email && !person.directoryOnly)
+      .sort((a, b) => a.name.localeCompare(b.name) || a.role.localeCompare(b.role));
+  }, [contributors, remoteStaff]);
 
   const open = (item: Question) => {
     setSelected(item);
-    setAssignTo(item.assignedTo || item.preferredAuthor || '');
+    const assignedPerson = assignableStaff.find((person) => person.name === item.assignedTo);
+    const preferredPerson = assignableStaff.find((person) => person.name === item.preferredAuthor);
+    setAssignTo(assignedPerson?.email || preferredPerson?.email || '');
     setAnswer(item.authorDraft || item.answerNotes || '');
   };
 
@@ -164,15 +227,17 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
 
             {!isAuthor && (
               <>
-                <label className="mt-6 block text-xs text-ilm-navy/50">Assign to author</label>
+                <label className="mt-6 block text-xs text-ilm-navy/50">Assign to staff member</label>
                 <select
                   value={assignTo}
                   onChange={(e) => setAssignTo(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3 py-2.5 text-sm text-ilm-navy outline-none"
                 >
                   <option value="">Unassigned</option>
-                  {contributors.filter((c) => c.active && c.role === 'author').map((c) => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
+                  {assignableStaff.map((person) => (
+                    <option key={person.id} value={person.email}>
+                      {person.name} — {roleLabels[person.role]}
+                    </option>
                   ))}
                 </select>
               </>
@@ -200,18 +265,30 @@ export function QuestionsScreen({ role, userName }: { role: Role; userName: stri
               {!isAuthor && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!assignTo) {
-                      void adminSwal.error('Select an author', 'Choose who should answer this question.');
+                  disabled={assigning}
+                  onClick={async () => {
+                    const person = assignableStaff.find((candidate) => candidate.email === assignTo);
+                    if (!person) {
+                      void adminSwal.error('Select a staff member', 'Choose an active author, editor, or administrator.');
                       return;
                     }
-                    assignQuestion(selected.id, assignTo);
-                    void adminSwal.success('Assigned', `Email sent to ${assignTo}`);
+                    setAssigning(true);
+                    const result = await assignQuestion(selected.id, person);
+                    setAssigning(false);
+                    if (!result.ok) {
+                      void adminSwal.error('Assignment failed', result.error || 'Please try again.');
+                      return;
+                    }
+                    if (result.emailSent) {
+                      void adminSwal.success('Assigned', `Notification sent to ${person.name}`);
+                    } else {
+                      void adminSwal.info('Assigned', `The question was assigned to ${person.name}, but the notification email could not be sent.`);
+                    }
                     close();
                   }}
-                  className="rounded-full border border-ilm-navy/15 px-4 py-2 text-xs text-ilm-navy hover:bg-ilm-cream"
+                  className="rounded-full border border-ilm-navy/15 px-4 py-2 text-xs text-ilm-navy hover:bg-ilm-cream disabled:opacity-60"
                 >
-                  Assign & notify author
+                  {assigning ? 'Assigning…' : 'Assign & notify staff member'}
                 </button>
               )}
               {isAuthor && selected.status === 'assigned' && (

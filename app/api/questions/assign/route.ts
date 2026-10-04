@@ -33,24 +33,51 @@ export async function POST(req: Request) {
 
   if (isSupabaseConfigured() && id && !id.startsWith('local-') && !id.startsWith('q')) {
     const admin = tryCreateServiceClient();
-    if (admin) {
-      const { error } = await admin
+    if (!admin) {
+      return NextResponse.json({ ok: false, error: 'Database service role unavailable' }, { status: 503 });
+    }
+
+    const { data: profile, error: profileError } = await admin
+      .from('profiles')
+      .select('id, is_active')
+      .eq('email', assigneeEmail)
+      .maybeSingle();
+    if (profileError) {
+      return NextResponse.json({ ok: false, error: profileError.message }, { status: 500 });
+    }
+    if (!profile || !profile.is_active) {
+      return NextResponse.json({ ok: false, error: 'Selected staff profile is missing or inactive' }, { status: 404 });
+    }
+
+    const assigned = await admin
+      .from('questions')
+      .update({
+        status: 'assigned',
+        assigned_to: profile.id,
+        assigned_to_name: assigneeName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+
+    if (assigned.error?.message.includes('assigned_to_name')) {
+      const fallback = await admin
         .from('questions')
-        .update({
-          status: 'assigned',
-          assigned_to_name: assigneeName,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-      if (error && !error.message.includes('assigned_to_name')) {
-        const fallback = await admin
-          .from('questions')
-          .update({ status: 'assigned', updated_at: new Date().toISOString() })
-          .eq('id', id);
-        if (fallback.error) {
-          return NextResponse.json({ ok: false, error: fallback.error.message }, { status: 500 });
-        }
+        .update({ status: 'assigned', assigned_to: profile.id, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select('id')
+        .maybeSingle();
+      if (fallback.error) {
+        return NextResponse.json({ ok: false, error: fallback.error.message }, { status: 500 });
       }
+      if (!fallback.data) {
+        return NextResponse.json({ ok: false, error: 'Question not found' }, { status: 404 });
+      }
+    } else if (assigned.error) {
+      return NextResponse.json({ ok: false, error: assigned.error.message }, { status: 500 });
+    } else if (!assigned.data) {
+      return NextResponse.json({ ok: false, error: 'Question not found' }, { status: 404 });
     }
   }
 

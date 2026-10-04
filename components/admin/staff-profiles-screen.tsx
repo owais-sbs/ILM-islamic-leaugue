@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown, ChevronUp, Eye, EyeOff,
   Globe, Pencil, Plus, Save, Trash2, Upload, X,
@@ -50,7 +50,66 @@ export function StaffProfilesScreen() {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditState | null>(null);
   const [expandedBio, setExpandedBio] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [remoteAccounts, setRemoteAccounts] = useState<Contributor[]>([]);
+  const [savedProfiles, setSavedProfiles] = useState<Record<string, Partial<Contributor>>>({});
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [accountsResponse, profilesResponse] = await Promise.all([
+          fetch('/api/admin/accounts', { cache: 'no-store' }),
+          fetch('/api/admin/staff-profiles', { cache: 'no-store' }),
+        ]);
+        const accounts = accountsResponse.ok
+          ? (await accountsResponse.json()) as {
+              ok?: boolean;
+              contributors?: Array<{ id: string; name: string; email: string; role: Role; active: boolean }>;
+            }
+          : null;
+        const profiles = profilesResponse.ok
+          ? (await profilesResponse.json()) as { ok?: boolean; profiles?: Array<Partial<Contributor> & { id: string }> }
+          : null;
+        if (cancelled) return;
+
+        if (accounts?.ok && Array.isArray(accounts.contributors)) {
+          setRemoteAccounts(accounts.contributors.map((person) => ({
+            ...person,
+            initials: person.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase(),
+            madhhab: 'Hanafi',
+            articles: 0,
+            image: safeScholarImage(''),
+          })));
+        }
+        if (profiles?.ok && Array.isArray(profiles.profiles)) {
+          setSavedProfiles(Object.fromEntries(profiles.profiles.map((profile) => [profile.id, profile])));
+        }
+      } catch {
+        /* locally saved profiles remain editable */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const staffProfiles = useMemo(() => {
+    const byId = new Map(contributors.map((person) => [person.id, person]));
+    for (const remote of remoteAccounts) {
+      const existing = Array.from(byId.values()).find(
+        (person) => person.email && person.email.toLowerCase() === remote.email.toLowerCase(),
+      );
+      if (existing && existing.id !== remote.id) byId.delete(existing.id);
+      byId.set(remote.id, { ...existing, ...remote, image: existing?.image || remote.image });
+    }
+    return Array.from(byId.values()).map((person) => ({
+      ...person,
+      ...savedProfiles[person.id],
+      image: savedProfiles[person.id]?.image || person.image,
+    }));
+  }, [contributors, remoteAccounts, savedProfiles]);
 
   const openEdit = (c: Contributor) => {
     setEditing(c.id);
@@ -60,18 +119,29 @@ export function StaffProfilesScreen() {
   const closeEdit = () => { setEditing(null); setDraft(null); };
 
   const handleSave = async (c: Contributor) => {
-    if (!draft) return;
-    updateContributorProfile(c.id, {
-      staffTitle: draft.staffTitle || undefined,
-      bio: draft.bio || undefined,
-      biography: draft.biography.filter((p) => p.trim()),
+    if (!draft || saving) return;
+    setSaving(true);
+    const patch = {
+      staffTitle: draft.staffTitle,
+      bio: draft.bio,
+      biography: draft.biography.filter((paragraph) => paragraph.trim()),
       focus: draft.focus,
       accent: draft.accent,
       image: draft.image,
       showInDirectory: draft.showInDirectory,
-    });
+    };
+    const result = await updateContributorProfile(c.id, patch, c);
+    setSaving(false);
+    if (!result.ok) {
+      await adminSwal.error('Could not save profile', result.error || 'Please try again.');
+      return;
+    }
+    setSavedProfiles((prev) => ({ ...prev, [c.id]: patch }));
     closeEdit();
-    await adminSwal.success('Profile updated', c.name);
+    await adminSwal.success(
+      'Profile updated',
+      result.localOnly ? `${c.name} was saved in this browser only. Sign in with an editor or administrator account and configure Supabase for live updates.` : `${c.name} was saved locally and to the live site.`,
+    );
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,12 +177,12 @@ export function StaffProfilesScreen() {
     <Reveal>
       <div className="mb-5">
         <p className="text-sm text-ilm-navy/55">
-          Manage the public-facing profiles of all staff members. Enabling <strong>Show in Directory</strong> makes a staff member visible in the Murabbiyūn section on the website.
+          Manage the public-facing profiles of all staff members. Enabling <strong>Show in Directory</strong> makes a staff member visible in the Murabbiyūn section. Live updates require an authenticated editor or administrator session and Supabase service-role configuration; otherwise, changes are saved in this browser only.
         </p>
       </div>
 
       <div className="space-y-3">
-        {contributors.map((c) => {
+        {staffProfiles.map((c) => {
           const isEditing = editing === c.id;
           const isExpanded = expandedBio === c.id;
 
@@ -148,7 +218,7 @@ export function StaffProfilesScreen() {
                       c.role === 'administrator' ? 'bg-ilm-gold text-ilm-navy-deep' :
                       c.role === 'editor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
                     )}>
-                      {roleLabels[c.role]}
+                      {c.directoryOnly ? 'Directory profile' : roleLabels[c.role]}
                     </span>
                     {c.showInDirectory && (
                       <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">
@@ -295,8 +365,8 @@ export function StaffProfilesScreen() {
                       <textarea
                         value={draft.bio}
                         onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
-                        rows={2}
-                        className="w-full resize-none rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm outline-none focus:border-ilm-gold"
+                        rows={4}
+                        className="min-h-28 w-full resize-y rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-3 text-base leading-relaxed outline-none transition-colors focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
                       />
                     </div>
 
@@ -311,9 +381,9 @@ export function StaffProfilesScreen() {
                             <textarea
                               value={para}
                               onChange={(e) => updateBioParagraph(idx, e.target.value)}
-                              rows={2}
+                              rows={5}
                               placeholder={`Paragraph ${idx + 1}…`}
-                              className="flex-1 resize-none rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm outline-none focus:border-ilm-gold"
+                              className="min-h-36 flex-1 resize-y rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-3 text-base leading-relaxed outline-none transition-colors focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
                             />
                             <button
                               type="button"
@@ -387,10 +457,11 @@ export function StaffProfilesScreen() {
                     <div className="sm:col-span-2 flex flex-wrap items-center gap-2 border-t border-ilm-navy/6 pt-4">
                       <button
                         type="button"
+                        disabled={saving}
                         onClick={() => void handleSave(c)}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-60"
                       >
-                        <Save size={13} /> Save profile
+                        <Save size={13} /> {saving ? 'Saving…' : 'Save profile'}
                       </button>
                       <button
                         type="button"
@@ -413,7 +484,7 @@ export function StaffProfilesScreen() {
           );
         })}
 
-        {contributors.length === 0 && (
+        {staffProfiles.length === 0 && (
           <div className="rounded-2xl border border-ilm-navy/8 bg-white py-16 text-center text-sm text-ilm-navy/35">
             No staff members yet. Add them in the Authors screen.
           </div>

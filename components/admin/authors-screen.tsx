@@ -105,7 +105,7 @@ export function AuthorsScreen() {
     }
   };
 
-  const list = useMemo(() => contributors, [contributors]);
+  const list = useMemo(() => contributors.filter((person) => !person.directoryOnly), [contributors]);
 
   return (
     <Reveal>

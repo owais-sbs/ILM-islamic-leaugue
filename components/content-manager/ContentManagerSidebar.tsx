@@ -4,14 +4,15 @@ import { cn } from '@/lib/utils';
 import {
   Layout, Globe, Layers, Star, Users,
   GraduationCap, Quote, Mail, AlignJustify,
-  BookOpen, Info, Target,
+  BookOpen, Info, Target, Shield, FileText, Scale,
 } from 'lucide-react';
 
 export type CMActiveSection =
   | 'header' | 'hero' | 'about' | 'featured-articles'
   | 'learning-journey' | 'quote' | 'newsletter' | 'footer'
   | 'directory'
-  | 'about-page' | 'mission-vision-page';
+  | 'about-page' | 'mission-vision-page'
+  | 'privacy-page' | 'disclaimer-page' | 'terms-page';
 
 interface SidebarItem {
   key: CMActiveSection;
@@ -45,6 +46,14 @@ const groups: SidebarGroup[] = [
     items: [
       { key: 'about-page',           label: 'About Us',       icon: <Info size={13} />, indent: true },
       { key: 'mission-vision-page',  label: 'Mission & Vision', icon: <Target size={13} />, indent: true },
+    ],
+  },
+  {
+    label: 'Legal',
+    items: [
+      { key: 'privacy-page', label: 'Privacy Policy', icon: <Shield size={13} />, indent: true },
+      { key: 'disclaimer-page', label: 'Disclaimer', icon: <FileText size={13} />, indent: true },
+      { key: 'terms-page', label: 'Terms & Conditions', icon: <Scale size={13} />, indent: true },
     ],
   },
 ];

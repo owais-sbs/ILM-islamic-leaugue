@@ -180,7 +180,7 @@ export function DashboardScreen({
               </h3>
               <div className="space-y-3">
                 {contributors
-                  .filter((c) => c.role === 'author')
+                  .filter((c) => c.role === 'author' && !c.directoryOnly)
                   .map((c) => {
                     const count = articles.filter((a) => a.author === c.name).length;
                     return (

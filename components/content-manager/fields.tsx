@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils';
 export function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <div className="mb-1">
-      <label className="block text-xs font-semibold text-ilm-navy/70">{children}</label>
-      {hint && <p className="mt-0.5 text-[10px] text-ilm-navy/40">{hint}</p>}
+      <label className="block text-sm font-semibold text-ilm-navy/75">{children}</label>
+      {hint && <p className="mt-1 text-xs leading-relaxed text-ilm-navy/45">{hint}</p>}
     </div>
   );
 }
@@ -42,7 +42,7 @@ export function TextField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
+        className="min-h-12 w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-3 text-base text-ilm-navy outline-none transition-colors placeholder:text-ilm-navy/35 focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
       />
     </div>
   );
@@ -55,7 +55,7 @@ export function TextareaField({
   value,
   onChange,
   placeholder,
-  rows = 3,
+  rows = 5,
   className,
 }: {
   label?: string;
@@ -74,7 +74,7 @@ export function TextareaField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full resize-none rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
+        className="min-h-36 w-full resize-y rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-3 text-base leading-relaxed text-ilm-navy outline-none transition-colors placeholder:text-ilm-navy/35 focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
       />
     </div>
   );
@@ -102,7 +102,7 @@ export function LinkField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? '/path or https://…'}
-        className="w-full rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 font-mono text-xs text-ilm-navy outline-none focus:border-ilm-gold"
+        className="min-h-12 w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-3 font-mono text-sm text-ilm-navy outline-none transition-colors placeholder:text-ilm-navy/35 focus:border-ilm-gold focus:ring-2 focus:ring-ilm-gold/15"
       />
     </div>
   );

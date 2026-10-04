@@ -199,9 +199,24 @@ export interface CMMissionVisionPage {
   objectives: string[];
 }
 
+export interface CMLegalSection {
+  heading: string;
+  body: string;
+}
+
+export interface CMLegalPage {
+  eyebrow: string;
+  title: string;
+  lastUpdated: string;
+  sections: CMLegalSection[];
+}
+
 export interface CMPagesContent {
   aboutPage: CMAboutPage;
   missionVisionPage: CMMissionVisionPage;
+  privacyPage: CMLegalPage;
+  disclaimerPage: CMLegalPage;
+  termsPage: CMLegalPage;
 }
 
 export type CMSection = keyof CMHomepageContent;

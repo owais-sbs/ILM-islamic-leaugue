@@ -1,16 +1,17 @@
+import { siteConfig } from '@/lib/site';
+import { getPublicSiteUrl } from '@/lib/public-site-url';
+
 const navy = '#0B1152';
 const gold = '#C79A3D';
 const cream = '#FBFAF7';
 
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
-}
-
 function logoUrl() {
-  return `${siteUrl()}/ILM_Final_Logo_Design.webp`;
+  return new URL(siteConfig.logo, getPublicSiteUrl()).toString();
 }
 
 function shell(title: string, body: string) {
+  const publicUrl = getPublicSiteUrl();
+  const displayUrl = publicUrl.replace(/^https?:\/\//, '');
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,21 +24,9 @@ function shell(title: string, body: string) {
     <tr><td align="center">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e8e2d8;box-shadow:0 12px 40px rgba(11,17,82,0.06);">
         <tr>
-          <td style="background:${navy};padding:26px 32px;">
-            <table role="presentation" cellspacing="0" cellpadding="0">
-              <tr>
-                <td style="vertical-align:middle;padding-right:14px;">
-                  <img src="${logoUrl()}" width="52" height="52" alt="ILM" style="display:block;border-radius:10px;background:#ffffff;object-fit:contain;"/>
-                </td>
-                <td style="vertical-align:middle;">
-                  <p style="margin:0;font-size:22px;letter-spacing:-0.04em;color:${gold};font-family:Georgia,serif;">ilm</p>
-                  <p style="margin:4px 0 0;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.78);font-family:Arial,Helvetica,sans-serif;line-height:1.35;">
-                    Islamic League of Murabbiyūn
-                  </p>
-                </td>
-              </tr>
-            </table>
-            <h1 style="margin:18px 0 0;font-size:24px;font-weight:400;color:#ffffff;line-height:1.35;font-family:Georgia,serif;">${title}</h1>
+          <td style="background:${navy};padding:24px 32px;">
+            <img src="${logoUrl()}" width="220" height="110" alt="Islamic League of Murabbiyūn" style="display:block;width:220px;height:110px;object-fit:contain;object-position:left center;"/>
+            <h1 style="margin:12px 0 0;font-size:24px;font-weight:400;color:#ffffff;line-height:1.35;font-family:Georgia,serif;">${title}</h1>
           </td>
         </tr>
         <tr>
@@ -47,7 +36,7 @@ function shell(title: string, body: string) {
           <td style="padding:0 32px 28px;">
             <div style="border-top:1px solid #eee8df;padding-top:18px;color:#8a8f9f;font-size:12px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
               Islamic League of Murabbiyūn · Thoughtful learning with adab<br/>
-              <a href="${siteUrl()}" style="color:${gold};text-decoration:none;">${siteUrl().replace(/^https?:\/\//, '')}</a>
+              <a href="${publicUrl}" style="color:${gold};text-decoration:none;">${displayUrl}</a>
             </div>
           </td>
         </tr>
@@ -103,10 +92,10 @@ export function assignedToAuthorEmail(opts: { authorName: string; asker: string;
     html: shell(
       'A question needs your care',
       `<p>Dear ${opts.authorName},</p>
-       <p>An administrator assigned you the following question from <strong>${opts.asker}</strong>.</p>
+       <p>The ILM team assigned you the following question from <strong>${opts.asker}</strong>.</p>
        <p><strong>Subject:</strong> ${opts.subject}</p>
        <p style="white-space:pre-wrap;background:#f8f6f2;padding:16px;border-radius:12px;">${opts.question}</p>
-       <p>Please sign in to the ILM admin portal → <strong>Assigned to me</strong>, write your response, and submit it for review.</p>`,
+       <p>Please sign in to the ILM admin portal and open <strong>Questions</strong> to respond or review this request.</p>`,
     ),
   };
 }

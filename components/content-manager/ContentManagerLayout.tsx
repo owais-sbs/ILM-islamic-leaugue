@@ -27,6 +27,7 @@ import { NewsletterEditor } from './editors/NewsletterEditor';
 import { FooterEditor } from './editors/FooterEditor';
 import { AboutPageEditor } from './editors/AboutPageEditor';
 import { MissionVisionEditor } from './editors/MissionVisionEditor';
+import { LegalPageEditor } from './editors/LegalPageEditor';
 
 const sectionTitles: Record<CMActiveSection, string> = {
   header: 'Header',
@@ -40,6 +41,9 @@ const sectionTitles: Record<CMActiveSection, string> = {
   footer: 'Footer',
   'about-page': 'About Us Page',
   'mission-vision-page': 'Mission & Vision Page',
+  'privacy-page': 'Privacy Policy',
+  'disclaimer-page': 'Disclaimer',
+  'terms-page': 'Terms & Conditions',
 };
 
 export function ContentManagerLayout() {
@@ -208,6 +212,33 @@ export function ContentManagerLayout() {
             data={pages.missionVisionPage}
             onSave={(v) => void handleSavePage('missionVisionPage', v)}
             onReset={() => void handleResetPage('missionVisionPage')}
+          />
+        );
+      case 'privacy-page':
+        return (
+          <LegalPageEditor
+            data={pages.privacyPage}
+            pageName="Privacy Policy"
+            onSave={(v) => void handleSavePage('privacyPage', v)}
+            onReset={() => void handleResetPage('privacyPage')}
+          />
+        );
+      case 'disclaimer-page':
+        return (
+          <LegalPageEditor
+            data={pages.disclaimerPage}
+            pageName="Disclaimer"
+            onSave={(v) => void handleSavePage('disclaimerPage', v)}
+            onReset={() => void handleResetPage('disclaimerPage')}
+          />
+        );
+      case 'terms-page':
+        return (
+          <LegalPageEditor
+            data={pages.termsPage}
+            pageName="Terms & Conditions"
+            onSave={(v) => void handleSavePage('termsPage', v)}
+            onReset={() => void handleResetPage('termsPage')}
           />
         );
       default:

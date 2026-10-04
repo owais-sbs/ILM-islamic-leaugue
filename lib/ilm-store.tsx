@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   articles as seedArticles,
   categories as seedCategories,
@@ -46,6 +46,32 @@ const SEED_TAGS = [
   'sustainability',
 ] as const;
 import { images, safeArticleImage, safeScholarImage } from '@/lib/images';
+import { murabbiyūn } from '@/lib/public-data';
+
+const directoryProfileContributors: Contributor[] = murabbiyūn.map((person) => ({
+  id: person.id,
+  name: person.name,
+  email: '',
+  role: 'author',
+  initials: person.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase(),
+  madhhab: person.madhhab || '',
+  articles: 0,
+  active: true,
+  image: person.image,
+  bio: person.bio,
+  staffTitle: person.role,
+  biography: person.biography,
+  focus: person.focus,
+  accent: person.accent,
+  showInDirectory: true,
+  directoryOnly: true,
+}));
 
 const KEY = 'ilm-demo-state-v13';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
@@ -83,18 +109,18 @@ interface Store {
   returnArticle: (id: string, actor: string, notes: string) => void;
   publishArticle: (id: string, actor: string) => void;
   unpublishArticle: (id: string, actor: string) => void;
-  deleteArticle: (id: string, actor: string) => void;
+  deleteArticle: (id: string, slug: string, actor: string) => Promise<{ ok: boolean; error?: string }>;
   addQuestion: (q: Omit<Question, 'id' | 'date' | 'status'>) => void;
   syncQuestions: () => Promise<void>;
-  assignQuestion: (id: string, assignee: string) => void;
+  assignQuestion: (id: string, assignee: Pick<Contributor, 'name' | 'email' | 'role'>) => Promise<{ ok: boolean; emailSent: boolean; error?: string }>;
   authorSubmitAnswer: (id: string, draft: string, authorName: string) => void;
   answerQuestion: (id: string, answerNotes: string) => void;
   profiles: Record<Role, UserProfile>;
   updateProfile: (role: Role, patch: Partial<UserProfile>) => void;
-  addCategory: (name: string) => Category | null;
-  removeCategory: (id: string) => void;
-  addTag: (name: string) => boolean;
-  removeTag: (name: string) => void;
+  addCategory: (name: string) => Promise<{ ok: boolean; category?: Category; localOnly?: boolean; error?: string }>;
+  removeCategory: (id: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
+  addTag: (name: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
+  removeTag: (name: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   addSubscriber: (email: string) => boolean;
   syncSubscribers: () => Promise<void>;
   toggleSubscriber: (id: string, active: boolean) => void;
@@ -112,7 +138,7 @@ interface Store {
   activateInvitedAuthor: (email: string) => void;
   markInviteResent: (id: string, token: string, expiresAt: number) => void;
   toggleAuthorActive: (id: string, active: boolean) => void;
-  updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>) => void;
+  updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>, fallback?: Contributor) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   markNoticeRead: (id: string) => void;
   markAllNoticesRead: (role: Role, authorName?: string) => void;
   addMedia: (item: Omit<MediaItem, 'id' | 'createdAt'>, id?: string) => MediaItem | null;
@@ -160,6 +186,8 @@ function persist(data: {
   profiles: Record<Role, UserProfile>;
   media: MediaItem[];
   siteSettings: SiteSettings;
+  deletedArticleIds?: string[];
+  deletedArticleSlugs?: string[];
 }) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
@@ -180,6 +208,8 @@ function readPersisted(): {
   profiles?: Record<Role, UserProfile>;
   media?: MediaItem[];
   siteSettings?: SiteSettings;
+  deletedArticleIds?: string[];
+  deletedArticleSlugs?: string[];
 } | null {
   try {
     const raw = localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY);
@@ -230,11 +260,14 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const [notices, setNotices] = useState<Notice[]>(seedNotices);
   const [activity, setActivity] = useState<ActivityEntry[]>(seedLog);
   const [subscribers, setSubscribers] = useState<Subscriber[]>(seedSubscribers);
-  const [contributors, setContributors] = useState<Contributor[]>(seedContributors);
+  const [contributors, setContributors] = useState<Contributor[]>([...seedContributors, ...directoryProfileContributors]);
   const [profiles, setProfiles] = useState<Record<Role, UserProfile>>(defaultProfiles);
   const [media, setMedia] = useState<MediaItem[]>(seedMedia);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [newlyPublishedSlugs, setNewlyPublishedSlugs] = useState<string[]>([]);
+  const [deletedArticleIds, setDeletedArticleIds] = useState<Set<string>>(new Set());
+  const [deletedArticleSlugs, setDeletedArticleSlugs] = useState<Set<string>>(new Set());
+  const deletedArticleSlugsRef = useRef<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -265,13 +298,20 @@ export function IlmProvider({ children }: { children: ReactNode }) {
 
     const parsed = readPersisted();
     // Always start from the current seed catalog so public articles never vanish after a content swap.
-    let nextArticles = withSafeImages();
+    // BUT honour any deliberately deleted seed articles.
+    const deletedIds = new Set<string>(Array.isArray(parsed?.deletedArticleIds) ? parsed!.deletedArticleIds : []);
+    const deletedSlugs = new Set<string>(Array.isArray(parsed?.deletedArticleSlugs) ? parsed!.deletedArticleSlugs : []);
+    deletedArticleSlugsRef.current = deletedSlugs;
+    if (deletedIds.size > 0) setDeletedArticleIds(deletedIds);
+    if (deletedSlugs.size > 0) setDeletedArticleSlugs(deletedSlugs);
+
+    let nextArticles = withSafeImages().filter((a) => !deletedIds.has(a.id) && !deletedSlugs.has(a.slug));
     if (parsed) {
       if (Array.isArray(parsed.articles)) {
         const extras = parsed.articles
-          .filter((a) => a?.slug && !OLD_ARTICLE_SLUGS.has(a.slug) && !seedBySlug.has(a.slug))
+          .filter((a) => a?.slug && !OLD_ARTICLE_SLUGS.has(a.slug) && !seedBySlug.has(a.slug) && !deletedIds.has(a.id) && !deletedSlugs.has(a.slug))
           .map((a) => ({ ...a, image: safeArticleImage(a.image) }));
-        nextArticles = [...withSafeImages(), ...extras];
+        nextArticles = [...withSafeImages().filter((a) => !deletedIds.has(a.id) && !deletedSlugs.has(a.slug)), ...extras];
       }
       if (Array.isArray(parsed.categories)) {
         // Prefer the current seed category list so new topics (Purification, Prayer) are never dropped.
@@ -288,12 +328,17 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (Array.isArray(parsed.activity)) setActivity(parsed.activity);
       if (Array.isArray(parsed.subscribers)) setSubscribers(parsed.subscribers);
       if (Array.isArray(parsed.contributors)) {
-        setContributors(
-          parsed.contributors.map((c) => ({
-            ...c,
-            image: safeScholarImage(c.image),
-          })),
-        );
+        setContributors((prev) => {
+          const byId = new Map(prev.map((person) => [person.id, person]));
+          for (const person of parsed.contributors!) {
+            byId.set(person.id, {
+              ...byId.get(person.id),
+              ...person,
+              image: safeScholarImage(person.image),
+            });
+          }
+          return Array.from(byId.values());
+        });
       }
       if (parsed.profiles) {
         setProfiles((prev) => ({ ...prev, ...parsed.profiles! }));
@@ -321,10 +366,11 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     if (mergeRemote) {
       void (async () => {
         try {
-          const [artsRes, catsRes, settingsRes] = await Promise.all([
+          const [artsRes, catsRes, settingsRes, staffProfilesRes] = await Promise.all([
             fetch('/api/articles/published', { cache: 'no-store' }),
             fetch('/api/admin/categories', { cache: 'no-store' }),
             fetch('/api/admin/settings', { cache: 'no-store' }),
+            fetch('/api/staff-profiles', { cache: 'no-store' }),
           ]);
 
           if (artsRes.ok) {
@@ -335,6 +381,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
                 for (const remote of json.articles!) {
                   if (!remote?.slug || OLD_ARTICLE_SLUGS.has(remote.slug)) continue;
                   if (seedBySlug.has(remote.slug)) continue;
+                  if (deletedArticleSlugsRef.current.has(remote.slug)) continue;
                   if (!remote.title?.trim()) continue;
                   const local = bySlug.get(remote.slug);
                   bySlug.set(
@@ -381,6 +428,55 @@ export function IlmProvider({ children }: { children: ReactNode }) {
             }
           }
 
+          if (staffProfilesRes.ok) {
+            const json = (await staffProfilesRes.json()) as {
+              ok?: boolean;
+              profiles?: Array<Partial<Contributor> & { id: string }>;
+            };
+            if (json.ok && Array.isArray(json.profiles)) {
+              setContributors((prev) => {
+                const byId = new Map(prev.map((person) => [person.id, person]));
+                for (const profile of json.profiles!) {
+                  const local = byId.get(profile.id);
+                  if (!local && !profile.name) continue;
+                  const name = profile.name || local!.name;
+                  const initials = name
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join('')
+                    .toUpperCase();
+                  byId.set(profile.id, {
+                    ...(local || {
+                      id: profile.id,
+                      name,
+                      email: '',
+                      role: profile.role || 'author',
+                      initials: initials || 'ILM',
+                      madhhab: profile.madhhab || '',
+                      articles: 0,
+                      active: true,
+                      image: safeScholarImage(profile.image),
+                      directoryOnly: true,
+                    }),
+                    ...profile,
+                    initials: initials || local?.initials || 'ILM',
+                    image: profile.image ? safeScholarImage(profile.image) : local?.image || safeScholarImage(''),
+                    staffTitle: profile.staffTitle ?? local?.staffTitle,
+                    bio: profile.bio ?? local?.bio,
+                    biography: profile.biography ?? local?.biography,
+                    focus: profile.focus ?? local?.focus,
+                    accent: profile.accent ?? local?.accent,
+                    showInDirectory: profile.showInDirectory ?? local?.showInDirectory,
+                    active: profile.active ?? local?.active ?? true,
+                  });
+                }
+                return Array.from(byId.values());
+              });
+            }
+          }
+
           const mediaRes = await fetch('/api/admin/media', { cache: 'no-store' });
           if (mediaRes.ok) {
             const json = (await mediaRes.json()) as {
@@ -405,8 +501,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready) persist({ articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, media, siteSettings });
-  }, [articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, media, siteSettings, ready]);
+    if (ready) persist({ articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, media, siteSettings, deletedArticleIds: [...deletedArticleIds], deletedArticleSlugs: [...deletedArticleSlugs] });
+  }, [articles, categories, tags, questions, notices, activity, subscribers, contributors, profiles, media, siteSettings, deletedArticleIds, deletedArticleSlugs, ready]);
 
   const log = useCallback((action: string, user: string, target: string) => {
     setActivity((prev) => [{ id: `l${Date.now()}`, action, user, target, timestamp: nowStamp() }, ...prev]);
@@ -596,19 +692,35 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteArticle = useCallback(
-    (id: string, actor: string) => {
-      let title = '';
-      setArticles((prev) => {
-        const article = prev.find((a) => a.id === id);
-        if (!article) return prev;
-        title = article.title;
-        return prev.filter((a) => a.id !== id);
-      });
-      if (!title) return;
-      log('Deleted', actor, title);
-      notify({ title: 'Article deleted', body: title, role: 'administrator' });
+    async (id: string, slug: string, actor: string) => {
+      const article = articles.find((item) => item.id === id || item.slug === slug);
+      let response: Response;
+      let result: { ok?: boolean; localOnly?: boolean; error?: string };
+      try {
+        response = await fetch(`/api/articles/delete?slug=${encodeURIComponent(slug)}`, { method: 'DELETE' });
+        result = (await response.json()) as typeof result;
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : 'Could not reach the delete service' };
+      }
+
+      if (!response.ok && !(response.status === 503 && result.localOnly)) {
+        return { ok: false, error: result.error || `Delete failed (${response.status})` };
+      }
+      if (response.ok && !result.ok) {
+        return { ok: false, error: result.error || 'The delete service rejected the request' };
+      }
+
+      deletedArticleSlugsRef.current = new Set([...deletedArticleSlugsRef.current, slug]);
+      setDeletedArticleIds((prev) => new Set([...prev, id]));
+      setDeletedArticleSlugs((prev) => new Set([...prev, slug]));
+      setArticles((prev) => prev.filter((item) => item.id !== id && item.slug !== slug));
+      if (article) {
+        log('Deleted', actor, article.title);
+        notify({ title: 'Article deleted', body: article.title, role: 'administrator' });
+      }
+      return { ok: true };
     },
-    [log, notify],
+    [articles, log, notify],
   );
 
   const addQuestion = useCallback(
@@ -668,34 +780,51 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const assignQuestion = useCallback(
-    (id: string, assignee: string) => {
-      const item = questions.find((q) => q.id === id);
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === id ? { ...q, assignedTo: assignee, status: 'assigned' as const } : q)),
-      );
-      const contributor = contributors.find((c) => c.name === assignee);
-      notify({
-        title: 'Question assigned to you',
-        body: item?.question.slice(0, 100) || 'Open Assigned to me.',
-        role: 'author',
-        authorName: assignee,
-      });
-      if (contributor?.email) {
-        void fetch('/api/questions/assign', {
+    async (id: string, assignee: Pick<Contributor, 'name' | 'email' | 'role'>) => {
+      const item = questions.find((question) => question.id === id);
+      if (!item) return { ok: false, emailSent: false, error: 'Question not found' };
+
+      try {
+        const response = await fetch('/api/questions/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id,
-            assigneeName: assignee,
-            assigneeEmail: contributor.email,
-            asker: item?.asker,
-            subject: item?.subject,
-            question: item?.question,
+            assigneeName: assignee.name,
+            assigneeEmail: assignee.email,
+            asker: item.asker,
+            subject: item.subject,
+            question: item.question,
           }),
         });
+        const result = (await response.json()) as { ok?: boolean; emailSent?: boolean; error?: string };
+        if (!response.ok || !result.ok) {
+          return { ok: false, emailSent: false, error: result.error || `Assignment failed (${response.status})` };
+        }
+
+        setQuestions((prev) =>
+          prev.map((question) =>
+            question.id === id
+              ? { ...question, assignedTo: assignee.name, status: 'assigned' as const }
+              : question,
+          ),
+        );
+        notify({
+          title: 'Question assigned to you',
+          body: item.question.slice(0, 100) || 'Open Questions in your ILM dashboard.',
+          role: assignee.role,
+          authorName: assignee.name,
+        });
+        return { ok: true, emailSent: Boolean(result.emailSent) };
+      } catch (error) {
+        return {
+          ok: false,
+          emailSent: false,
+          error: error instanceof Error ? error.message : 'Could not reach the assignment service',
+        };
       }
     },
-    [contributors, notify, questions],
+    [notify, questions],
   );
 
   const authorSubmitAnswer = useCallback(
@@ -800,78 +929,107 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   );
 
   const addCategory = useCallback(
-    (name: string) => {
+    async (name: string) => {
       const trimmed = name.trim();
-      if (!trimmed) return null;
+      if (!trimmed) return { ok: false, error: 'Enter a category name.' };
       const slug = slugify(trimmed);
-      if (!slug) return null;
-      const isDuplicate = categories.some(
-        (c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase(),
-      );
-      if (isDuplicate) return null;
-      const created: Category = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
+      if (!slug) return { ok: false, error: 'Enter a valid category name.' };
+      if (categories.some((c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase())) {
+        return { ok: false, error: 'That category already exists.' };
+      }
+
+      const localCategory: Category = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
+      let category = localCategory;
+      let localOnly = false;
+      try {
+        const response = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: trimmed, type: 'category' }),
+        });
+        const result = (await response.json()) as { ok?: boolean; category?: Category; localOnly?: boolean; error?: string };
+        if (response.ok && result.ok && result.category) {
+          category = result.category;
+        } else if (response.status === 503 || result.localOnly) {
+          localOnly = true;
+        } else {
+          return { ok: false, error: result.error || `Could not save category (HTTP ${response.status}).` };
+        }
+      } catch {
+        localOnly = true;
+      }
+
       setCategories((prev) => {
-        if (prev.some((c) => c.slug === slug || c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
-        return [...prev, created];
+        const existingIndex = prev.findIndex((item) => item.slug === slug);
+        if (existingIndex < 0) return [...prev, category];
+        return prev.map((item, index) => index === existingIndex ? category : item);
       });
       log('Added category', 'Administrator', trimmed);
-      void fetch('/api/admin/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed, type: 'category' }),
-      })
-        .then(async (res) => {
-          const json = (await res.json()) as { ok?: boolean; category?: Category };
-          if (!json.ok || !json.category) return;
-          setCategories((prev) =>
-            prev.map((c) => (c.slug === slug ? { ...c, id: json.category!.id, name: json.category!.name } : c)),
-          );
-        })
-        .catch(() => undefined);
-      return created;
+      return { ok: true, category, localOnly };
     },
     [categories, log],
   );
 
   const removeCategory = useCallback(
-    (id: string) => {
-      setCategories((prev) => {
-        const target = prev.find((c) => c.id === id);
-        if (target) log('Removed category', 'Administrator', target.name);
-        return prev.filter((c) => c.id !== id);
-      });
-      void fetch(`/api/admin/categories?id=${encodeURIComponent(id)}&type=category`, { method: 'DELETE' }).catch(
-        () => undefined,
-      );
+    async (id: string) => {
+      const target = categories.find((category) => category.id === id);
+      if (!target) return { ok: false, error: 'Category not found.' };
+      let localOnly = false;
+      try {
+        const response = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}&type=category`, { method: 'DELETE' });
+        const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
+        if ((!response.ok || !result.ok) && response.status !== 503 && !result.localOnly) {
+          return { ok: false, error: result.error || `Could not remove category (HTTP ${response.status}).` };
+        }
+        localOnly = response.status === 503 || result.localOnly === true;
+      } catch {
+        localOnly = true;
+      }
+      setCategories((prev) => prev.filter((category) => category.id !== id));
+      log('Removed category', 'Administrator', target.name);
+      return { ok: true, localOnly };
     },
-    [log],
+    [categories, log],
   );
 
-  const addTag = useCallback((name: string) => {
+  const addTag = useCallback(async (name: string) => {
     const trimmed = name.trim().toLowerCase();
-    if (!trimmed) return false;
-    let added = false;
-    setTags((prev) => {
-      if (prev.includes(trimmed)) return prev;
-      added = true;
-      return [...prev, trimmed];
-    });
-    if (added) {
-      void fetch('/api/admin/categories', {
+    if (!trimmed) return { ok: false, error: 'Enter a tag name.' };
+    if (tags.includes(trimmed)) return { ok: false, error: 'That tag already exists.' };
+    let localOnly = false;
+    try {
+      const response = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: trimmed, type: 'tag' }),
-      }).catch(() => undefined);
+      });
+      const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
+      if (!response.ok || !result.ok) {
+        if (response.status === 503 || result.localOnly) localOnly = true;
+        else return { ok: false, error: result.error || `Could not save tag (HTTP ${response.status}).` };
+      }
+    } catch {
+      localOnly = true;
     }
-    return added;
-  }, []);
+    setTags((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+    return { ok: true, localOnly };
+  }, [tags]);
 
-  const removeTag = useCallback((name: string) => {
+  const removeTag = useCallback(async (name: string) => {
     const trimmed = name.trim().toLowerCase();
-    setTags((prev) => prev.filter((t) => t !== trimmed));
-    void fetch(`/api/admin/categories?type=tag&name=${encodeURIComponent(trimmed)}`, { method: 'DELETE' }).catch(
-      () => undefined,
-    );
+    let localOnly = false;
+    try {
+      const response = await fetch(`/api/admin/categories?type=tag&name=${encodeURIComponent(trimmed)}`, { method: 'DELETE' });
+      const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
+      if ((!response.ok || !result.ok) && response.status !== 503 && !result.localOnly) {
+        return { ok: false, error: result.error || `Could not remove tag (HTTP ${response.status}).` };
+      }
+      localOnly = response.status === 503 || result.localOnly === true;
+    } catch {
+      localOnly = true;
+    }
+    setTags((prev) => prev.filter((tag) => tag !== trimmed));
+    return { ok: true, localOnly };
   }, []);
 
   const addSubscriber = useCallback((email: string) => {
@@ -1074,13 +1232,48 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateContributorProfile = useCallback(
-    (
+    async (
       id: string,
       patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>,
+      fallback?: Contributor,
     ) => {
-      setContributors((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-      );
+      let response: Response;
+      let result: { ok?: boolean; localOnly?: boolean; error?: string };
+      try {
+        response = await fetch('/api/admin/staff-profiles', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, patch: { ...patch, focus: patch.focus ?? null } }),
+        });
+        result = (await response.json()) as typeof result;
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : 'Could not reach the profile service' };
+      }
+
+      const localOnly = !response.ok && result.localOnly === true;
+      if (!response.ok && !localOnly) {
+        return { ok: false, error: result.error || `Profile save failed (${response.status})` };
+      }
+      if (response.ok && !result.ok) {
+        return { ok: false, error: result.error || 'The profile service rejected the changes' };
+      }
+
+      setContributors((prev) => {
+        const existing = prev.find((person) => person.id === id);
+        const base = existing || fallback;
+        if (!base) return prev;
+        const updated = {
+          ...base,
+          ...patch,
+          staffTitle: patch.staffTitle || undefined,
+          bio: patch.bio || undefined,
+          focus: patch.focus || undefined,
+        };
+        return existing
+          ? prev.map((person) => person.id === id ? updated : person)
+          : [...prev, updated];
+      });
+      return { ok: true, localOnly };
     },
     [],
   );

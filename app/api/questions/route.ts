@@ -24,8 +24,9 @@ function inferSource(row: Record<string, unknown>): 'ask' | 'contact' {
   return 'ask';
 }
 
-function mapRow(row: Record<string, unknown>) {
+function mapRow(row: Record<string, unknown>, assignedNames: Map<string, string>) {
   const created = row.created_at ? new Date(String(row.created_at)) : new Date();
+  const assignedId = row.assigned_to ? String(row.assigned_to) : '';
   return {
     id: String(row.id),
     asker: String(row.name || 'Anonymous'),
@@ -38,7 +39,9 @@ function mapRow(row: Record<string, unknown>) {
     date: created.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     createdAt: created.getTime(),
     status: String(row.status || 'new') as 'new' | 'assigned' | 'author_ready' | 'answered',
-    assignedTo: row.assigned_to_name ? String(row.assigned_to_name) : undefined,
+    assignedTo: row.assigned_to_name
+      ? String(row.assigned_to_name)
+      : assignedNames.get(assignedId),
     authorDraft: row.author_draft ? String(row.author_draft) : undefined,
     answerNotes: row.answer_notes ? String(row.answer_notes) : undefined,
   };
@@ -84,7 +87,19 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, questions: (data || []).map(mapRow) });
+  const assignedIds = Array.from(new Set((data || []).map((row) => String(row.assigned_to || '')).filter(Boolean)));
+  const assignedNames = new Map<string, string>();
+  if (assignedIds.length > 0) {
+    const { data: assignedProfiles } = await client
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', assignedIds);
+    for (const profile of assignedProfiles || []) {
+      if (profile.id && profile.full_name) assignedNames.set(String(profile.id), String(profile.full_name));
+    }
+  }
+
+  return NextResponse.json({ ok: true, questions: (data || []).map((row) => mapRow(row, assignedNames)) });
 }
 
 export async function POST(req: Request) {

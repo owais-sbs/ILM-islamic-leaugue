@@ -25,6 +25,21 @@ export function mergePages(parsed: Partial<CMPagesContent> | Record<string, unkn
       visionNotes: p.missionVisionPage?.visionNotes ?? CM_PAGE_DEFAULTS.missionVisionPage.visionNotes,
       objectives: p.missionVisionPage?.objectives ?? CM_PAGE_DEFAULTS.missionVisionPage.objectives,
     },
+    privacyPage: {
+      ...CM_PAGE_DEFAULTS.privacyPage,
+      ...p.privacyPage,
+      sections: p.privacyPage?.sections ?? CM_PAGE_DEFAULTS.privacyPage.sections,
+    },
+    disclaimerPage: {
+      ...CM_PAGE_DEFAULTS.disclaimerPage,
+      ...p.disclaimerPage,
+      sections: p.disclaimerPage?.sections ?? CM_PAGE_DEFAULTS.disclaimerPage.sections,
+    },
+    termsPage: {
+      ...CM_PAGE_DEFAULTS.termsPage,
+      ...p.termsPage,
+      sections: p.termsPage?.sections ?? CM_PAGE_DEFAULTS.termsPage.sections,
+    },
   };
 }
 
