@@ -12,6 +12,7 @@ export function useCMPages(): CMPagesContent {
   useEffect(() => {
     try {
       localStorage.removeItem('ilm_content_manager_pages_v1');
+      localStorage.removeItem('ilm_content_manager_pages_v2');
     } catch {
       /* ignore */
     }

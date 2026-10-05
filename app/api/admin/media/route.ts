@@ -77,7 +77,24 @@ export async function POST(req: Request) {
     upsert: false,
   });
   if (upload.error) {
-    return NextResponse.json({ ok: false, error: upload.error.message }, { status: 500 });
+    // Auto-create bucket if missing, then retry once
+    const missingBucket = /bucket|not found|does not exist/i.test(upload.error.message);
+    if (missingBucket) {
+      await admin.storage.createBucket('media', {
+        public: true,
+        fileSizeLimit: 5242880,
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
+      });
+      const retry = await admin.storage.from('media').upload(path, buffer, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (retry.error) {
+        return NextResponse.json({ ok: false, error: retry.error.message }, { status: 500 });
+      }
+    } else {
+      return NextResponse.json({ ok: false, error: upload.error.message }, { status: 500 });
+    }
   }
 
   const { data: pub } = admin.storage.from('media').getPublicUrl(path);

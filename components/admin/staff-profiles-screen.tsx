@@ -194,12 +194,6 @@ export function StaffProfilesScreen() {
 
   return (
     <Reveal>
-      <div className="mb-5">
-        <p className="text-sm text-ilm-navy/55">
-          Manage public staff profiles. Enable <strong>Show in Directory</strong> to appear in Murabbiyūn. Saves sync to Supabase for the live Vercel site. Profile photos upload to media storage when available.
-        </p>
-      </div>
-
       <div className="space-y-3">
         {staffProfiles.map((c) => {
           const isEditing = editing === c.id;

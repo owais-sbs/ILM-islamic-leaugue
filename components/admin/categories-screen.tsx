@@ -33,10 +33,7 @@ export function CategoriesScreen() {
                 const result = await addCategory(categoryName);
                 if (result.ok && result.category) {
                   setCategoryName('');
-                  void adminSwal.success(
-                    result.localOnly ? 'Category saved locally only' : 'Category added',
-                    result.localOnly ? `${result.category.name} is only available in this browser until Supabase is reachable.` : result.category.name,
-                  );
+                  void adminSwal.success('Category added', result.category.name);
                 } else {
                   void adminSwal.error('Could not add category', result.error || 'Please try again.');
                 }
@@ -70,7 +67,7 @@ export function CategoriesScreen() {
                       if (res.isConfirmed) {
                         const result = await removeCategory(cat.id);
                         if (!result.ok) void adminSwal.error('Could not remove category', result.error || 'Please try again.');
-                        else if (result.localOnly) void adminSwal.success('Removed locally only', 'Supabase could not be reached.');
+                        else void adminSwal.success('Category removed', cat.name);
                       }
                     }}
                     className="text-ilm-navy/30 transition-colors hover:text-red-500"

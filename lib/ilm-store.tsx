@@ -125,6 +125,7 @@ interface Store {
   syncSubscribers: () => Promise<void>;
   toggleSubscriber: (id: string, active: boolean) => void;
   addAuthor: (input: {
+    id?: string;
     name: string;
     email: string;
     role?: Role;
@@ -134,10 +135,13 @@ interface Store {
     inviteToken?: string;
     inviteExpiresAt?: number;
     inviteStatus?: 'pending' | 'active';
+    image?: string;
   }) => Contributor | null;
   activateInvitedAuthor: (email: string) => void;
   markInviteResent: (id: string, token: string, expiresAt: number) => void;
-  toggleAuthorActive: (id: string, active: boolean) => void;
+  toggleAuthorActive: (id: string, active: boolean) => Promise<{ ok: boolean; error?: string; emailOk?: boolean }>;
+  deleteAuthor: (id: string) => Promise<{ ok: boolean; error?: string; emailOk?: boolean }>;
+  syncAuthors: () => Promise<void>;
   updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>, fallback?: Contributor) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   markNoticeRead: (id: string) => void;
   markAllNoticesRead: (role: Role, authorName?: string) => void;
@@ -366,13 +370,14 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     if (mergeRemote) {
       void (async () => {
         try {
-          const [artsRes, workflowRes, catsRes, settingsRes, staffProfilesRes, subscribersRes] = await Promise.all([
+          const [artsRes, workflowRes, catsRes, settingsRes, staffProfilesRes, subscribersRes, accountsRes] = await Promise.all([
             fetch('/api/articles/published', { cache: 'no-store' }),
             fetch('/api/articles/workflow', { cache: 'no-store' }),
             fetch('/api/admin/categories', { cache: 'no-store' }),
             fetch('/api/admin/settings', { cache: 'no-store' }),
             fetch('/api/staff-profiles', { cache: 'no-store' }),
             fetch('/api/subscribers', { cache: 'no-store' }),
+            fetch('/api/admin/accounts', { cache: 'no-store' }),
           ]);
 
           const mergeRemoteArticles = (remoteArticles: Article[], forceStatus?: Article['status']) => {
@@ -417,18 +422,18 @@ export function IlmProvider({ children }: { children: ReactNode }) {
               tags?: string[];
             };
             if (json.ok && Array.isArray(json.categories) && json.categories.length > 0) {
-              setCategories((prev) => {
-                const bySlug = new Map(prev.map((c) => [c.slug, c]));
-                for (const remote of json.categories!) {
-                  if (!remote?.slug) continue;
-                  const local = bySlug.get(remote.slug);
-                  bySlug.set(remote.slug, local ? { ...local, ...remote, name: remote.name || local.name } : remote);
-                }
-                return Array.from(bySlug.values());
-              });
+              // Live list is source of truth — drop seed cat1 ids that break delete.
+              setCategories(
+                json.categories.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  slug: c.slug,
+                  articleCount: c.articleCount || 0,
+                })),
+              );
             }
-            if (json.ok && Array.isArray(json.tags) && json.tags.length > 0) {
-              setTags((prev) => Array.from(new Set([...prev, ...json.tags!.map((t) => t.toLowerCase())])));
+            if (json.ok && Array.isArray(json.tags)) {
+              setTags(json.tags.map((t) => String(t).trim()).filter(Boolean));
             }
           }
 
@@ -503,6 +508,58 @@ export function IlmProvider({ children }: { children: ReactNode }) {
                   .map((s) => ({ ...s, email: s.email.toLowerCase() }))
                   .sort((a, b) => b.date.localeCompare(a.date)),
               );
+            }
+          }
+
+          if (accountsRes.ok) {
+            const json = (await accountsRes.json()) as {
+              ok?: boolean;
+              contributors?: Array<{
+                id: string;
+                name: string;
+                email: string;
+                role: Role;
+                active: boolean;
+                madhhab?: string;
+                bio?: string;
+                staffTitle?: string;
+                image?: string;
+              }>;
+            };
+            if (json.ok && Array.isArray(json.contributors) && json.contributors.length > 0) {
+              setContributors((prev) => {
+                const byEmail = new Map(prev.map((p) => [p.email.toLowerCase(), p]));
+                for (const remote of json.contributors!) {
+                  const key = remote.email.toLowerCase();
+                  const local = byEmail.get(key);
+                  const parts = (remote.name || key).split(/\s+/).filter(Boolean);
+                  const initials = ((parts[0]?.[0] || 'A') + (parts[1]?.[0] || parts[0]?.[1] || 'U')).toUpperCase();
+                  byEmail.set(key, {
+                    ...(local || {
+                      id: remote.id,
+                      name: remote.name,
+                      email: key,
+                      role: remote.role,
+                      initials,
+                      madhhab: remote.madhhab || 'Hanafi',
+                      articles: 0,
+                      active: remote.active,
+                      image: safeScholarImage(remote.image || ''),
+                    }),
+                    id: remote.id,
+                    name: remote.name || local?.name || key,
+                    email: key,
+                    role: remote.role || local?.role || 'author',
+                    active: remote.active,
+                    madhhab: remote.madhhab || local?.madhhab || 'Hanafi',
+                    bio: remote.bio || local?.bio,
+                    staffTitle: remote.staffTitle || local?.staffTitle,
+                    image: remote.image ? safeScholarImage(remote.image) : local?.image || safeScholarImage(''),
+                    directoryOnly: false,
+                  });
+                }
+                return Array.from(byEmail.values());
+              });
             }
           }
 
@@ -714,6 +771,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       void (async () => {
         try {
           const minutes = Number.parseInt(String(article.readTime), 10) || 5;
+          const authorMatch = contributors.find((c) => c.name === article.author);
           await fetch('/api/articles/publish', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -728,6 +786,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
               category: article.category,
               image: article.image,
               readingMinutes: minutes,
+              authorEmail: authorMatch?.email || undefined,
+              authorName: article.author,
             }),
           });
         } catch {
@@ -742,7 +802,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         authorName: article.author,
       });
     },
-    [articles, log, notify],
+    [articles, contributors, log, notify],
   );
 
   const unpublishArticle = useCallback(
@@ -1007,7 +1067,6 @@ export function IlmProvider({ children }: { children: ReactNode }) {
 
       const localCategory: Category = { id: `cat${Date.now()}`, name: trimmed, slug, articleCount: 0 };
       let category = localCategory;
-      let localOnly = false;
       try {
         const response = await fetch('/api/admin/categories', {
           method: 'POST',
@@ -1015,24 +1074,27 @@ export function IlmProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ name: trimmed, type: 'category' }),
         });
         const result = (await response.json()) as { ok?: boolean; category?: Category; localOnly?: boolean; error?: string };
-        if (response.ok && result.ok && result.category) {
-          category = result.category;
-        } else if (response.status === 503 || result.localOnly) {
-          localOnly = true;
-        } else {
-          return { ok: false, error: result.error || `Could not save category (HTTP ${response.status}).` };
+        if (!response.ok || !result.ok || !result.category) {
+          return {
+            ok: false,
+            error: result.error || `Could not save category (HTTP ${response.status}). Check Supabase service role on Vercel.`,
+          };
         }
-      } catch {
-        localOnly = true;
+        category = result.category;
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : 'Network error while saving category.',
+        };
       }
 
       setCategories((prev) => {
         const existingIndex = prev.findIndex((item) => item.slug === slug);
         if (existingIndex < 0) return [...prev, category];
-        return prev.map((item, index) => index === existingIndex ? category : item);
+        return prev.map((item, index) => (index === existingIndex ? category : item));
       });
       log('Added category', 'Administrator', trimmed);
-      return { ok: true, category, localOnly };
+      return { ok: true, category, localOnly: false };
     },
     [categories, log],
   );
@@ -1041,66 +1103,66 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       const target = categories.find((category) => category.id === id);
       if (!target) return { ok: false, error: 'Category not found.' };
-      let localOnly = false;
       try {
         const params = new URLSearchParams({ type: 'category', slug: target.slug });
         if (/^[0-9a-f-]{36}$/i.test(id)) params.set('id', id);
         const response = await fetch(`/api/admin/categories?${params.toString()}`, { method: 'DELETE' });
         const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
-        if ((!response.ok || !result.ok) && response.status !== 503 && !result.localOnly) {
+        if (!response.ok || !result.ok) {
           return { ok: false, error: result.error || `Could not remove category (HTTP ${response.status}).` };
         }
-        localOnly = response.status === 503 || result.localOnly === true;
-      } catch {
-        localOnly = true;
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : 'Network error while removing category.',
+        };
       }
       setCategories((prev) => prev.filter((category) => category.id !== id && category.slug !== target.slug));
       log('Removed category', 'Administrator', target.name);
-      return { ok: true, localOnly };
+      return { ok: true, localOnly: false };
     },
     [categories, log],
   );
 
   const addTag = useCallback(async (name: string) => {
-    const trimmed = name.trim().toLowerCase();
+    const trimmed = name.trim();
     if (!trimmed) return { ok: false, error: 'Enter a tag name.' };
-    if (tags.includes(trimmed)) return { ok: false, error: 'That tag already exists.' };
-    let localOnly = false;
+    if (tags.some((t) => t.toLowerCase() === trimmed.toLowerCase())) {
+      return { ok: false, error: 'That tag already exists.' };
+    }
     try {
       const response = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: trimmed, type: 'tag' }),
       });
-      const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
+      const result = (await response.json()) as { ok?: boolean; tag?: string; localOnly?: boolean; error?: string };
       if (!response.ok || !result.ok) {
-        if (response.status === 503 || result.localOnly) localOnly = true;
-        else return { ok: false, error: result.error || `Could not save tag (HTTP ${response.status}).` };
+        return { ok: false, error: result.error || `Could not save tag (HTTP ${response.status}).` };
       }
-    } catch {
-      localOnly = true;
+      const saved = result.tag || trimmed;
+      setTags((prev) => (prev.some((t) => t.toLowerCase() === saved.toLowerCase()) ? prev : [...prev, saved]));
+      return { ok: true, localOnly: false };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Network error while saving tag.' };
     }
-    setTags((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed]);
-    return { ok: true, localOnly };
   }, [tags]);
 
   const removeTag = useCallback(async (name: string) => {
     const trimmed = name.trim();
     const slug = slugify(trimmed);
-    let localOnly = false;
     try {
       const params = new URLSearchParams({ type: 'tag', name: trimmed, slug });
       const response = await fetch(`/api/admin/categories?${params.toString()}`, { method: 'DELETE' });
       const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
-      if ((!response.ok || !result.ok) && response.status !== 503 && !result.localOnly) {
+      if (!response.ok || !result.ok) {
         return { ok: false, error: result.error || `Could not remove tag (HTTP ${response.status}).` };
       }
-      localOnly = response.status === 503 || result.localOnly === true;
-    } catch {
-      localOnly = true;
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Network error while removing tag.' };
     }
     setTags((prev) => prev.filter((tag) => tag.toLowerCase() !== trimmed.toLowerCase()));
-    return { ok: true, localOnly };
+    return { ok: true, localOnly: false };
   }, []);
 
   const addSubscriber = useCallback(async (email: string) => {
@@ -1227,6 +1289,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
 
   const addAuthor = useCallback(
     (input: {
+      id?: string;
       name: string;
       email: string;
       role?: Role;
@@ -1236,11 +1299,11 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       inviteToken?: string;
       inviteExpiresAt?: number;
       inviteStatus?: 'pending' | 'active';
+      image?: string;
     }) => {
       const name = input.name.trim();
       const email = input.email.trim().toLowerCase();
       if (!name || !email || !email.includes('@')) return null;
-      if (contributors.some((c) => c.email.toLowerCase() === email)) return null;
 
       const parts = name.split(/\s+/).filter(Boolean);
       const initials = ((parts[0]?.[0] || 'A') + (parts[1]?.[0] || parts[0]?.[1] || 'U')).toUpperCase();
@@ -1253,7 +1316,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       ];
       const pending = input.inviteStatus === 'pending' || Boolean(input.inviteToken);
       const created: Contributor = {
-        id: `c${Date.now()}`,
+        id: input.id || `c${Date.now()}`,
         name,
         email,
         role: input.role || 'author',
@@ -1261,7 +1324,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         madhhab: input.madhhab || 'Hanafi',
         articles: 0,
         active: !pending,
-        image: avatarPool[contributors.length % avatarPool.length],
+        image: input.image || avatarPool[contributors.length % avatarPool.length],
         bio: input.bio,
         staffTitle: input.staffTitle,
         inviteStatus: pending ? 'pending' : 'active',
@@ -1269,7 +1332,10 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         inviteExpiresAt: input.inviteExpiresAt,
       };
 
-      setContributors((prev) => [created, ...prev]);
+      setContributors((prev) => {
+        const withoutDup = prev.filter((c) => c.email.toLowerCase() !== email && c.id !== created.id);
+        return [created, ...withoutDup];
+      });
       notify({
         title: pending ? 'Invite sent' : 'Author added',
         body: pending ? `${name} invited — awaiting password setup.` : `${name} can now contribute.`,
@@ -1307,9 +1373,113 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       ),
     );
   }, []);
-  const toggleAuthorActive = useCallback((id: string, active: boolean) => {
-    setContributors((prev) => prev.map((c) => (c.id === id ? { ...c, active } : c)));
+
+  const syncAuthors = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/accounts', { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = (await res.json()) as {
+        ok?: boolean;
+        contributors?: Array<{
+          id: string;
+          name: string;
+          email: string;
+          role: Role;
+          active: boolean;
+          madhhab?: string;
+          bio?: string;
+          staffTitle?: string;
+          image?: string;
+        }>;
+      };
+      if (!json.ok || !Array.isArray(json.contributors)) return;
+      setContributors((prev) => {
+        const byEmail = new Map(prev.map((p) => [p.email.toLowerCase(), p]));
+        for (const remote of json.contributors!) {
+          const key = remote.email.toLowerCase();
+          const local = byEmail.get(key);
+          const parts = remote.name.split(/\s+/).filter(Boolean);
+          const initials = ((parts[0]?.[0] || 'A') + (parts[1]?.[0] || parts[0]?.[1] || 'U')).toUpperCase();
+          byEmail.set(key, {
+            ...(local || {
+              id: remote.id,
+              name: remote.name,
+              email: key,
+              role: remote.role,
+              initials,
+              madhhab: remote.madhhab || 'Hanafi',
+              articles: 0,
+              active: remote.active,
+              image: safeScholarImage(remote.image || ''),
+            }),
+            id: remote.id,
+            name: remote.name || local?.name || key,
+            email: key,
+            role: remote.role || local?.role || 'author',
+            active: remote.active,
+            madhhab: remote.madhhab || local?.madhhab || 'Hanafi',
+            bio: remote.bio || local?.bio,
+            staffTitle: remote.staffTitle || local?.staffTitle,
+            image: remote.image ? safeScholarImage(remote.image) : local?.image || safeScholarImage(''),
+            directoryOnly: false,
+          });
+        }
+        return Array.from(byEmail.values());
+      });
+    } catch {
+      /* ignore */
+    }
   }, []);
+
+  const toggleAuthorActive = useCallback(async (id: string, active: boolean) => {
+    const person = contributors.find((c) => c.id === id);
+    try {
+      const response = await fetch('/api/admin/accounts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: /^[0-9a-f-]{36}$/i.test(id) ? id : undefined,
+          email: person?.email,
+          action: active ? 'activate' : 'deactivate',
+        }),
+      });
+      const result = (await response.json()) as { ok?: boolean; error?: string; emailOk?: boolean };
+      if (!response.ok || !result.ok) {
+        return { ok: false, error: result.error || `Could not update account (HTTP ${response.status}).` };
+      }
+      setContributors((prev) => prev.map((c) => (c.id === id || c.email === person?.email ? { ...c, active } : c)));
+      log(active ? 'Activated author' : 'Deactivated author', 'Administrator', person?.name || id);
+      return { ok: true, emailOk: result.emailOk };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Network error' };
+    }
+  }, [contributors, log]);
+
+  const deleteAuthor = useCallback(async (id: string) => {
+    const person = contributors.find((c) => c.id === id);
+    try {
+      const response = await fetch('/api/admin/accounts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: /^[0-9a-f-]{36}$/i.test(id) ? id : undefined,
+          email: person?.email,
+          action: 'delete',
+        }),
+      });
+      const result = (await response.json()) as { ok?: boolean; error?: string; emailOk?: boolean };
+      if (!response.ok || !result.ok) {
+        return { ok: false, error: result.error || `Could not delete account (HTTP ${response.status}).` };
+      }
+      setContributors((prev) =>
+        prev.map((c) => (c.id === id || c.email === person?.email ? { ...c, active: false } : c)),
+      );
+      log('Deleted author', 'Administrator', person?.name || id);
+      return { ok: true, emailOk: result.emailOk };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Network error' };
+    }
+  }, [contributors, log]);
 
   const updateContributorProfile = useCallback(
     async (
@@ -1404,6 +1574,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       activateInvitedAuthor,
       markInviteResent,
       toggleAuthorActive,
+      deleteAuthor,
+      syncAuthors,
       updateContributorProfile,
       markNoticeRead,
       markAllNoticesRead,
@@ -1448,6 +1620,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       activateInvitedAuthor,
       markInviteResent,
       toggleAuthorActive,
+      deleteAuthor,
+      syncAuthors,
       updateContributorProfile,
       markNoticeRead,
       markAllNoticesRead,

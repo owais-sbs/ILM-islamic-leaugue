@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Globe, Mail, Plus, UserPlus, X } from 'lucide-react';
 import { roleLabels, type Role } from '@/lib/admin-data';
 import { useIlm } from '@/lib/ilm-store';
@@ -28,21 +28,28 @@ const roleIdByUi: Record<Role, number> = {
 
 export function AuthorsScreen() {
   const router = useRouter();
-  const { contributors, addAuthor, toggleAuthorActive } = useIlm();
+  const { contributors, addAuthor, toggleAuthorActive, deleteAuthor, syncAuthors } = useIlm();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Form state
-  const [name, setName]           = useState('');
-  const [email, setEmail]         = useState('');
-  const [role, setRole]           = useState<Role>('author');
-  const [madhhab, setMadhhab]     = useState<string>('Hanafi');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<Role>('author');
+  const [madhhab, setMadhhab] = useState<string>('Hanafi');
   const [staffTitle, setStaffTitle] = useState('');
-  const [bio, setBio]             = useState('');
+  const [bio, setBio] = useState('');
+
+  useEffect(() => {
+    void syncAuthors();
+  }, [syncAuthors]);
 
   const resetForm = () => {
-    setName(''); setEmail(''); setRole('author');
-    setMadhhab('Hanafi'); setStaffTitle(''); setBio('');
+    setName('');
+    setEmail('');
+    setRole('author');
+    setMadhhab('Hanafi');
+    setStaffTitle('');
+    setBio('');
     setOpen(false);
   };
 
@@ -53,13 +60,44 @@ export function AuthorsScreen() {
     const result = await adminSwal.confirm(
       next ? 'Activate account?' : 'Deactivate account?',
       next
-        ? `${person.name} will be able to contribute again.`
-        : `${person.name} will be marked inactive and cannot contribute.`,
+        ? `${person.name} will be able to contribute again. A reactivation email will be sent.`
+        : `${person.name} will be marked inactive and receive a deactivation email.`,
       next ? 'Activate' : 'Deactivate',
     );
     if (!result.isConfirmed) return;
-    toggleAuthorActive(id, next);
-    await adminSwal.success(next ? 'Activated' : 'Deactivated', person.name);
+    const api = await toggleAuthorActive(id, next);
+    if (!api.ok) {
+      await adminSwal.error('Could not update account', api.error || 'Please try again.');
+      return;
+    }
+    await adminSwal.success(
+      next ? 'Activated' : 'Deactivated',
+      api.emailOk === false
+        ? `${person.name} updated, but the notification email could not be sent.`
+        : person.name,
+    );
+  };
+
+  const removeAuthor = async (id: string) => {
+    const person = contributors.find((r) => r.id === id);
+    if (!person) return;
+    const result = await adminSwal.confirm(
+      'Remove account?',
+      `${person.name} will be deactivated and receive a removal email. Articles they authored stay on the site.`,
+      'Remove',
+    );
+    if (!result.isConfirmed) return;
+    const api = await deleteAuthor(id);
+    if (!api.ok) {
+      await adminSwal.error('Could not remove account', api.error || 'Please try again.');
+      return;
+    }
+    await adminSwal.success(
+      'Account removed',
+      api.emailOk === false
+        ? `${person.name} removed, but the notification email could not be sent.`
+        : person.name,
+    );
   };
 
   const submitAuthor = async (e: React.FormEvent) => {
@@ -69,10 +107,22 @@ export function AuthorsScreen() {
       const res = await fetch('/api/admin/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: name, email, role, roleId: roleIdByUi[role] }),
+        body: JSON.stringify({
+          fullName: name,
+          email,
+          role,
+          roleId: roleIdByUi[role],
+          madhhab,
+          bio: bio || undefined,
+          staffTitle: staffTitle || undefined,
+        }),
       });
       const json = (await res.json()) as {
-        ok?: boolean; error?: string; warning?: string; roleName?: string;
+        ok?: boolean;
+        error?: string;
+        warning?: string;
+        roleName?: string;
+        authUserId?: string;
       };
 
       if (!res.ok || !json.ok) {
@@ -81,14 +131,20 @@ export function AuthorsScreen() {
       }
 
       const created = addAuthor({
-        name, email, role, madhhab,
+        id: json.authUserId,
+        name,
+        email,
+        role,
+        madhhab,
         staffTitle: staffTitle || undefined,
         bio: bio || undefined,
         inviteStatus: 'active',
       });
 
+      await syncAuthors();
+
       if (!created) {
-        await adminSwal.success('Account created', json.warning || `${name} can sign in. (Already in local list.)`);
+        await adminSwal.success('Account created', json.warning || `${name} can sign in.`);
       } else if (json.warning) {
         await adminSwal.success('Account created', json.warning);
       } else {
@@ -303,6 +359,7 @@ export function AuthorsScreen() {
                         { label: 'Edit profile', onClick: () => router.push(adminPath('staff-profiles')) },
                         { label: 'Copy email', onClick: () => { void navigator.clipboard.writeText(c.email); void adminSwal.success('Copied', c.email); } },
                         { label: 'Send email', onClick: () => { window.location.href = `mailto:${c.email}`; } },
+                        { label: 'Remove account', onClick: () => void removeAuthor(c.id), danger: true },
                       ]}
                     />
                   </td>

@@ -46,6 +46,30 @@ export function mergePages(parsed: Partial<CMPagesContent> | Record<string, unkn
         ? p.termsPage!.sections
         : CM_PAGE_DEFAULTS.termsPage.sections,
     },
+    askPage: { ...CM_PAGE_DEFAULTS.askPage, ...p.askPage },
+    contactPage: { ...CM_PAGE_DEFAULTS.contactPage, ...p.contactPage },
+    donationPage: {
+      ...CM_PAGE_DEFAULTS.donationPage,
+      ...p.donationPage,
+      introduction: Array.isArray(p.donationPage?.introduction)
+        ? p.donationPage!.introduction
+        : CM_PAGE_DEFAULTS.donationPage.introduction,
+      missionExpandItems: Array.isArray(p.donationPage?.missionExpandItems)
+        ? p.donationPage!.missionExpandItems
+        : CM_PAGE_DEFAULTS.donationPage.missionExpandItems,
+      whySupportIntro: Array.isArray(p.donationPage?.whySupportIntro)
+        ? p.donationPage!.whySupportIntro
+        : CM_PAGE_DEFAULTS.donationPage.whySupportIntro,
+      whySupportItems: Array.isArray(p.donationPage?.whySupportItems)
+        ? p.donationPage!.whySupportItems
+        : CM_PAGE_DEFAULTS.donationPage.whySupportItems,
+      longTermParagraphs: Array.isArray(p.donationPage?.longTermParagraphs)
+        ? p.donationPage!.longTermParagraphs
+        : CM_PAGE_DEFAULTS.donationPage.longTermParagraphs,
+      joinUsParagraphs: Array.isArray(p.donationPage?.joinUsParagraphs)
+        ? p.donationPage!.joinUsParagraphs
+        : CM_PAGE_DEFAULTS.donationPage.joinUsParagraphs,
+    },
   };
 }
 

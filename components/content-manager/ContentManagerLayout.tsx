@@ -28,6 +28,9 @@ import { FooterEditor } from './editors/FooterEditor';
 import { AboutPageEditor } from './editors/AboutPageEditor';
 import { MissionVisionEditor } from './editors/MissionVisionEditor';
 import { LegalPageEditor } from './editors/LegalPageEditor';
+import { AskPageEditor } from './editors/AskPageEditor';
+import { ContactPageEditor } from './editors/ContactPageEditor';
+import { DonationPageEditor } from './editors/DonationPageEditor';
 
 const sectionTitles: Record<CMActiveSection, string> = {
   header: 'Header',
@@ -44,6 +47,9 @@ const sectionTitles: Record<CMActiveSection, string> = {
   'privacy-page': 'Privacy Policy',
   'disclaimer-page': 'Disclaimer',
   'terms-page': 'Terms & Conditions',
+  'ask-page': 'Ask a Question Page',
+  'contact-page': 'Contact Page',
+  'donation-page': 'Donation Page',
 };
 
 export function ContentManagerLayout() {
@@ -239,6 +245,30 @@ export function ContentManagerLayout() {
             pageName="Terms & Conditions"
             onSave={(v) => void handleSavePage('termsPage', v)}
             onReset={() => void handleResetPage('termsPage')}
+          />
+        );
+      case 'ask-page':
+        return (
+          <AskPageEditor
+            data={pages.askPage}
+            onSave={(v) => void handleSavePage('askPage', v)}
+            onReset={() => void handleResetPage('askPage')}
+          />
+        );
+      case 'contact-page':
+        return (
+          <ContactPageEditor
+            data={pages.contactPage}
+            onSave={(v) => void handleSavePage('contactPage', v)}
+            onReset={() => void handleResetPage('contactPage')}
+          />
+        );
+      case 'donation-page':
+        return (
+          <DonationPageEditor
+            data={pages.donationPage}
+            onSave={(v) => void handleSavePage('donationPage', v)}
+            onReset={() => void handleResetPage('donationPage')}
           />
         );
       default:

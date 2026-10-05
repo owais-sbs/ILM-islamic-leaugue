@@ -3,15 +3,16 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Send } from 'lucide-react';
-import { categories } from '@/lib/admin-data';
 import { murabbiyūn } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
+import { useCMPages } from '@/lib/content-manager/useCMPages';
 import { publicSwal } from '@/lib/public-swal';
 import { SiteFooter } from '@/components/public/site-footer';
 import { SiteHeader } from '@/components/public/site-header';
 
 function AskForm() {
-  const { addQuestion } = useIlm();
+  const { addQuestion, categories } = useIlm();
+  const { askPage: c } = useCMPages();
   const searchParams = useSearchParams();
   const mentorSlug = searchParams.get('mentor') || '';
   const preselected = useMemo(
@@ -27,12 +28,9 @@ function AskForm() {
 
   return (
     <section className="mx-auto max-w-xl px-4 py-12 sm:px-6 sm:py-16">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Ask with adab</p>
-      <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">Ask a question</h1>
-      <p className="mt-3 text-sm leading-relaxed text-ilm-navy/55">
-        Your question is stored for editors and administrators. Visitors cannot read the question inbox.
-        You may optionally identify a preferred Murabbī; administrators still review and route each question.
-      </p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">{c.eyebrow}</p>
+      <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">{c.title}</h1>
+      <p className="mt-3 text-sm leading-relaxed text-ilm-navy/55">{c.intro}</p>
       <form
         className="mt-8 space-y-3"
         onSubmit={async (e) => {
@@ -61,10 +59,7 @@ function AskForm() {
             addQuestion(payload);
             e.currentTarget.reset();
             setPreferredAuthor(preselected);
-            await publicSwal.sent(
-              'Question sent successfully',
-              'Your question was delivered to the ILM team. Please wait — a murabbi will respond by email.',
-            );
+            await publicSwal.sent(c.successTitle, c.successMessage);
           } catch {
             await publicSwal.error('Could not send', 'Please try again in a moment.');
           } finally {
@@ -72,11 +67,11 @@ function AskForm() {
           }
         }}
       >
-        <input name="name" placeholder="Name" className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
-        <input name="email" type="email" required placeholder="Email" className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
-        <input name="subject" placeholder="Subject" className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
+        <input name="name" placeholder={c.namePlaceholder} className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
+        <input name="email" type="email" required placeholder={c.emailPlaceholder} className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
+        <input name="subject" placeholder={c.subjectPlaceholder} className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
         <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-ilm-navy/45">
-          Preferred Murabbī (optional)
+          {c.preferredAuthorLabel}
         </label>
         <select
           name="preferredAuthor"
@@ -91,14 +86,17 @@ function AskForm() {
             </option>
           ))}
         </select>
+        <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-ilm-navy/45">
+          {c.categoryLabel}
+        </label>
         <select name="category" className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none">
-          {categories.map((c) => (
-            <option key={c.id}>{c.name}</option>
+          {categories.map((cat) => (
+            <option key={cat.id}>{cat.name}</option>
           ))}
         </select>
-        <textarea name="question" required rows={6} placeholder="Your question…" className="w-full resize-none rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
+        <textarea name="question" required rows={6} placeholder={c.questionPlaceholder} className="w-full resize-none rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold" />
         <button disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">
-          {busy ? 'Sending…' : 'Send question'} <Send size={14} />
+          {busy ? 'Sending…' : c.submitLabel} <Send size={14} />
         </button>
       </form>
     </section>

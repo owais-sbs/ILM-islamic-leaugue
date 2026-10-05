@@ -207,3 +207,47 @@ export function accountWelcomeEmail(opts: {
     ),
   };
 }
+
+export function accountDeactivatedEmail(opts: { fullName: string; email: string }) {
+  return {
+    subject: 'Your ILM account has been deactivated',
+    html: shell(
+      'Account deactivated',
+      `<p>Assalamu Alaikum ${opts.fullName || 'colleague'},</p>
+       <p>Your ILM contributor account (<strong>${opts.email}</strong>) has been deactivated by an administrator.</p>
+       <p>You will no longer be able to sign in to the admin portal until the account is reactivated.</p>
+       <p>If you believe this was done in error, please contact the ILM administration team.</p>
+       <p style="margin-top:24px;color:${navy};">With peace,<br/><strong>The ILM team</strong></p>`,
+    ),
+  };
+}
+
+export function accountDeletedEmail(opts: { fullName: string; email: string }) {
+  return {
+    subject: 'Your ILM account has been removed',
+    html: shell(
+      'Account removed',
+      `<p>Assalamu Alaikum ${opts.fullName || 'colleague'},</p>
+       <p>Your ILM contributor account (<strong>${opts.email}</strong>) has been removed by an administrator.</p>
+       <p>You will no longer have access to the admin portal. If you need clarification, please contact the ILM administration team.</p>
+       <p style="margin-top:24px;color:${navy};">With peace,<br/><strong>The ILM team</strong></p>`,
+    ),
+  };
+}
+
+export function accountReactivatedEmail(opts: { fullName: string; email: string; loginUrl: string }) {
+  return {
+    subject: 'Your ILM account has been reactivated',
+    html: shell(
+      'Account reactivated',
+      `<p>Assalamu Alaikum ${opts.fullName || 'colleague'},</p>
+       <p>Your ILM contributor account (<strong>${opts.email}</strong>) has been reactivated.</p>
+       <p style="margin:28px 0;">
+         <a href="${opts.loginUrl}" style="display:inline-block;background:${navy};color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.04em;">
+           Sign in
+         </a>
+       </p>
+       <p style="margin-top:24px;color:${navy};">With peace,<br/><strong>The ILM team</strong></p>`,
+    ),
+  };
+}

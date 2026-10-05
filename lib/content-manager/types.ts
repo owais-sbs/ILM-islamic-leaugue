@@ -211,12 +211,67 @@ export interface CMLegalPage {
   sections: CMLegalSection[];
 }
 
+export interface CMAskPage {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  successTitle: string;
+  successMessage: string;
+  namePlaceholder: string;
+  emailPlaceholder: string;
+  subjectPlaceholder: string;
+  preferredAuthorLabel: string;
+  categoryLabel: string;
+  questionPlaceholder: string;
+  submitLabel: string;
+}
+
+export interface CMContactPage {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  contactEmailLabel: string;
+  contactEmail: string;
+  secondaryNote: string;
+  successTitle: string;
+  successMessage: string;
+  namePlaceholder: string;
+  emailPlaceholder: string;
+  subjectPlaceholder: string;
+  messagePlaceholder: string;
+  submitLabel: string;
+}
+
+export interface CMDonationPage {
+  pageTitle: string;
+  subtitle: string;
+  introduction: string[];
+  missionTitle: string;
+  missionBody: string;
+  missionInitialWork: string;
+  missionExpandIntro: string;
+  missionExpandItems: string[];
+  whySupportTitle: string;
+  whySupportIntro: string[];
+  whySupportItems: { title: string; body: string }[];
+  longTermTitle: string;
+  longTermParagraphs: string[];
+  joinUsTitle: string;
+  joinUsParagraphs: string[];
+  organizational: string;
+  zelleLabel: string;
+  zelleHint: string;
+}
+
 export interface CMPagesContent {
   aboutPage: CMAboutPage;
   missionVisionPage: CMMissionVisionPage;
   privacyPage: CMLegalPage;
   disclaimerPage: CMLegalPage;
   termsPage: CMLegalPage;
+  askPage: CMAskPage;
+  contactPage: CMContactPage;
+  donationPage: CMDonationPage;
 }
 
 export type CMSection = keyof CMHomepageContent;

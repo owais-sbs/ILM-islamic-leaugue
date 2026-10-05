@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { accountWelcomeEmail } from '@/lib/email-templates';
+import {
+  accountWelcomeEmail,
+  accountDeactivatedEmail,
+  accountDeletedEmail,
+  accountReactivatedEmail,
+} from '@/lib/email-templates';
 import { sendMail } from '@/lib/mail';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { requireAdminWrite } from '@/lib/supabase/admin-bridge';
@@ -18,6 +23,9 @@ type Body = {
   email?: string;
   roleId?: number;
   role?: Role;
+  madhhab?: string;
+  bio?: string;
+  staffTitle?: string;
 };
 
 
@@ -56,7 +64,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('profiles')
-    .select('id, email, full_name, role, is_active')
+    .select('id, email, full_name, role, is_active, madhhab, bio, avatar_url, credentials')
     .order('full_name', { ascending: true });
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -64,10 +72,14 @@ export async function GET() {
 
   const contributors = (data || []).map((profile) => ({
     id: profile.id,
-    name: profile.full_name,
+    name: profile.full_name || profile.email,
     email: profile.email,
     role: profile.role === 'admin' ? 'administrator' : profile.role,
     active: profile.is_active,
+    madhhab: profile.madhhab || '',
+    bio: profile.bio || '',
+    staffTitle: profile.credentials || '',
+    image: profile.avatar_url || '',
   }));
 
   return NextResponse.json({ ok: true, contributors });
@@ -195,6 +207,9 @@ export async function POST(req: Request) {
 
   // Keep existing profiles / RLS workflow in sync (role still required by articles helpers)
   const slug = slugify(fullName);
+  const madhhab = String(payload.madhhab || '').trim().slice(0, 80) || null;
+  const bio = String(payload.bio || '').trim().slice(0, 2000) || null;
+  const staffTitle = String(payload.staffTitle || '').trim().slice(0, 300) || roleName;
   await admin.from('profiles').upsert({
     id: authUserId,
     email,
@@ -203,7 +218,9 @@ export async function POST(req: Request) {
     role: profileRole,
     is_active: true,
     email_public: email,
-    credentials: roleName,
+    credentials: staffTitle,
+    madhhab,
+    bio,
   });
 
   const mail = accountWelcomeEmail({
@@ -242,4 +259,85 @@ export async function POST(req: Request) {
     emailOk,
     warning: emailWarning,
   });
+}
+
+type PatchBody = {
+  id?: string;
+  email?: string;
+  active?: boolean;
+  action?: 'activate' | 'deactivate' | 'delete';
+};
+
+export async function PATCH(req: Request) {
+  const access = await requireAdminWrite({ allowEditor: false, allowDemoBridge: true });
+  if (!access.ok) return access.response;
+  const { admin } = access;
+
+  let payload: PatchBody;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const action = payload.action || (payload.active === false ? 'deactivate' : payload.active === true ? 'activate' : '');
+  if (!action || !['activate', 'deactivate', 'delete'].includes(action)) {
+    return NextResponse.json({ ok: false, error: 'action must be activate, deactivate, or delete' }, { status: 400 });
+  }
+
+  let profileQuery = admin.from('profiles').select('id, email, full_name, is_active');
+  if (payload.id) profileQuery = profileQuery.eq('id', payload.id);
+  else if (payload.email) profileQuery = profileQuery.ilike('email', payload.email.trim().toLowerCase());
+  else return NextResponse.json({ ok: false, error: 'id or email required' }, { status: 400 });
+
+  const { data: profile, error: findError } = await profileQuery.maybeSingle();
+  if (findError) return NextResponse.json({ ok: false, error: findError.message }, { status: 500 });
+  if (!profile) return NextResponse.json({ ok: false, error: 'Account not found' }, { status: 404 });
+
+  const loginUrl = `${getPublicSiteUrl()}/login`;
+  let emailOk = false;
+
+  if (action === 'delete') {
+    // Soft-delete: deactivate profile and ban auth user so articles FK stay valid
+    await admin.from('profiles').update({ is_active: false }).eq('id', profile.id);
+    try {
+      await admin.auth.admin.updateUserById(profile.id, { ban_duration: '876000h' });
+    } catch {
+      /* ban optional */
+    }
+    try {
+      const mail = accountDeletedEmail({ fullName: profile.full_name || '', email: profile.email });
+      const sent = await sendMail({ to: profile.email, ...mail });
+      emailOk = Boolean(sent.ok);
+    } catch {
+      emailOk = false;
+    }
+    return NextResponse.json({ ok: true, action: 'delete', id: profile.id, emailOk });
+  }
+
+  const nextActive = action === 'activate';
+  const { error: updateError } = await admin.from('profiles').update({ is_active: nextActive }).eq('id', profile.id);
+  if (updateError) return NextResponse.json({ ok: false, error: updateError.message }, { status: 500 });
+
+  try {
+    if (nextActive) {
+      await admin.auth.admin.updateUserById(profile.id, { ban_duration: 'none' });
+    } else {
+      await admin.auth.admin.updateUserById(profile.id, { ban_duration: '876000h' });
+    }
+  } catch {
+    /* auth ban optional if user missing */
+  }
+
+  try {
+    const mail = nextActive
+      ? accountReactivatedEmail({ fullName: profile.full_name || '', email: profile.email, loginUrl })
+      : accountDeactivatedEmail({ fullName: profile.full_name || '', email: profile.email });
+    const sent = await sendMail({ to: profile.email, ...mail });
+    emailOk = Boolean(sent.ok);
+  } catch {
+    emailOk = false;
+  }
+
+  return NextResponse.json({ ok: true, action, id: profile.id, active: nextActive, emailOk });
 }

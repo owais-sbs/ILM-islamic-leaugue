@@ -5,7 +5,7 @@
 
 import type { CMPagesContent } from './types';
 
-export const CM_PAGE_STORAGE_KEY = 'ilm_content_manager_pages_v2';
+export const CM_PAGE_STORAGE_KEY = 'ilm_content_manager_pages_v3';
 
 export const CM_PAGE_DEFAULTS: CMPagesContent = {
   aboutPage: {
@@ -112,5 +112,117 @@ export const CM_PAGE_DEFAULTS: CMPagesContent = {
       { heading: 'Limitation of liability', body: 'To the fullest extent permitted by law, ILM and its contributors are not liable for indirect or consequential loss arising from use of the site or reliance on published content.' },
       { heading: 'Changes', body: 'We may update these terms as the platform grows. Continued use after changes means you accept the revised terms. Related pages include our Privacy Policy and Disclaimer.' },
     ],
+  },
+
+  askPage: {
+    eyebrow: 'Ask with adab',
+    title: 'Ask a question',
+    intro:
+      'Your question is stored for editors and administrators. Visitors cannot read the question inbox. You may optionally identify a preferred Murabbī; administrators still review and route each question.',
+    successTitle: 'Question sent successfully',
+    successMessage: 'Your question was delivered to the ILM team. Please wait — a murabbi will respond by email.',
+    namePlaceholder: 'Name',
+    emailPlaceholder: 'Email',
+    subjectPlaceholder: 'Subject',
+    preferredAuthorLabel: 'Preferred Murabbī (optional)',
+    categoryLabel: 'Category',
+    questionPlaceholder: 'Your question',
+    submitLabel: 'Send question',
+  },
+
+  contactPage: {
+    eyebrow: 'Contact',
+    title: 'Write to ILM',
+    intro: 'For general correspondence:',
+    contactEmailLabel: 'Email',
+    contactEmail: 'salam@ilm.org',
+    secondaryNote:
+      'Questions about sacred knowledge belong on the Ask a Question page so they can be assigned to a murabbi.',
+    successTitle: 'Message sent successfully',
+    successMessage: 'Your contact form was delivered to the ILM admin team. Please wait for a thoughtful reply by email.',
+    namePlaceholder: 'Your name',
+    emailPlaceholder: 'Your email',
+    subjectPlaceholder: 'Subject',
+    messagePlaceholder: 'Your message',
+    submitLabel: 'Send message',
+  },
+
+  donationPage: {
+    pageTitle: 'Support the Islamic League of Murabbiyūn (ILM)',
+    subtitle: 'Supporting Islamic Education for Muslims in America',
+    introduction: [
+      'The Islamic League of Murabbiyūn (ILM) is an educational initiative of Talha Islamic Ministry, an established nonprofit organization dedicated to serving the Muslim community.',
+      'ILM was established with a simple but important objective: to make reliable Islamic knowledge accessible to ordinary Muslims in the United States and to provide clarity on the religious matters that affect their everyday lives.',
+      'Many Muslims encounter questions about marriage, business, family life, purification and cleanliness, food, worship, and other aspects of their religion on a regular basis. Yet finding clear, accessible, and properly grounded answers can sometimes be difficult.',
+      'ILM seeks to help bridge that gap.',
+    ],
+    missionTitle: 'Our Mission',
+    missionBody:
+      "ILM is committed to providing English-speaking Muslims throughout the United States with clear, practical, and reliable Islamic education rooted in the Qur'an, Sunnah, and the methodology of Ahlus-Sunnah wa-l-Jamāʿah.",
+    missionInitialWork:
+      'Our initial work will focus on developing an online educational resource containing articles written by qualified Murabbiyūn, mentors, educators, and cultivators who have received formal Islamic education or substantial traditional training under qualified scholars.',
+    missionExpandIntro: 'As the organization grows, we hope to expand this work into:',
+    missionExpandItems: [
+      'Educational books and publications',
+      'Intensive 5- and 10-day seminars',
+      'Seasonal educational programs and lectures',
+      'An annual Islamic educational conference',
+      'Research addressing issues affecting Muslims in America',
+      'Educational resources for youth and families',
+      'Mentorship for promising students of knowledge',
+      'Assistance for qualified students seeking admission to established Islamic universities and institutions',
+      'Translation of selected materials into Spanish and Haitian Creole',
+      'Responsible engagement with media and community organizations when clarification of Islamic teachings is needed',
+      'Eventually, a scholarly and advisory body capable of examining emerging cultural issues affecting American Muslims',
+    ],
+    whySupportTitle: 'Why Your Support Matters',
+    whySupportIntro: [
+      'The work of establishing a beneficial educational institution requires more than knowledge and qualified teachers. It requires the resources necessary to publish, distribute, organize, research, translate, and preserve beneficial knowledge.',
+      'Your contribution can help ILM:',
+    ],
+    whySupportItems: [
+      {
+        title: 'Build and maintain its educational platform',
+        body: 'Allowing beneficial Islamic articles and resources to remain freely accessible to Muslims throughout the United States.',
+      },
+      {
+        title: 'Publish beneficial Islamic literature',
+        body: 'Helping transform online educational material into books, booklets, guides, and other resources that can be distributed in Muslim communities.',
+      },
+      {
+        title: 'Support educational programs',
+        body: 'Helping us organize seminars, lectures, conferences, and other opportunities for Muslims to learn directly from qualified educators.',
+      },
+      {
+        title: 'Develop future students of knowledge',
+        body: 'Helping promising students pursue advanced Islamic education and, when necessary, supplementing scholarships or stipends so that financial hardship does not prevent them from benefiting from their studies.',
+      },
+      {
+        title: 'Address the needs of American Muslims',
+        body: 'Providing the resources necessary to research and address religious questions and cultural issues that specifically affect Muslims living in the United States.',
+      },
+      {
+        title: 'Expand access to beneficial knowledge',
+        body: 'Supporting translation and other efforts to reach Muslims who may benefit from educational material in Spanish, Haitian Creole, and other languages as the need arises.',
+      },
+    ],
+    longTermTitle: 'A Long-Term Vision',
+    longTermParagraphs: [
+      'The immediate goal of ILM is modest: to establish a reliable educational website and begin producing beneficial Islamic material.',
+      'The long-term vision, however, is much greater.',
+      'By the permission of Allah, we hope to develop ILM into a strong and recognized national Islamic educational institution, one that serves Muslims not merely by answering individual questions, but by cultivating a population of Muslims who understand their religion, practice it correctly, and are equipped to navigate the challenges of life in America while remaining firmly grounded in their faith.',
+      'We also hope to cultivate the next generation of qualified Muslim educators and students of knowledge who can continue serving the community long after us.',
+    ],
+    joinUsTitle: 'Join Us in This Effort',
+    joinUsParagraphs: [
+      'We invite you to support the Islamic League of Murabbiyūn and help establish an educational institution whose benefit can continue to reach Muslims for years to come.',
+      'Your contribution helps us build something whose benefit extends beyond a single lecture, article, or event. It helps us establish the means through which beneficial Islamic knowledge can be taught, preserved, distributed, and passed on to future generations.',
+      'May Allah accept this effort, place blessing in it, and make it a means of guidance and benefit for Muslims throughout America.',
+      'Support ILM today and help us build a lasting foundation for Islamic education.',
+    ],
+    organizational:
+      'The Islamic League of Murabbiyūn (ILM) is an educational initiative of Talha Islamic Ministry, a nonprofit organization.',
+    zelleLabel: 'Support via Zelle',
+    zelleHint: 'Scan the QR code or use your banking app to send support to Talha Islamic Ministry.',
   },
 };

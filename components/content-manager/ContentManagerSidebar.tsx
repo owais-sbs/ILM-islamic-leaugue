@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import {
   Layout, Globe, Layers, Star, Users,
   GraduationCap, Quote, Mail, AlignJustify,
-  BookOpen, Info, Target, Shield, FileText, Scale,
+  BookOpen, Info, Target, Shield, FileText, Scale, MessageCircle, Heart,
 } from 'lucide-react';
 
 export type CMActiveSection =
@@ -12,7 +12,8 @@ export type CMActiveSection =
   | 'learning-journey' | 'quote' | 'newsletter' | 'footer'
   | 'directory'
   | 'about-page' | 'mission-vision-page'
-  | 'privacy-page' | 'disclaimer-page' | 'terms-page';
+  | 'privacy-page' | 'disclaimer-page' | 'terms-page'
+  | 'ask-page' | 'contact-page' | 'donation-page';
 
 interface SidebarItem {
   key: CMActiveSection;
@@ -54,6 +55,14 @@ const groups: SidebarGroup[] = [
       { key: 'privacy-page', label: 'Privacy Policy', icon: <Shield size={13} />, indent: true },
       { key: 'disclaimer-page', label: 'Disclaimer', icon: <FileText size={13} />, indent: true },
       { key: 'terms-page', label: 'Terms & Conditions', icon: <Scale size={13} />, indent: true },
+    ],
+  },
+  {
+    label: 'Connect',
+    items: [
+      { key: 'ask-page', label: 'Ask a Question', icon: <MessageCircle size={13} />, indent: true },
+      { key: 'contact-page', label: 'Contact', icon: <Mail size={13} />, indent: true },
+      { key: 'donation-page', label: 'Donation', icon: <Heart size={13} />, indent: true },
     ],
   },
 ];

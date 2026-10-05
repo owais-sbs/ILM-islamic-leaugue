@@ -18,6 +18,8 @@ type PublishBody = {
   image?: string;
   readingMinutes?: number;
   authorEmail?: string;
+  authorName?: string;
+  authorId?: string;
 };
 
 function slugify(input: string) {
@@ -26,6 +28,30 @@ function slugify(input: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80);
+}
+
+async function resolveAuthorId(
+  admin: NonNullable<ReturnType<typeof tryCreateServiceClient>>,
+  opts: { authorId?: string; authorEmail?: string; authorName?: string; sessionUserId?: string },
+) {
+  if (opts.authorId && /^[0-9a-f-]{36}$/i.test(opts.authorId)) {
+    const { data } = await admin.from('profiles').select('id').eq('id', opts.authorId).maybeSingle();
+    if (data?.id) return data.id as string;
+  }
+
+  if (opts.authorEmail) {
+    const email = opts.authorEmail.trim().toLowerCase();
+    const { data } = await admin.from('profiles').select('id').ilike('email', email).maybeSingle();
+    if (data?.id) return data.id as string;
+  }
+
+  if (opts.authorName?.trim()) {
+    const { data } = await admin.from('profiles').select('id').ilike('full_name', opts.authorName.trim()).maybeSingle();
+    if (data?.id) return data.id as string;
+  }
+
+  if (opts.sessionUserId) return opts.sessionUserId;
+  return null;
 }
 
 export async function POST(req: Request) {
@@ -41,24 +67,22 @@ export async function POST(req: Request) {
   }
 
   const userClient = tryCreateServerSupabase();
-  if (!userClient) {
-    return NextResponse.json({ ok: false, error: 'Auth unavailable' }, { status: 503 });
-  }
-
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
-
-  // Allow demo publish without cookie when service role is present (admin UI may use sessionStorage role)
   const admin = tryCreateServiceClient();
   if (!admin) {
     return NextResponse.json({ ok: false, error: 'Service role unavailable' }, { status: 503 });
   }
 
+  let sessionUserId: string | undefined;
   let profileRole: string | null = null;
-  if (user) {
-    const { data: profile } = await admin.from('profiles').select('role, is_active').eq('id', user.id).maybeSingle();
-    profileRole = profile?.is_active ? profile.role : null;
+  if (userClient) {
+    const {
+      data: { user },
+    } = await userClient.auth.getUser();
+    if (user) {
+      sessionUserId = user.id;
+      const { data: profile } = await admin.from('profiles').select('role, is_active').eq('id', user.id).maybeSingle();
+      profileRole = profile?.is_active ? profile.role : null;
+    }
   }
 
   let body: PublishBody;
@@ -72,28 +96,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'title and slug are required' }, { status: 400 });
   }
 
-  // Prefer authenticated admin; otherwise accept only when a staff profile email is provided (demo bridge)
   if (profileRole && profileRole !== 'admin' && profileRole !== 'editor') {
     return NextResponse.json({ ok: false, error: 'Only editor/admin can publish via API' }, { status: 403 });
   }
 
   const slug = slugify(body.slug || body.title);
-  const authorEmail = body.authorEmail || user?.email || 'adminops@gmail.com';
-
-  const { data: author } = await admin
-    .from('profiles')
-    .select('id, full_name, slug')
-    .eq('email', authorEmail)
-    .maybeSingle();
-
-  let authorId = author?.id as string | undefined;
-  if (!authorId && user?.id) authorId = user.id;
+  const authorId = await resolveAuthorId(admin, {
+    authorId: body.authorId,
+    authorEmail: body.authorEmail,
+    authorName: body.authorName,
+    sessionUserId,
+  });
   if (!authorId) {
-    const { data: anyAdmin } = await admin.from('profiles').select('id').eq('role', 'admin').limit(1).maybeSingle();
-    authorId = anyAdmin?.id;
-  }
-  if (!authorId) {
-    return NextResponse.json({ ok: false, error: 'No author profile found to attach the article' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'No matching author profile found. Create the author account first, then publish.' },
+      { status: 400 },
+    );
   }
 
   let categoryId: string | null = null;
@@ -146,7 +164,6 @@ export async function POST(req: Request) {
     rowId = inserted.id;
   }
 
-  // Service role skips JWT workflow — move through approved → published (or direct published)
   const { error: pubError } = await admin
     .from('articles')
     .update({
@@ -155,6 +172,7 @@ export async function POST(req: Request) {
       body_html: html,
       body_text: text,
       footnotes: body.footnotes || '',
+      author_id: authorId,
       category_id: categoryId,
       featured_image_url: body.image || null,
       seo_title: body.seoTitle || body.title,

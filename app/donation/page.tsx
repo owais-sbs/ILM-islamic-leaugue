@@ -3,9 +3,11 @@
 import { SiteFooter } from '@/components/public/site-footer';
 import { SiteHeader } from '@/components/public/site-header';
 import { ScrollReveal, StaggerChild, StaggerIn } from '@/components/public/scroll-reveal';
-import { donationContent } from '@/lib/ilm-page-content';
+import { useCMPages } from '@/lib/content-manager/useCMPages';
 
 export default function DonationPage() {
+  const { donationPage: c } = useCMPages();
+
   return (
     <main className="flex min-h-[100svh] flex-col overflow-x-hidden pt-28">
       <SiteHeader active="connect" />
@@ -18,11 +20,11 @@ export default function DonationPage() {
                 <span className="h-px w-8 bg-ilm-gold" /> Support
               </p>
               <h1 className="mt-4 text-[26px] font-semibold tracking-tight text-ilm-navy sm:text-[34px] lg:text-[40px]">
-                {donationContent.pageTitle}
+                {c.pageTitle}
               </h1>
-              <p className="mt-3 text-base text-ilm-navy/60 sm:text-lg">{donationContent.subtitle}</p>
+              <p className="mt-3 text-base text-ilm-navy/60 sm:text-lg">{c.subtitle}</p>
               <div className="mt-5 space-y-3.5">
-                {donationContent.introduction.map((para) => (
+                {c.introduction.map((para) => (
                   <p key={para.slice(0, 48)} className="text-[15px] leading-relaxed text-ilm-navy/65 sm:text-base">
                     {para}
                   </p>
@@ -44,7 +46,7 @@ export default function DonationPage() {
                   </div>
                 </div>
                 <div className="min-w-0 p-5 sm:p-6">
-                  <h2 className="text-xl font-semibold text-ilm-navy sm:text-2xl">Donate via Zelle</h2>
+                  <h2 className="text-xl font-semibold text-ilm-navy sm:text-2xl">{c.zelleLabel}</h2>
                   <dl className="mt-4 space-y-2.5 text-[14px] leading-relaxed text-ilm-navy/65 sm:text-[15px]">
                     <div className="flex flex-col gap-0.5">
                       <dt className="font-semibold text-ilm-navy">Zelle Tag:</dt>
@@ -68,9 +70,7 @@ export default function DonationPage() {
                     1026 Cosby Ave, Cambridge, MD
                   </p>
                   <p className="mt-4 border-t border-ilm-navy/8 pt-4 text-[13px] leading-relaxed text-ilm-navy/65 sm:text-[14px]">
-                    Open your banking app, select Zelle, and scan the code above, or search
-                    tislamicministry@gmail.com directly in Zelle to send your donation. You&apos;ll see &quot;Talha
-                    Islamic Ministry Inc.&quot; as the confirmed recipient.
+                    {c.zelleHint}
                   </p>
                 </div>
               </article>
@@ -81,16 +81,14 @@ export default function DonationPage() {
         <section className="mx-auto max-w-[1100px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
           <ScrollReveal from="left">
             <article className="rounded-[28px] border border-ilm-navy/8 bg-white p-6 shadow-[0_12px_40px_rgba(11,17,82,0.05)] sm:p-8">
-              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">
-                {donationContent.mission.title}
-              </h2>
+              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">{c.missionTitle}</h2>
               <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-ilm-navy/60 sm:text-base">
-                <p>{donationContent.mission.body}</p>
-                <p>{donationContent.mission.initialWork}</p>
-                <p>{donationContent.mission.expandIntro}</p>
+                <p>{c.missionBody}</p>
+                <p>{c.missionInitialWork}</p>
+                <p>{c.missionExpandIntro}</p>
               </div>
               <ul className="mt-4 list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-ilm-navy/65 sm:text-base">
-                {donationContent.mission.expandItems.map((item) => (
+                {c.missionExpandItems.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -99,17 +97,15 @@ export default function DonationPage() {
 
           <ScrollReveal from="right" delay={0.04}>
             <article className="rounded-[28px] border border-ilm-navy/8 bg-white p-6 shadow-[0_12px_40px_rgba(11,17,82,0.05)] sm:p-8">
-              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">
-                {donationContent.whySupport.title}
-              </h2>
+              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">{c.whySupportTitle}</h2>
               <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-ilm-navy/60 sm:text-base">
-                {donationContent.whySupport.intro.map((para) => (
+                {c.whySupportIntro.map((para) => (
                   <p key={para.slice(0, 40)}>{para}</p>
                 ))}
               </div>
               <StaggerIn className="mt-6 space-y-4">
-                {donationContent.whySupport.items.map((item, i) => (
-                  <StaggerChild key={item.title} from={i % 2 === 0 ? 'left' : 'right'}>
+                {c.whySupportItems.map((item, i) => (
+                  <StaggerChild key={`${item.title}-${i}`} from={i % 2 === 0 ? 'left' : 'right'}>
                     <div className="rounded-[20px] border border-ilm-navy/[0.06] bg-ilm-cream/40 p-5">
                       <h3 className="text-lg font-semibold text-ilm-navy">{item.title}</h3>
                       <p className="mt-2 text-sm leading-relaxed text-ilm-navy/55 sm:text-[15px]">{item.body}</p>
@@ -122,11 +118,9 @@ export default function DonationPage() {
 
           <ScrollReveal from="left" delay={0.04}>
             <article className="rounded-[28px] border border-ilm-navy/8 bg-white p-6 shadow-[0_12px_40px_rgba(11,17,82,0.05)] sm:p-8">
-              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">
-                {donationContent.longTerm.title}
-              </h2>
+              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">{c.longTermTitle}</h2>
               <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-ilm-navy/60 sm:text-base">
-                {donationContent.longTerm.paragraphs.map((para) => (
+                {c.longTermParagraphs.map((para) => (
                   <p key={para.slice(0, 40)}>{para}</p>
                 ))}
               </div>
@@ -135,16 +129,14 @@ export default function DonationPage() {
 
           <ScrollReveal from="right" delay={0.04}>
             <article className="rounded-[28px] border border-ilm-navy/8 bg-white p-6 shadow-[0_12px_40px_rgba(11,17,82,0.05)] sm:p-8">
-              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">
-                {donationContent.joinUs.title}
-              </h2>
+              <h2 className="text-2xl font-semibold text-ilm-navy sm:text-[28px]">{c.joinUsTitle}</h2>
               <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-ilm-navy/60 sm:text-base">
-                {donationContent.joinUs.paragraphs.map((para) => (
+                {c.joinUsParagraphs.map((para) => (
                   <p key={para.slice(0, 40)}>{para}</p>
                 ))}
               </div>
               <p className="mt-8 border-t border-ilm-navy/8 pt-6 text-sm font-medium leading-relaxed text-ilm-navy/70">
-                {donationContent.organizational}
+                {c.organizational}
               </p>
             </article>
           </ScrollReveal>

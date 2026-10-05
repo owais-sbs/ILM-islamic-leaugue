@@ -3,26 +3,27 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { useIlm } from '@/lib/ilm-store';
+import { useCMPages } from '@/lib/content-manager/useCMPages';
 import { publicSwal } from '@/lib/public-swal';
 import { SiteFooter } from '@/components/public/site-footer';
 import { SiteHeader } from '@/components/public/site-header';
 
 export default function ContactPage() {
   const { addQuestion } = useIlm();
+  const { contactPage: c } = useCMPages();
   const [busy, setBusy] = useState(false);
 
   return (
     <main className="min-h-screen pt-24 sm:pt-28">
       <SiteHeader active="connect" />
       <section className="mx-auto max-w-xl px-4 pb-14 pt-4 sm:px-6 sm:pb-20 sm:pt-10">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-ilm-gold-deep">Contact</p>
-        <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">Write to ILM</h1>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-ilm-gold-deep">{c.eyebrow}</p>
+        <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">{c.title}</h1>
         <p className="mt-4 leading-relaxed text-ilm-navy/60">
-          For general correspondence: <strong className="font-medium text-ilm-navy">salam@ilm.org</strong>
+          {c.intro}{' '}
+          <strong className="font-medium text-ilm-navy">{c.contactEmail}</strong>
         </p>
-        <p className="mt-2 text-sm text-ilm-navy/50">
-          Questions about sacred knowledge belong on the Ask a Question page so they can be assigned to a murabbi.
-        </p>
+        <p className="mt-2 text-sm text-ilm-navy/50">{c.secondaryNote}</p>
 
         <form
           className="mt-8 space-y-3"
@@ -41,10 +42,7 @@ export default function ContactPage() {
             try {
               addQuestion(payload);
               e.currentTarget.reset();
-              await publicSwal.sent(
-                'Message sent successfully',
-                'Your contact form was delivered to the ILM admin team. Please wait for a thoughtful reply by email.',
-              );
+              await publicSwal.sent(c.successTitle, c.successMessage);
             } catch {
               await publicSwal.error('Could not send', 'Please try again in a moment.');
             } finally {
@@ -55,33 +53,33 @@ export default function ContactPage() {
           <input
             name="name"
             required
-            placeholder="Your name"
+            placeholder={c.namePlaceholder}
             className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold"
           />
           <input
             name="email"
             type="email"
             required
-            placeholder="Email"
+            placeholder={c.emailPlaceholder}
             className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold"
           />
           <input
             name="subject"
-            placeholder="Subject"
+            placeholder={c.subjectPlaceholder}
             className="w-full rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold"
           />
           <textarea
             name="message"
             required
             rows={5}
-            placeholder="Message"
+            placeholder={c.messagePlaceholder}
             className="w-full resize-none rounded-2xl border border-ilm-navy/10 bg-white px-4 py-3 text-sm outline-none focus:border-ilm-gold"
           />
           <button
             disabled={busy}
             className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
           >
-            {busy ? 'Sending…' : 'Send message'} <Send size={14} />
+            {busy ? 'Sending…' : c.submitLabel} <Send size={14} />
           </button>
         </form>
       </section>
