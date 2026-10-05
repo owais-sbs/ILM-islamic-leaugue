@@ -5,7 +5,7 @@
 
 import type { CMPagesContent } from './types';
 
-export const CM_PAGE_STORAGE_KEY = 'ilm_content_manager_pages_v1';
+export const CM_PAGE_STORAGE_KEY = 'ilm_content_manager_pages_v2';
 
 export const CM_PAGE_DEFAULTS: CMPagesContent = {
   aboutPage: {

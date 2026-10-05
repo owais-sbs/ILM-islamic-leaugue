@@ -229,11 +229,13 @@ function HowItWorks() {
 
 /* ─────────────────────────────────────────────────────── Newsletter */
 function ConnectSection() {
-  const cm         = useContentManager();
-  const nl         = cm.newsletter;
+  const cm = useContentManager();
+  const nl = cm.newsletter;
   const { addSubscriber } = useIlm();
-  const [email, setEmail]         = useState('');
+  const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   if (!nl.visible) return null;
 
@@ -263,10 +265,18 @@ function ConnectSection() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!email.trim()) return;
-                addSubscriber(email);
-                setSubscribed(true);
-                setEmail('');
+                if (!email.trim() || busy) return;
+                setBusy(true);
+                setError('');
+                void addSubscriber(email).then((result) => {
+                  setBusy(false);
+                  if (!result.ok) {
+                    setError(result.error || 'Could not subscribe. Please try again.');
+                    return;
+                  }
+                  setSubscribed(true);
+                  setEmail('');
+                });
               }}
             >
               <label htmlFor="nl-email" className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/70">
@@ -280,12 +290,14 @@ function ConnectSection() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={nl.inputPlaceholder}
-                  className="flex-1 bg-transparent py-3 text-white outline-none placeholder:text-white/30"
+                  disabled={busy}
+                  className="flex-1 bg-transparent py-3 text-white outline-none placeholder:text-white/30 disabled:opacity-60"
                 />
-                <button type="submit" aria-label={nl.btnText} className="px-2 text-ilm-gold-light">
+                <button type="submit" aria-label={nl.btnText} disabled={busy} className="px-2 text-ilm-gold-light disabled:opacity-60">
                   <ArrowRight size={18} />
                 </button>
               </div>
+              {error ? <p className="mt-3 text-[12px] text-red-300">{error}</p> : null}
               <small className="mt-4 block text-[11px] text-white/40">No noise. Just a note worth opening.</small>
             </form>
           )}

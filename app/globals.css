@@ -164,7 +164,20 @@
   width: 10px;
 }
 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(11, 17, 82, 0.18);
+  background: #070b39;
   border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0a1048;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #070b39 transparent;
 }

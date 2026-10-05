@@ -6,7 +6,8 @@ const gold = '#C79A3D';
 const cream = '#FBFAF7';
 
 function logoUrl() {
-  return new URL(siteConfig.logo, getPublicSiteUrl()).toString();
+  // PNG for email clients — many do not render WebP (including Outlook / Gmail variants).
+  return new URL('/ILM_Final_Logo_Design.png', getPublicSiteUrl()).toString();
 }
 
 function shell(title: string, body: string) {
@@ -24,9 +25,16 @@ function shell(title: string, body: string) {
     <tr><td align="center">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e8e2d8;box-shadow:0 12px 40px rgba(11,17,82,0.06);">
         <tr>
-          <td style="background:${navy};padding:24px 32px;">
-            <img src="${logoUrl()}" width="220" height="110" alt="Islamic League of Murabbiyūn" style="display:block;width:220px;height:110px;object-fit:contain;object-position:left center;"/>
-            <h1 style="margin:12px 0 0;font-size:24px;font-weight:400;color:#ffffff;line-height:1.35;font-family:Georgia,serif;">${title}</h1>
+          <td style="background:${navy};padding:28px 32px;">
+            <a href="${getPublicSiteUrl()}" style="text-decoration:none;">
+              <img
+                src="${logoUrl()}"
+                width="240"
+                alt="Islamic League of Murabbiyūn — Mentors · Educators · Cultivators"
+                style="display:block;width:240px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;"
+              />
+            </a>
+            <h1 style="margin:16px 0 0;font-size:22px;font-weight:400;color:#ffffff;line-height:1.35;font-family:Georgia,serif;">${title}</h1>
           </td>
         </tr>
         <tr>

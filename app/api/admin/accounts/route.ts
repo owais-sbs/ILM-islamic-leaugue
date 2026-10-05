@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { accountWelcomeEmail } from '@/lib/email-templates';
 import { sendMail } from '@/lib/mail';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
-import { tryCreateServerSupabase } from '@/lib/supabase/server';
+import { requireAdminWrite } from '@/lib/supabase/admin-bridge';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { siteConfig } from '@/lib/site';
 import { getPublicSiteUrl } from '@/lib/public-site-url';
@@ -50,32 +50,9 @@ export async function GET() {
     return NextResponse.json({ ok: true, contributors: [] });
   }
 
-  const session = tryCreateServerSupabase();
-  if (!session) {
-    return NextResponse.json({ ok: false, error: 'Session unavailable' }, { status: 503 });
-  }
-  const {
-    data: { user },
-  } = await session.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: 'Sign in to view staff accounts' }, { status: 401 });
-  }
-
-  const admin = tryCreateServiceClient();
-  if (!admin) {
-    return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 503 });
-  }
-  const { data: requester, error: requesterError } = await admin
-    .from('profiles')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (requesterError) {
-    return NextResponse.json({ ok: false, error: requesterError.message }, { status: 500 });
-  }
-  if (!requester?.is_active || (requester.role !== 'admin' && requester.role !== 'editor')) {
-    return NextResponse.json({ ok: false, error: 'Only editors and administrators can view staff accounts' }, { status: 403 });
-  }
+  const access = await requireAdminWrite({ allowEditor: true, allowDemoBridge: true });
+  if (!access.ok) return access.response;
+  const { admin } = access;
 
   const { data, error } = await admin
     .from('profiles')

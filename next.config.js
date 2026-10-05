@@ -15,6 +15,10 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' }],
       },
       {
+        source: '/ILM_Final_Logo_Design.png',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' }],
+      },
+      {
         source: '/og-image.png',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' }],
       },

@@ -37,7 +37,8 @@ function defaultEdit(c: Contributor): EditState {
   return {
     staffTitle: c.staffTitle ?? '',
     bio: c.bio ?? '',
-    biography: c.biography?.length ? c.biography : [c.bio ?? ''],
+    // Keep an intentional empty biography after deletes — do not respawn from short bio.
+    biography: Array.isArray(c.biography) ? (c.biography.length ? c.biography : ['']) : c.bio ? [c.bio] : [''],
     focus: c.focus ?? undefined,
     accent: c.accent ?? ACCENT_OPTIONS[0].value,
     image: c.image ?? '',
@@ -147,13 +148,31 @@ export function StaffProfilesScreen() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setDraft((d) => d ? { ...d, image: reader.result as string } : d);
+    if (file.size > 4.5 * 1024 * 1024) {
+      void adminSwal.error('File too large', 'Use an image under 4.5 MB.');
+      return;
+    }
+    void (async () => {
+      const form = new FormData();
+      form.append('file', file);
+      try {
+        const res = await fetch('/api/admin/media', { method: 'POST', body: form });
+        const json = (await res.json()) as { ok?: boolean; item?: { src: string }; error?: string };
+        if (res.ok && json.ok && json.item?.src) {
+          setDraft((d) => (d ? { ...d, image: json.item!.src } : d));
+          return;
+        }
+      } catch {
+        /* fall through to data URL */
       }
-    };
-    reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setDraft((d) => (d ? { ...d, image: reader.result as string } : d));
+        }
+      };
+      reader.readAsDataURL(file);
+    })();
   };
 
   const updateBioParagraph = (idx: number, value: string) => {
@@ -177,7 +196,7 @@ export function StaffProfilesScreen() {
     <Reveal>
       <div className="mb-5">
         <p className="text-sm text-ilm-navy/55">
-          Manage the public-facing profiles of all staff members. Enabling <strong>Show in Directory</strong> makes a staff member visible in the Murabbiyūn section. Live updates require an authenticated editor or administrator session and Supabase service-role configuration; otherwise, changes are saved in this browser only.
+          Manage public staff profiles. Enable <strong>Show in Directory</strong> to appear in Murabbiyūn. Saves sync to Supabase for the live Vercel site. Profile photos upload to media storage when available.
         </p>
       </div>
 

@@ -1,15 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Download, RefreshCw, Search } from 'lucide-react';
 import { useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
 import { Reveal } from './reveal';
 import { cn } from '@/lib/utils';
 
 export function SubscribersScreen() {
-  const { subscribers, toggleSubscriber } = useIlm();
+  const { subscribers, toggleSubscriber, syncSubscribers } = useIlm();
   const [q, setQ] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    void syncSubscribers();
+  }, [syncSubscribers]);
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -18,7 +23,10 @@ export function SubscribersScreen() {
   }, [subscribers, q]);
 
   const exportCsv = () => {
-    const rows = [['email', 'subscribed', 'status'], ...subscribers.map((s) => [s.email, s.date, s.active ? 'active' : 'unsubscribed'])];
+    const rows = [
+      ['email', 'subscribed', 'status'],
+      ...subscribers.map((s) => [s.email, s.date, s.active ? 'active' : 'unsubscribed']),
+    ];
     const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -30,16 +38,37 @@ export function SubscribersScreen() {
     void adminSwal.success('CSV exported', `${subscribers.length} subscribers`);
   };
 
+  const refresh = async () => {
+    setRefreshing(true);
+    await syncSubscribers();
+    setRefreshing(false);
+    await adminSwal.success('Subscribers refreshed', `${subscribers.length} from Supabase`);
+  };
+
   return (
     <Reveal>
+      <p className="mb-4 text-sm text-ilm-navy/50">
+        Newsletter signups from “A little more meaning in your inbox” appear here live from Supabase.
+      </p>
+
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={exportCsv}
-          className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white"
-        >
-          <Download size={14} /> Export CSV
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="inline-flex items-center gap-2 rounded-full bg-ilm-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white"
+          >
+            <Download size={14} /> Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 rounded-full border border-ilm-navy/15 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy disabled:opacity-60"
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : undefined} /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 rounded-2xl border border-ilm-navy/10 bg-white p-4">
@@ -77,7 +106,7 @@ export function SubscribersScreen() {
                         const res = await adminSwal.confirm(
                           next ? 'Reactivate subscriber?' : 'Unsubscribe?',
                           s.email,
-                          next ? 'Activate' : 'Unsubscribe'
+                          next ? 'Activate' : 'Unsubscribe',
                         );
                         if (!res.isConfirmed) return;
                         toggleSubscriber(s.id, next);
@@ -85,7 +114,7 @@ export function SubscribersScreen() {
                       }}
                       className={cn(
                         'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide',
-                        s.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                        s.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600',
                       )}
                     >
                       {s.active ? 'Active' : 'Unsubscribed'}
@@ -96,7 +125,7 @@ export function SubscribersScreen() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-5 py-12 text-center text-sm text-ilm-navy/35">
-                    No subscribers match this search.
+                    No subscribers yet. Signups from the homepage newsletter will appear here.
                   </td>
                 </tr>
               )}

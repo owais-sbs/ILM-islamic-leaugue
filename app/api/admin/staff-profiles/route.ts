@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+import { requireAdminWrite } from '@/lib/supabase/admin-bridge';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
-import { tryCreateServerSupabase } from '@/lib/supabase/server';
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/env';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const FOCUS_OPTIONS = new Set(['Studies', 'Fiqh', 'Spiritual', 'Arabic']);
 const ACCENT_OPTIONS = new Set([
@@ -15,47 +16,17 @@ const ACCENT_OPTIONS = new Set([
   'bg-rose-100 text-rose-700',
 ]);
 
-type StaffAccess =
-  | { ok: true; admin: NonNullable<ReturnType<typeof tryCreateServiceClient>> }
-  | { ok: false; response: NextResponse };
-
-async function authorizeStaff(): Promise<StaffAccess> {
-  const session = tryCreateServerSupabase();
-  if (!session) return { ok: false, response: NextResponse.json({ ok: false, error: 'Session unavailable' }, { status: 503 }) };
-  const {
-    data: { user },
-  } = await session.auth.getUser();
-  if (!user) {
-    return { ok: false, response: NextResponse.json({ ok: false, localOnly: true, error: 'No authenticated Supabase session' }, { status: 401 }) };
-  }
-
-  const admin = tryCreateServiceClient();
-  if (!admin) return { ok: false, response: NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 503 }) };
-  const { data: profile, error } = await admin
-    .from('profiles')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (error) return { ok: false, response: NextResponse.json({ ok: false, error: error.message }, { status: 500 }) };
-  if (!profile?.is_active || (profile.role !== 'admin' && profile.role !== 'editor')) {
-    return { ok: false, response: NextResponse.json({ ok: false, error: 'Only editors and administrators can manage staff profiles' }, { status: 403 }) };
-  }
-  return { ok: true, admin };
-}
-
 export async function GET() {
   if (!isSupabaseConfigured()) return NextResponse.json({ ok: true, profiles: [] });
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({ ok: false, error: 'Supabase service role is not configured' }, { status: 503 });
   }
 
-  const access = await authorizeStaff();
-  if (!access.ok) return access.response;
-  const { data, error } = await access.admin
-    .from('site_settings')
-    .select('value')
-    .eq('key', 'staff_profiles')
-    .maybeSingle();
+  // Read with service role (public directory uses /api/staff-profiles). Admin UI needs overrides even without cookies.
+  const admin = tryCreateServiceClient();
+  if (!admin) return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 503 });
+
+  const { data, error } = await admin.from('site_settings').select('value').eq('key', 'staff_profiles').maybeSingle();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
   const value = data?.value;
@@ -63,14 +34,7 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ ok: false, localOnly: true, error: 'Supabase is not configured' }, { status: 503 });
-  }
-  if (!isSupabaseAdminConfigured()) {
-    return NextResponse.json({ ok: false, error: 'Supabase service role is not configured' }, { status: 503 });
-  }
-
-  const access = await authorizeStaff();
+  const access = await requireAdminWrite({ allowEditor: true, allowDemoBridge: true });
   if (!access.ok) return access.response;
 
   let body: { id?: string; patch?: Record<string, unknown> };
@@ -124,7 +88,7 @@ export async function PUT(req: Request) {
   if (readError) return NextResponse.json({ ok: false, error: readError.message }, { status: 500 });
 
   const currentValue = current?.value;
-  const profiles = Array.isArray(currentValue) ? currentValue as Array<Record<string, unknown>> : [];
+  const profiles = Array.isArray(currentValue) ? (currentValue as Array<Record<string, unknown>>) : [];
   const index = profiles.findIndex((entry) => entry.id === id);
   if (index < 0) profiles.push(profile);
   else profiles[index] = { ...profiles[index], ...profile };

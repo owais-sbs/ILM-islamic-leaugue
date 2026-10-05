@@ -121,7 +121,7 @@ interface Store {
   removeCategory: (id: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   addTag: (name: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   removeTag: (name: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
-  addSubscriber: (email: string) => boolean;
+  addSubscriber: (email: string) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   syncSubscribers: () => Promise<void>;
   toggleSubscriber: (id: string, active: boolean) => void;
   addAuthor: (input: {
@@ -366,33 +366,47 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     if (mergeRemote) {
       void (async () => {
         try {
-          const [artsRes, catsRes, settingsRes, staffProfilesRes] = await Promise.all([
+          const [artsRes, workflowRes, catsRes, settingsRes, staffProfilesRes, subscribersRes] = await Promise.all([
             fetch('/api/articles/published', { cache: 'no-store' }),
+            fetch('/api/articles/workflow', { cache: 'no-store' }),
             fetch('/api/admin/categories', { cache: 'no-store' }),
             fetch('/api/admin/settings', { cache: 'no-store' }),
             fetch('/api/staff-profiles', { cache: 'no-store' }),
+            fetch('/api/subscribers', { cache: 'no-store' }),
           ]);
+
+          const mergeRemoteArticles = (remoteArticles: Article[], forceStatus?: Article['status']) => {
+            setArticles((prev) => {
+              const bySlug = new Map(prev.map((a) => [a.slug, a]));
+              for (const remote of remoteArticles) {
+                if (!remote?.slug || OLD_ARTICLE_SLUGS.has(remote.slug)) continue;
+                if (seedBySlug.has(remote.slug)) continue;
+                if (deletedArticleSlugsRef.current.has(remote.slug)) continue;
+                if (!remote.title?.trim()) continue;
+                const local = bySlug.get(remote.slug);
+                const status = forceStatus || remote.status;
+                bySlug.set(
+                  remote.slug,
+                  local
+                    ? { ...local, ...remote, status, image: safeArticleImage(remote.image || local.image) }
+                    : { ...remote, status, image: safeArticleImage(remote.image) },
+                );
+              }
+              return Array.from(bySlug.values());
+            });
+          };
 
           if (artsRes.ok) {
             const json = (await artsRes.json()) as { ok?: boolean; articles?: Article[] };
             if (json.ok && Array.isArray(json.articles) && json.articles.length > 0) {
-              setArticles((prev) => {
-                const bySlug = new Map(prev.map((a) => [a.slug, a]));
-                for (const remote of json.articles!) {
-                  if (!remote?.slug || OLD_ARTICLE_SLUGS.has(remote.slug)) continue;
-                  if (seedBySlug.has(remote.slug)) continue;
-                  if (deletedArticleSlugsRef.current.has(remote.slug)) continue;
-                  if (!remote.title?.trim()) continue;
-                  const local = bySlug.get(remote.slug);
-                  bySlug.set(
-                    remote.slug,
-                    local
-                      ? { ...local, ...remote, status: 'published', image: safeArticleImage(remote.image || local.image) }
-                      : { ...remote, status: 'published', image: safeArticleImage(remote.image) },
-                  );
-                }
-                return Array.from(bySlug.values());
-              });
+              mergeRemoteArticles(json.articles, 'published');
+            }
+          }
+
+          if (workflowRes.ok) {
+            const json = (await workflowRes.json()) as { ok?: boolean; articles?: Article[] };
+            if (json.ok && Array.isArray(json.articles) && json.articles.length > 0) {
+              mergeRemoteArticles(json.articles);
             }
           }
 
@@ -477,6 +491,21 @@ export function IlmProvider({ children }: { children: ReactNode }) {
             }
           }
 
+          if (subscribersRes.ok) {
+            const json = (await subscribersRes.json()) as {
+              ok?: boolean;
+              subscribers?: Subscriber[];
+            };
+            if (json.ok && Array.isArray(json.subscribers)) {
+              // Remote list is source of truth for newsletter (drop demo seed emails).
+              setSubscribers(
+                json.subscribers
+                  .map((s) => ({ ...s, email: s.email.toLowerCase() }))
+                  .sort((a, b) => b.date.localeCompare(a.date)),
+              );
+            }
+          }
+
           const mediaRes = await fetch('/api/admin/media', { cache: 'no-store' });
           if (mediaRes.ok) {
             const json = (await mediaRes.json()) as {
@@ -512,30 +541,78 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     setNotices((prev) => [{ ...n, id: `n${Date.now()}`, read: false }, ...prev]);
   }, []);
 
+  const syncArticleWorkflow = useCallback(
+    (article: Article, action: 'submit' | 'approve' | 'return' | 'unpublish' | 'save', reviewNotes?: string) => {
+      const minutes = Number.parseInt(String(article.readTime), 10) || 5;
+      void fetch('/api/articles/workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          title: article.title,
+          slug: article.slug,
+          excerpt: article.excerpt,
+          body: article.body,
+          footnotes: article.footnotes,
+          seoTitle: article.seoTitle,
+          seoDescription: article.seoDescription,
+          category: article.category,
+          image: article.image,
+          readingMinutes: minutes,
+          reviewNotes,
+          status: article.status,
+        }),
+      }).catch(() => undefined);
+    },
+    [],
+  );
+
   const saveArticle = useCallback(
     (article: Article, actor: string, asSubmit?: boolean) => {
+      const exists = articles.some((a) => a.id === article.id);
+      const status: ArticleStatus = asSubmit
+        ? 'submitted'
+        : article.status === 'published'
+          ? 'published'
+          : !exists
+            ? 'draft'
+            : article.status === 'returned' && !asSubmit
+              ? 'returned'
+              : article.status;
+      const next: Article = {
+        ...article,
+        status: asSubmit ? 'submitted' : status,
+        reviewNotes: asSubmit ? undefined : article.reviewNotes,
+        revisions: [
+          ...article.revisions,
+          { version: article.revisions.length + 1, savedAt: nowStamp(), title: article.title },
+        ],
+      };
       setArticles((prev) => {
-        const exists = prev.some((a) => a.id === article.id);
-        const status: ArticleStatus = asSubmit
-          ? 'submitted'
-          : article.status === 'published'
-            ? 'published'
-            : !exists
-              ? 'draft'
-              : article.status === 'returned' && !asSubmit
-                ? 'returned'
-                : article.status;
-        const next: Article = {
-          ...article,
-          status: asSubmit ? 'submitted' : status,
-          reviewNotes: asSubmit ? undefined : article.reviewNotes,
-          revisions: [
-            ...article.revisions,
-            { version: article.revisions.length + 1, savedAt: nowStamp(), title: article.title },
-          ],
-        };
-        return exists ? prev.map((a) => (a.id === next.id ? next : a)) : [next, ...prev];
+        const already = prev.some((a) => a.id === next.id);
+        return already ? prev.map((a) => (a.id === next.id ? next : a)) : [next, ...prev];
       });
+      if (next.status === 'published') {
+        // Admin may save while published — keep content live via publish API
+        void fetch('/api/articles/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: next.title,
+            slug: next.slug,
+            excerpt: next.excerpt,
+            body: next.body,
+            footnotes: next.footnotes,
+            seoTitle: next.seoTitle,
+            seoDescription: next.seoDescription,
+            category: next.category,
+            image: next.image,
+            readingMinutes: Number.parseInt(String(next.readTime), 10) || 5,
+          }),
+        }).catch(() => undefined);
+      } else {
+        syncArticleWorkflow(next, asSubmit ? 'submit' : 'save');
+      }
       log(asSubmit ? 'Submitted' : 'Saved', actor, article.title || 'Untitled');
       if (asSubmit) {
         notify({ title: 'Article submitted', body: `${article.title} is in the review queue.`, role: 'editor' });
@@ -547,70 +624,62 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [log, notify],
+    [articles, log, notify, syncArticleWorkflow],
   );
 
   const submitArticle = useCallback(
     (id: string, actor: string) => {
-      let title = '';
-      setArticles((prev) => {
-        const article = prev.find((a) => a.id === id);
-        if (!article) return prev;
-        title = article.title;
-        return prev.map((a) => (a.id === id ? { ...a, status: 'submitted' as const, reviewNotes: undefined } : a));
-      });
-      if (!title) return;
-      log('Submitted', actor, title);
-      notify({ title: 'Article submitted', body: `${title} is waiting for review.`, role: 'editor' });
+      const article = articles.find((a) => a.id === id);
+      if (!article) return;
+      setArticles((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: 'submitted' as const, reviewNotes: undefined } : a)),
+      );
+      syncArticleWorkflow({ ...article, status: 'submitted' }, 'submit');
+      log('Submitted', actor, article.title);
+      notify({ title: 'Article submitted', body: `${article.title} is waiting for review.`, role: 'editor' });
     },
-    [log, notify],
+    [articles, log, notify, syncArticleWorkflow],
   );
 
   const approveArticle = useCallback(
     (id: string, actor: string) => {
-      let title = '';
-      let author = '';
-      setArticles((prev) => {
-        const article = prev.find((a) => a.id === id);
-        if (!article) return prev;
-        title = article.title;
-        author = article.author;
-        return prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const } : a));
-      });
-      if (!title) return;
-      log('Approved', actor, title);
+      const article = articles.find((a) => a.id === id);
+      if (!article) return;
+      setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const } : a)));
+      syncArticleWorkflow({ ...article, status: 'approved' }, 'approve');
+      log('Approved', actor, article.title);
       notify({
         title: 'Your article was approved',
-        body: `“${title}” was approved by the editor and is awaiting the Administrator’s publish.`,
+        body: `“${article.title}” was approved by the editor and is awaiting the Administrator’s publish.`,
         role: 'author',
-        authorName: author,
+        authorName: article.author,
       });
-      notify({ title: 'Ready to publish', body: `“${title}” is approved and waiting for publication.`, role: 'administrator' });
+      notify({
+        title: 'Ready to publish',
+        body: `“${article.title}” is approved and waiting for publication.`,
+        role: 'administrator',
+      });
     },
-    [log, notify],
+    [articles, log, notify, syncArticleWorkflow],
   );
 
   const returnArticle = useCallback(
     (id: string, actor: string, notes: string) => {
-      let title = '';
-      let author = '';
-      setArticles((prev) => {
-        const article = prev.find((a) => a.id === id);
-        if (!article) return prev;
-        title = article.title;
-        author = article.author;
-        return prev.map((a) => (a.id === id ? { ...a, status: 'returned' as const, reviewNotes: notes } : a));
-      });
-      if (!title) return;
-      log('Returned', actor, title);
+      const article = articles.find((a) => a.id === id);
+      if (!article) return;
+      setArticles((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: 'returned' as const, reviewNotes: notes } : a)),
+      );
+      syncArticleWorkflow({ ...article, status: 'returned', reviewNotes: notes }, 'return', notes);
+      log('Returned', actor, article.title);
       notify({
         title: 'Article returned',
-        body: `“${title}” was returned. Notes: ${notes}`,
+        body: `“${article.title}” was returned. Notes: ${notes}`,
         role: 'author',
-        authorName: author,
+        authorName: article.author,
       });
     },
-    [log, notify],
+    [articles, log, notify, syncArticleWorkflow],
   );
 
   const publishArticle = useCallback(
@@ -678,17 +747,15 @@ export function IlmProvider({ children }: { children: ReactNode }) {
 
   const unpublishArticle = useCallback(
     (id: string, actor: string) => {
-      let title = '';
-      setArticles((prev) => {
-        const article = prev.find((a) => a.id === id);
-        if (!article) return prev;
-        title = article.title;
-        return prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const, featured: false } : a));
-      });
-      if (!title) return;
-      log('Unpublished', actor, title);
+      const article = articles.find((a) => a.id === id);
+      if (!article) return;
+      setArticles((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: 'approved' as const, featured: false } : a)),
+      );
+      syncArticleWorkflow({ ...article, status: 'approved' }, 'unpublish');
+      log('Unpublished', actor, article.title);
     },
-    [log],
+    [articles, log, syncArticleWorkflow],
   );
 
   const deleteArticle = useCallback(
@@ -976,7 +1043,9 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (!target) return { ok: false, error: 'Category not found.' };
       let localOnly = false;
       try {
-        const response = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}&type=category`, { method: 'DELETE' });
+        const params = new URLSearchParams({ type: 'category', slug: target.slug });
+        if (/^[0-9a-f-]{36}$/i.test(id)) params.set('id', id);
+        const response = await fetch(`/api/admin/categories?${params.toString()}`, { method: 'DELETE' });
         const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
         if ((!response.ok || !result.ok) && response.status !== 503 && !result.localOnly) {
           return { ok: false, error: result.error || `Could not remove category (HTTP ${response.status}).` };
@@ -985,7 +1054,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       } catch {
         localOnly = true;
       }
-      setCategories((prev) => prev.filter((category) => category.id !== id));
+      setCategories((prev) => prev.filter((category) => category.id !== id && category.slug !== target.slug));
       log('Removed category', 'Administrator', target.name);
       return { ok: true, localOnly };
     },
@@ -1016,10 +1085,12 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   }, [tags]);
 
   const removeTag = useCallback(async (name: string) => {
-    const trimmed = name.trim().toLowerCase();
+    const trimmed = name.trim();
+    const slug = slugify(trimmed);
     let localOnly = false;
     try {
-      const response = await fetch(`/api/admin/categories?type=tag&name=${encodeURIComponent(trimmed)}`, { method: 'DELETE' });
+      const params = new URLSearchParams({ type: 'tag', name: trimmed, slug });
+      const response = await fetch(`/api/admin/categories?${params.toString()}`, { method: 'DELETE' });
       const result = (await response.json()) as { ok?: boolean; localOnly?: boolean; error?: string };
       if ((!response.ok || !result.ok) && response.status !== 503 && !result.localOnly) {
         return { ok: false, error: result.error || `Could not remove tag (HTTP ${response.status}).` };
@@ -1028,37 +1099,50 @@ export function IlmProvider({ children }: { children: ReactNode }) {
     } catch {
       localOnly = true;
     }
-    setTags((prev) => prev.filter((tag) => tag !== trimmed));
+    setTags((prev) => prev.filter((tag) => tag.toLowerCase() !== trimmed.toLowerCase()));
     return { ok: true, localOnly };
   }, []);
 
-  const addSubscriber = useCallback((email: string) => {
+  const addSubscriber = useCallback(async (email: string) => {
     const normalized = email.trim().toLowerCase();
-    if (!normalized || !normalized.includes('@')) return false;
-    let added = false;
-    setSubscribers((prev) => {
-      const existing = prev.find((s) => s.email.toLowerCase() === normalized);
-      if (existing) {
-        if (!existing.active) {
-          added = true;
-          return prev.map((s) => (s.id === existing.id ? { ...s, active: true, date: shortDate() } : s));
-        }
-        return prev;
-      }
-      added = true;
-      return [{ id: `s${Date.now()}`, email: normalized, date: shortDate(), active: true }, ...prev];
-    });
-    if (added) {
-      notify({ title: 'New subscriber', body: normalized, role: 'administrator' });
-      notify({ title: 'New subscriber', body: normalized, role: 'editor' });
-      log('New subscriber', 'Public site', normalized);
-      void fetch('/api/subscribers', {
+    if (!normalized || !normalized.includes('@')) {
+      return { ok: false, error: 'Enter a valid email address.' };
+    }
+
+    try {
+      const response = await fetch('/api/subscribers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: normalized }),
-      }).catch(() => undefined);
+      });
+      const result = (await response.json()) as {
+        ok?: boolean;
+        subscriber?: Subscriber;
+        localOnly?: boolean;
+        error?: string;
+      };
+
+      if (!response.ok || !result.ok || !result.subscriber) {
+        return {
+          ok: false,
+          error: result.error || `Could not save subscriber (HTTP ${response.status}).`,
+        };
+      }
+
+      setSubscribers((prev) => {
+        const next = prev.filter((s) => s.email.toLowerCase() !== normalized);
+        return [result.subscriber!, ...next];
+      });
+      notify({ title: 'New subscriber', body: normalized, role: 'administrator' });
+      notify({ title: 'New subscriber', body: normalized, role: 'editor' });
+      log('New subscriber', 'Public site', normalized);
+      return { ok: true, localOnly: result.localOnly === true };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Network error while saving subscriber.',
+      };
     }
-    return added;
   }, [log, notify]);
 
   const syncSubscribers = useCallback(async () => {
@@ -1067,18 +1151,14 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const json = (await res.json()) as {
         ok?: boolean;
-        subscribers?: { id: string; email: string; date: string; active: boolean }[];
+        subscribers?: Subscriber[];
       };
       if (!json.ok || !Array.isArray(json.subscribers)) return;
-      setSubscribers((prev) => {
-        const byEmail = new Map(prev.map((s) => [s.email.toLowerCase(), s]));
-        for (const remote of json.subscribers!) {
-          const key = remote.email.toLowerCase();
-          const local = byEmail.get(key);
-          byEmail.set(key, local ? { ...local, ...remote, email: key } : { ...remote, email: key });
-        }
-        return Array.from(byEmail.values()).sort((a, b) => b.date.localeCompare(a.date));
-      });
+      setSubscribers(
+        json.subscribers
+          .map((s) => ({ ...s, email: s.email.toLowerCase() }))
+          .sort((a, b) => b.date.localeCompare(a.date)),
+      );
     } catch {
       /* ignore */
     }

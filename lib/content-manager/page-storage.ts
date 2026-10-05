@@ -28,17 +28,23 @@ export function mergePages(parsed: Partial<CMPagesContent> | Record<string, unkn
     privacyPage: {
       ...CM_PAGE_DEFAULTS.privacyPage,
       ...p.privacyPage,
-      sections: p.privacyPage?.sections ?? CM_PAGE_DEFAULTS.privacyPage.sections,
+      sections: Array.isArray(p.privacyPage?.sections)
+        ? p.privacyPage!.sections
+        : CM_PAGE_DEFAULTS.privacyPage.sections,
     },
     disclaimerPage: {
       ...CM_PAGE_DEFAULTS.disclaimerPage,
       ...p.disclaimerPage,
-      sections: p.disclaimerPage?.sections ?? CM_PAGE_DEFAULTS.disclaimerPage.sections,
+      sections: Array.isArray(p.disclaimerPage?.sections)
+        ? p.disclaimerPage!.sections
+        : CM_PAGE_DEFAULTS.disclaimerPage.sections,
     },
     termsPage: {
       ...CM_PAGE_DEFAULTS.termsPage,
       ...p.termsPage,
-      sections: p.termsPage?.sections ?? CM_PAGE_DEFAULTS.termsPage.sections,
+      sections: Array.isArray(p.termsPage?.sections)
+        ? p.termsPage!.sections
+        : CM_PAGE_DEFAULTS.termsPage.sections,
     },
   };
 }

@@ -10,6 +10,11 @@ export function useCMPages(): CMPagesContent {
   const [content, setContent] = useState<CMPagesContent>(CM_PAGE_DEFAULTS);
 
   useEffect(() => {
+    try {
+      localStorage.removeItem('ilm_content_manager_pages_v1');
+    } catch {
+      /* ignore */
+    }
     setContent(readCMPages());
 
     let cancelled = false;

@@ -25,7 +25,6 @@ import { AuthorsScreen } from '@/components/admin/authors-screen';
 import { MediaScreen } from '@/components/admin/media-screen';
 import { QuestionsScreen } from '@/components/admin/questions-screen';
 import { SubscribersScreen } from '@/components/admin/subscribers-screen';
-import { SettingsScreen } from '@/components/admin/settings-screen';
 import { ActivityLogScreen } from '@/components/admin/activity-log-screen';
 import { ContentManagerLayout } from '@/components/content-manager/ContentManagerLayout';
 import { StaffProfilesScreen } from '@/components/admin/staff-profiles-screen';
@@ -403,8 +402,6 @@ export function AdminShell() {
         return <QuestionsScreen role={role} userName={user.name} />;
       case 'subscribers':
         return <SubscribersScreen />;
-      case 'settings':
-        return <SettingsScreen actorName={user.name} />;
       case 'activity-log':
         return <ActivityLogScreen />;
       case 'content-manager':

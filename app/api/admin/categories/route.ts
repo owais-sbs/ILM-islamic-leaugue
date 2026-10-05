@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
+import { requireAdminWrite } from '@/lib/supabase/admin-bridge';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
-import { tryCreateServerSupabase } from '@/lib/supabase/server';
-import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/env';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,44 +14,14 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
-type CategoryAccess =
-  | { ok: true; admin: NonNullable<ReturnType<typeof tryCreateServiceClient>> }
-  | { ok: false; response: NextResponse };
-
-async function authorizeCategoryWrite(): Promise<CategoryAccess> {
-  const session = tryCreateServerSupabase();
-  if (!session) {
-    return { ok: false, response: NextResponse.json({ ok: false, error: 'Session unavailable' }, { status: 503 }) };
-  }
-  const { data: { user } } = await session.auth.getUser();
-  if (!user) {
-    return { ok: false, response: NextResponse.json({ ok: false, localOnly: true, error: 'No authenticated Supabase session.' }, { status: 401 }) };
-  }
-
-  const admin = tryCreateServiceClient();
-  if (!admin) {
-    return { ok: false, response: NextResponse.json({ ok: false, error: 'Service role unavailable' }, { status: 503 }) };
-  }
-  const { data: profile, error } = await admin
-    .from('profiles')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (error) {
-    return { ok: false, response: NextResponse.json({ ok: false, error: error.message }, { status: 500 }) };
-  }
-  if (!profile?.is_active || (profile.role !== 'admin' && profile.role !== 'editor')) {
-    return { ok: false, response: NextResponse.json({ ok: false, error: 'Only editors and administrators can manage categories.' }, { status: 403 }) };
-  }
-  return { ok: true, admin };
-}
-
 export async function GET() {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ ok: false, categories: [], tags: [], error: 'Supabase not configured' }, { status: 503 });
   }
   const admin = tryCreateServiceClient();
-  if (!admin) return NextResponse.json({ ok: false, categories: [], tags: [], error: 'Service role unavailable' }, { status: 503 });
+  if (!admin) {
+    return NextResponse.json({ ok: false, categories: [], tags: [], error: 'Service role unavailable' }, { status: 503 });
+  }
 
   const [cats, tags] = await Promise.all([
     admin.from('categories').select('id, name, slug, display_order').order('display_order', { ascending: true }),
@@ -76,10 +46,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
-    return NextResponse.json({ ok: false, error: 'Supabase admin not configured on Vercel' }, { status: 503 });
-  }
-  const access = await authorizeCategoryWrite();
+  const access = await requireAdminWrite({ allowEditor: true, allowDemoBridge: true });
   if (!access.ok) return access.response;
   const { admin } = access;
 
@@ -115,27 +82,43 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
-    return NextResponse.json({ ok: false, error: 'Supabase admin not configured on Vercel' }, { status: 503 });
-  }
-  const access = await authorizeCategoryWrite();
+  const access = await requireAdminWrite({ allowEditor: true, allowDemoBridge: true });
   if (!access.ok) return access.response;
   const { admin } = access;
 
   const url = new URL(req.url);
   const id = url.searchParams.get('id');
+  const slug = url.searchParams.get('slug');
   const type = url.searchParams.get('type') === 'tag' ? 'tag' : 'category';
   const name = url.searchParams.get('name');
 
   if (type === 'tag') {
-    if (!name) return NextResponse.json({ ok: false, error: 'name required' }, { status: 400 });
-    const { error } = await admin.from('tags').delete().eq('name', name);
+    if (!name && !slug) return NextResponse.json({ ok: false, error: 'name or slug required' }, { status: 400 });
+    const tagSlug = slug || (name ? slugify(name) : '');
+    let query = admin.from('tags').delete();
+    if (tagSlug) query = query.eq('slug', tagSlug);
+    else if (name) query = query.ilike('name', name);
+    const { error } = await query;
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   }
 
-  if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 });
-  const { error } = await admin.from('categories').delete().eq('id', id);
+  if (!id && !slug) return NextResponse.json({ ok: false, error: 'id or slug required' }, { status: 400 });
+
+  let query = admin.from('categories').delete();
+  if (id && /^[0-9a-f-]{36}$/i.test(id)) {
+    query = query.eq('id', id);
+  } else if (slug) {
+    query = query.eq('slug', slug);
+  } else if (id) {
+    // Local seed ids like cat1 — try slug param or treat id as slug fragment
+    return NextResponse.json({
+      ok: false,
+      error: 'Category id is not a live Supabase UUID. Refresh categories from the server, then try again.',
+    }, { status: 400 });
+  }
+
+  const { error } = await query;
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

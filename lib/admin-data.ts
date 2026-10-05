@@ -269,7 +269,6 @@ export const navConfig: Record<Role, NavGroup[]> = {
       { label: 'Subscribers', key: 'subscribers', icon: 'subscribers' },
     ]},
     { label: 'System', items: [
-      { label: 'Settings', key: 'settings', icon: 'settings' },
       { label: 'Activity Log', key: 'activity-log', icon: 'activity' },
     ]},
     { label: 'Account', items: [

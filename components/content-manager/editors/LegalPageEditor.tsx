@@ -13,11 +13,12 @@ export function LegalPageEditor({
 }: {
   data: CMLegalPage;
   pageName: string;
-  onSave: (value: CMLegalPage) => void;
-  onReset: () => void;
+  onSave: (value: CMLegalPage) => void | Promise<void>;
+  onReset: () => void | Promise<void>;
 }) {
   const [draft, setDraft] = useState(data);
   const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(data);
 
   useEffect(() => {
@@ -85,15 +86,21 @@ export function LegalPageEditor({
       </FieldGroup>
 
       <SaveBar
-        dirty={dirty}
+        dirty={dirty && !busy}
         saved={saved}
         onSave={() => {
-          onSave(draft);
-          setSaved(true);
+          setBusy(true);
+          void Promise.resolve(onSave(draft)).finally(() => {
+            setBusy(false);
+            setSaved(true);
+          });
         }}
         onReset={() => {
-          onReset();
-          setSaved(false);
+          setBusy(true);
+          void Promise.resolve(onReset()).finally(() => {
+            setBusy(false);
+            setSaved(false);
+          });
         }}
       />
     </div>
