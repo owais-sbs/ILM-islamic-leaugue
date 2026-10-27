@@ -5,7 +5,7 @@
 
 import type { CMPagesContent } from './types';
 
-export const CM_PAGE_STORAGE_KEY = 'ilm_content_manager_pages_v3';
+export const CM_PAGE_STORAGE_KEY = 'ilm_content_manager_pages_v4';
 
 export const CM_PAGE_DEFAULTS: CMPagesContent = {
   aboutPage: {
@@ -37,9 +37,11 @@ export const CM_PAGE_DEFAULTS: CMPagesContent = {
     founderAuthor: 'Najeeb ibn Yusuf al-Anjelesi',
     founderParagraphs: [
       'As Salāmu alaikum wa rahmatullahi wa barakātuhu!',
-      'It is not unknown to anyone given ears by which they hear, eyes by which they see, and a sound heart by which they comprehend, that the challenges of the Muslims in the west (generally) and in the United States (specifically) are various and multifaceted.',
+      'It is not unknown to anyone given ears by which they hear, eyes by which they see, and a sound heart by which they comprehend, that the challenges of the Muslims in the west (generally) and in the United States (specifically) are various and multifaceted. These challenges require clear insight and understanding of the revelation revealed from Allah to our Prophet Muhammad -sallahu alaihi wa sallam- in order to identify, assess, and arrive at the best means to overcome these challenges.The complexities of these challenges are not insurmountable, the remedy to them is not unknown, and the means to overcome them are obtainable. Returning to the guidance of revelation is the first step in addressing the challenges we\u2019re faced with today as Allah has made explicitly clear all things the son of Adam requires to be successful in this life and the Hereafter, regardless of the place and time one may be.',
       'Allah says:',
-      '"And We sent down to you the Book a clarification for all things. A guidance, mercy, and glad-tidings for the Muslims." An-Nahl: 89',
+      '\u201CAnd We sent down to you the Book a clarification for all things. A guidance, mercy, and glad-tidings for the Muslims.\u201D An-Nahl: 89',
+      'Imam ibn Jarīr at-Tabari said in his exegesis to the Quran: \u201CThis Quran is sent down to you O\u2019 Muhammad of all of that which humanity stands in need of from awareness of the lawful and unlawful, reward and punishment, etc.\u201D',
+      'Imam ibn Kathir said: \u201CUndoubtedly, the Quran is inclusive of all beneficial knowledge from past narratives and future knowledge. Likewise, every lawful and unlawful matter along with whatever humanity stands in need of as it pertains to their worldly and religious related affairs, and their livelihood and ultimate (eternal) abode.\u201D',
       'Thus, I ask Allah that He aids and assists this effort, grants us success in our endeavors, and causes it to be a source of reward for all the contributors to this venture. Indeed, He is All-Knower, All-Seeing and All-Capable of whatsoever He wills.',
       'Lastly, may His lofty commendations and peace be on His Messenger Muhammad.',
     ],
