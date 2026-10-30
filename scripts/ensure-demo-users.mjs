@@ -67,21 +67,39 @@ const USERS = [
     password: process.env.ILM_ADMIN_PASSWORD,
     role: 'admin',
     roleName: 'Administrator',
-    name: 'ILM Administrator',
+    name: 'Shaykh Ibrahim Al-Fadl',
+    slug: 'ibrahim-al-fadl',
+    madhhab: 'Hanafi',
+    credentials: 'Imam & Educator',
+    bio: 'Director of the league, stewarding publishing, people, and the public voice of ILM.',
+    avatar:
+      'https://images.unsplash.com/photo-1564769625905-50e93615e769?auto=format&fit=crop&w=800&h=800&q=80',
   },
   {
     email: process.env.ILM_EDITOR_EMAIL,
     password: process.env.ILM_EDITOR_PASSWORD,
     role: 'editor',
     roleName: 'Editor',
-    name: 'ILM Editor',
+    name: 'Ustadh Omar Khalid',
+    slug: 'omar-khalid',
+    madhhab: 'Hanafi',
+    credentials: 'MA Arabic & Islamic Studies',
+    bio: 'Editor shaping the ILM library with care for language, sources, and the reader’s heart.',
+    avatar:
+      'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&h=800&q=80',
   },
   {
     email: process.env.ILM_AUTHOR_EMAIL,
     password: process.env.ILM_AUTHOR_PASSWORD,
     role: 'author',
     roleName: 'Author',
-    name: 'ILM Author',
+    name: 'Ustadh Bilal Rahman',
+    slug: 'bilal-rahman',
+    madhhab: 'Maliki',
+    credentials: 'Traditional studies · Fiqh',
+    bio: 'Educator and writer focused on spiritual growth and community building.',
+    avatar:
+      'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=800&h=800&q=80',
   },
 ];
 
@@ -120,16 +138,18 @@ async function ensureUser(u) {
     userId = data.user.id;
   }
 
-  const slug = u.email.split('@')[0].replace(/[^a-z0-9]+/gi, '-').toLowerCase();
   const { error: profileError } = await admin.from('profiles').upsert({
     id: userId,
     email: u.email,
     full_name: u.name,
-    slug,
+    slug: u.slug,
     role: u.role,
     is_active: true,
     email_public: u.email,
-    credentials: u.roleName,
+    credentials: u.credentials || u.roleName,
+    madhhab: u.madhhab || null,
+    bio: u.bio || null,
+    avatar_url: u.avatar || null,
   });
   if (profileError) throw profileError;
 

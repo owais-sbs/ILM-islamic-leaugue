@@ -161,11 +161,11 @@ export const questions: Question[] = [
 ];
 
 export const contributors: Contributor[] = [
-  { id: 'c1', name: 'Ustadh Bilal Rahman', email: 'bilal@ilm.org', role: 'author', initials: 'BR', madhhab: 'Maliki', articles: 1, active: true, image: images.scholarQuran },
+  { id: 'c1', name: 'Ustadh Bilal Rahman', email: 'author@murabbiyun.org', role: 'author', initials: 'BR', madhhab: 'Maliki', articles: 1, active: true, image: images.scholarQuran },
   { id: 'c2', name: 'Shaykh Hamza Idris', email: 'hamza@ilm.org', role: 'author', initials: 'HI', madhhab: "Shafi'i", articles: 1, active: true, image: images.scholarBeard },
   { id: 'c3', name: 'Ustadh Yusuf Karim', email: 'yusuf@ilm.org', role: 'author', initials: 'YK', madhhab: 'Hanbali', articles: 1, active: true, image: images.scholarPrayer },
-  { id: 'c4', name: 'Shaykh Ibrahim Al-Fadl', email: 'ibrahim@ilm.org', role: 'administrator', initials: 'IF', madhhab: 'Hanafi', articles: 0, active: true, image: images.scholarKufi },
-  { id: 'c5', name: 'Ustadh Omar Khalid', email: 'omar@ilm.org', role: 'editor', initials: 'OK', madhhab: 'Hanafi', articles: 0, active: true, image: images.scholarLantern },
+  { id: 'c4', name: 'Shaykh Ibrahim Al-Fadl', email: 'admin@murabbiyun.org', role: 'administrator', initials: 'IF', madhhab: 'Hanafi', articles: 0, active: true, image: images.scholarKufi },
+  { id: 'c5', name: 'Ustadh Omar Khalid', email: 'editor@murabbiyun.org', role: 'editor', initials: 'OK', madhhab: 'Hanafi', articles: 0, active: true, image: images.scholarLantern },
 ];
 
 export const subscribers: Subscriber[] = [

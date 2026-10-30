@@ -73,7 +73,7 @@ const directoryProfileContributors: Contributor[] = murabbiyūn.map((person) => 
   directoryOnly: true,
 }));
 
-const KEY = 'ilm-demo-state-v13';
+const KEY = 'ilm-demo-state-v14';
 export const LATEST_PUBLISH_KEY = 'ilm-latest-published-slug';
 const LEGACY_KEYS = [
   'ilm-demo-state-v1',
@@ -229,7 +229,7 @@ function defaultProfiles(): Record<Role, UserProfile> {
     author: {
       role: 'author',
       name: roleUsers.author.name,
-      email: 'bilal@ilm.org',
+      email: 'author@murabbiyun.org',
       bio: 'Educator and writer focused on spiritual growth and community building.',
       madhhab: 'Maliki',
       credentials: 'Traditional studies · Fiqh',
@@ -238,7 +238,7 @@ function defaultProfiles(): Record<Role, UserProfile> {
     editor: {
       role: 'editor',
       name: roleUsers.editor.name,
-      email: 'omar@ilm.org',
+      email: 'editor@murabbiyun.org',
       bio: 'Editor shaping the ILM library with care for language, sources, and the reader’s heart.',
       madhhab: 'Hanafi',
       credentials: 'MA Arabic & Islamic Studies',
@@ -247,7 +247,7 @@ function defaultProfiles(): Record<Role, UserProfile> {
     administrator: {
       role: 'administrator',
       name: roleUsers.administrator.name,
-      email: 'ibrahim@ilm.org',
+      email: 'admin@murabbiyun.org',
       bio: 'Director of the league, stewarding publishing, people, and the public voice of ILM.',
       madhhab: 'Hanafi',
       credentials: 'Imam & Educator',

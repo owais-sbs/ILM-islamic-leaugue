@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu, Plus, X } from 'lucide-react';
 import { navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
 import { adminPath, normalizeAdminSection, type AdminSection } from '@/lib/admin-routes';
-import { clearAdminRole, readAdminRole } from '@/lib/admin-session';
+import { clearAdminRole, readAdminRole, writeAdminRole } from '@/lib/admin-session';
 import { canPublish, emptyArticle, useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
 import { tryCreateClient } from '@/lib/supabase/client';
@@ -58,7 +58,7 @@ export function AdminShell() {
   const params = useParams();
   const sectionParam = typeof params?.section === 'string' ? params.section : Array.isArray(params?.section) ? params.section[0] : 'dashboard';
   const reduce = useReducedMotion();
-  const { articles, questions, notices, profiles, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, deleteArticle, markNoticeRead, markAllNoticesRead, syncQuestions } = useIlm();
+  const { articles, questions, notices, profiles, updateProfile, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, deleteArticle, markNoticeRead, markAllNoticesRead, syncQuestions } = useIlm();
   const [role, setRole] = useState<Role | null>(null);
   const [tab, setTab] = useState<AdminSection>(() => normalizeAdminSection(sectionParam));
   const [screen, setScreen] = useState<Screen>('tab');
@@ -109,15 +109,53 @@ export function AdminShell() {
         const { data } = await supabase.auth.getUser();
         const uid = data.user?.id;
         if (!uid) return;
+
+        const { data: liveProfile } = await supabase
+          .from('profiles')
+          .select('full_name, email, role, bio, madhhab, credentials, avatar_url, is_active')
+          .eq('id', uid)
+          .maybeSingle();
+
+        if (liveProfile?.is_active === false) {
+          router.replace('/login');
+          return;
+        }
+
+        const mappedRole: Role | null =
+          liveProfile?.role === 'admin'
+            ? 'administrator'
+            : liveProfile?.role === 'editor'
+              ? 'editor'
+              : liveProfile?.role === 'author'
+                ? 'author'
+                : null;
+
+        if (mappedRole && liveProfile?.full_name) {
+          setRole(mappedRole);
+          writeAdminRole(mappedRole);
+          updateProfile(mappedRole, {
+            name: liveProfile.full_name,
+            email: liveProfile.email || '',
+            bio: liveProfile.bio || '',
+            madhhab: liveProfile.madhhab || '',
+            credentials: liveProfile.credentials || '',
+            image: liveProfile.avatar_url || undefined,
+          });
+        }
+
         const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, { cache: 'no-store' });
         if (!meRes.ok) return;
-        const me = (await meRes.json()) as { mustChangePassword?: boolean };
+        const me = (await meRes.json()) as { mustChangePassword?: boolean; role?: Role | null };
+        if (me.role) {
+          setRole(me.role);
+          writeAdminRole(me.role);
+        }
         if (me.mustChangePassword) router.replace('/change-password');
       } catch {
         /* ignore */
       }
     })();
-  }, [router]);
+  }, [router, updateProfile]);
 
   useEffect(() => {
     if (!role) return;
