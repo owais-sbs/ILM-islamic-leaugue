@@ -1,6 +1,12 @@
 /**
- * Create / reset ILM demo Auth users + profiles.role
- * Run after SQL setup: node scripts/ensure-demo-users.mjs
+ * Create / reset ILM staff Auth users + profiles + account role mapping.
+ * Credentials come from .env only (never bundled into the client).
+ *
+ *   ILM_ADMIN_EMAIL / ILM_ADMIN_PASSWORD
+ *   ILM_EDITOR_EMAIL / ILM_EDITOR_PASSWORD
+ *   ILM_AUTHOR_EMAIL / ILM_AUTHOR_PASSWORD
+ *
+ * Run: node scripts/ensure-demo-users.mjs
  */
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync, existsSync } from 'fs';
@@ -15,7 +21,13 @@ function loadEnvFile(filename) {
     const i = trimmed.indexOf('=');
     if (i === -1) continue;
     const key = trimmed.slice(0, i).trim();
-    const value = trimmed.slice(i + 1).trim();
+    let value = trimmed.slice(i + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
     if (!process.env[key]) process.env[key] = value;
   }
 }
@@ -31,15 +43,58 @@ if (!url || !serviceKey) {
   process.exit(1);
 }
 
+const required = [
+  'ILM_ADMIN_EMAIL',
+  'ILM_ADMIN_PASSWORD',
+  'ILM_EDITOR_EMAIL',
+  'ILM_EDITOR_PASSWORD',
+  'ILM_AUTHOR_EMAIL',
+  'ILM_AUTHOR_PASSWORD',
+];
+const missing = required.filter((key) => !process.env[key]);
+if (missing.length) {
+  console.error(`Missing env vars: ${missing.join(', ')}`);
+  process.exit(1);
+}
+
 const admin = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
 const USERS = [
-  { email: 'adminops@gmail.com', password: 'admin123', role: 'admin', name: 'Admin Director' },
-  { email: 'author.smoke@ilm.test', password: 'author123', role: 'author', name: 'Smoke Author' },
-  { email: 'editor.smoke@ilm.test', password: 'editor123', role: 'editor', name: 'Smoke Editor' },
+  {
+    email: process.env.ILM_ADMIN_EMAIL,
+    password: process.env.ILM_ADMIN_PASSWORD,
+    role: 'admin',
+    roleName: 'Administrator',
+    name: 'ILM Administrator',
+  },
+  {
+    email: process.env.ILM_EDITOR_EMAIL,
+    password: process.env.ILM_EDITOR_PASSWORD,
+    role: 'editor',
+    roleName: 'Editor',
+    name: 'ILM Editor',
+  },
+  {
+    email: process.env.ILM_AUTHOR_EMAIL,
+    password: process.env.ILM_AUTHOR_PASSWORD,
+    role: 'author',
+    roleName: 'Author',
+    name: 'ILM Author',
+  },
 ];
+
+async function resolveRoleId(roleName) {
+  const { data, error } = await admin
+    .from('role_master')
+    .select('id, role_name')
+    .ilike('role_name', roleName)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data?.id) throw new Error(`role_master missing role: ${roleName}`);
+  return data.id;
+}
 
 async function ensureUser(u) {
   const { data: listed } = await admin.auth.admin.listUsers({ perPage: 200 });
@@ -74,20 +129,52 @@ async function ensureUser(u) {
     role: u.role,
     is_active: true,
     email_public: u.email,
-    credentials: u.role === 'admin' ? 'Administrator' : u.role === 'editor' ? 'Editor' : 'Murabbī',
+    credentials: u.roleName,
   });
   if (profileError) throw profileError;
+
+  const { data: account, error: accountError } = await admin
+    .from('account')
+    .upsert(
+      {
+        auth_user_id: userId,
+        full_name: u.name,
+        email: u.email,
+        must_change_password: false,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'auth_user_id' },
+    )
+    .select('id')
+    .single();
+
+  if (accountError) {
+    // Older DBs may not have account/role_mapping yet — profiles.role still works for login.
+    console.warn(`  ⚠ account sync skipped for ${u.email}: ${accountError.message}`);
+    return userId;
+  }
+
+  const roleId = await resolveRoleId(u.roleName);
+  await admin.from('role_mapping').delete().eq('account_id', account.id);
+  const { error: mappingError } = await admin.from('role_mapping').insert({
+    account_id: account.id,
+    role_id: roleId,
+  });
+  if (mappingError) {
+    console.warn(`  ⚠ role_mapping skipped for ${u.email}: ${mappingError.message}`);
+  }
+
   return userId;
 }
 
 async function main() {
-  console.log('\n=== ILM demo users ===\n');
+  console.log('\n=== ILM staff users ===\n');
   console.log(`Supabase: ${url}\n`);
   for (const u of USERS) {
     const id = await ensureUser(u);
-    console.log(`  ✅ ${u.role.padEnd(6)} ${u.email} / ${u.password}  (${id.slice(0, 8)}…)`);
+    console.log(`  ✅ ${u.role.padEnd(6)} ${u.email}  (${id.slice(0, 8)}…)`);
   }
-  console.log('\nDone. Use these on /login for client demo.\n');
+  console.log('\nDone. Passwords stay in .env only — login form is empty.\n');
 }
 
 main().catch((e) => {

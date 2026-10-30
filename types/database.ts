@@ -160,9 +160,3 @@ export type Database = {
   };
 };
 
-/** Demo accounts for client walkthrough (created by scripts/ensure-demo-users.mjs) */
-export const DEMO_ACCOUNTS = {
-  admin: { email: 'adminops@gmail.com', password: 'admin123', role: 'admin' as const },
-  editor: { email: 'editor.smoke@ilm.test', password: 'editor123', role: 'editor' as const },
-  author: { email: 'author.smoke@ilm.test', password: 'author123', role: 'author' as const },
-} as const;

@@ -8,21 +8,14 @@ import { Brand } from '@/components/public/brand';
 import { writeAdminRole } from '@/lib/admin-session';
 import type { Role } from '@/lib/admin-data';
 import { roleLabels } from '@/lib/admin-data';
-import { DEMO_ACCOUNTS } from '@/types/database';
 import { tryCreateClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
-const roles: { key: Role; icon: typeof ShieldCheck; hint: string; demoKey: keyof typeof DEMO_ACCOUNTS }[] = [
-  { key: 'author', icon: UserRound, hint: 'Draft & submit', demoKey: 'author' },
-  { key: 'editor', icon: PencilLine, hint: 'Review & shape', demoKey: 'editor' },
-  { key: 'administrator', icon: ShieldCheck, hint: 'Full publishing', demoKey: 'admin' },
+const roles: { key: Role; icon: typeof ShieldCheck; hint: string }[] = [
+  { key: 'author', icon: UserRound, hint: 'Draft & submit' },
+  { key: 'editor', icon: PencilLine, hint: 'Review & shape' },
+  { key: 'administrator', icon: ShieldCheck, hint: 'Full publishing' },
 ];
-
-function demoForRole(role: Role) {
-  if (role === 'administrator') return DEMO_ACCOUNTS.admin;
-  if (role === 'editor') return DEMO_ACCOUNTS.editor;
-  return DEMO_ACCOUNTS.author;
-}
 
 function mapDbRole(role: string | null | undefined): Role | null {
   if (role === 'admin') return 'administrator';
@@ -33,20 +26,15 @@ function mapDbRole(role: string | null | undefined): Role | null {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState<Role>('administrator');
-  const initial = demoForRole('administrator');
-  const [email, setEmail] = useState<string>(initial.email);
-  const [password, setPassword] = useState<string>(initial.password);
+  const [role, setRole] = useState<Role>('author');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [showDemo, setShowDemo] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const applyRole = (next: Role) => {
     setRole(next);
-    const demo = demoForRole(next);
-    setEmail(demo.email);
-    setPassword(demo.password);
     setError('');
   };
 
@@ -56,61 +44,54 @@ export default function LoginPage() {
     setError('');
 
     const supabase = tryCreateClient();
-    if (supabase) {
-      try {
-        const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-        if (authError) throw authError;
-
-        const uid = data.user?.id;
-        let nextRole: Role = role;
-        let mustChangePassword = false;
-
-        if (uid) {
-          let roleFromMapping: Role | null = null;
-          const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, {
-            cache: 'no-store',
-          });
-          if (meRes.ok) {
-            const me = (await meRes.json()) as {
-              ok?: boolean;
-              mustChangePassword?: boolean;
-              role?: Role | null;
-            };
-            if (me.role) roleFromMapping = me.role;
-            mustChangePassword = Boolean(me.mustChangePassword);
-          }
-
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role, is_active')
-            .eq('id', uid)
-            .maybeSingle();
-          const mapped = mapDbRole(profile?.role);
-          if (profile && !profile.is_active) {
-            throw new Error('This account is inactive. Contact an administrator.');
-          }
-          nextRole = roleFromMapping || mapped || role;
-        }
-
-        writeAdminRole(nextRole);
-        router.push(mustChangePassword ? '/change-password' : '/admin/dashboard');
-        return;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Sign-in failed';
-        const demo = demoForRole(role);
-        if (email === demo.email && password === demo.password) {
-          writeAdminRole(role);
-          router.push('/admin/dashboard');
-          return;
-        }
-        setError(message);
-        setBusy(false);
-        return;
-      }
+    if (!supabase) {
+      setError('Sign-in is unavailable. Check site configuration.');
+      setBusy(false);
+      return;
     }
 
-    writeAdminRole(role);
-    router.push('/admin/dashboard');
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+
+      const uid = data.user?.id;
+      let nextRole: Role = role;
+      let mustChangePassword = false;
+
+      if (uid) {
+        let roleFromMapping: Role | null = null;
+        const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, {
+          cache: 'no-store',
+        });
+        if (meRes.ok) {
+          const me = (await meRes.json()) as {
+            ok?: boolean;
+            mustChangePassword?: boolean;
+            role?: Role | null;
+          };
+          if (me.role) roleFromMapping = me.role;
+          mustChangePassword = Boolean(me.mustChangePassword);
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', uid)
+          .maybeSingle();
+        const mapped = mapDbRole(profile?.role);
+        if (profile && !profile.is_active) {
+          throw new Error('This account is inactive. Contact an administrator.');
+        }
+        nextRole = roleFromMapping || mapped || role;
+      }
+
+      writeAdminRole(nextRole);
+      router.push(mustChangePassword ? '/change-password' : '/admin/dashboard');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign-in failed';
+      setError(message);
+      setBusy(false);
+    }
   };
 
   return (
@@ -129,7 +110,7 @@ export default function LoginPage() {
         <div className="w-full max-w-[420px] rounded-[24px] border border-ilm-navy/8 bg-white/95 p-6 shadow-[0_20px_60px_rgba(11,17,82,0.08)] backdrop-blur sm:p-7">
           <div className="text-center">
             <h1 className="text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">Sign in to ILM Admin</h1>
-            <p className="mt-1.5 text-xs text-ilm-navy/50 sm:text-sm">Choose a role — demo credentials fill automatically.</p>
+            <p className="mt-1.5 text-xs text-ilm-navy/50 sm:text-sm">Enter your staff credentials to continue.</p>
           </div>
 
           <form onSubmit={signIn} className="mt-5 space-y-3.5">
@@ -165,7 +146,9 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="username"
-                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-2.5 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
+                placeholder="you@example.com"
+                required
+                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-2.5 text-sm text-ilm-navy outline-none placeholder:text-ilm-navy/30 focus:border-ilm-gold"
               />
             </div>
             <div>
@@ -176,7 +159,9 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-2.5 pr-10 text-sm text-ilm-navy outline-none focus:border-ilm-gold"
+                  placeholder="••••••••"
+                  required
+                  className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3.5 py-2.5 pr-10 text-sm text-ilm-navy outline-none placeholder:text-ilm-navy/30 focus:border-ilm-gold"
                 />
                 <button
                   type="button"
@@ -188,23 +173,6 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setShowDemo((v) => !v)}
-              className="w-full text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-ilm-gold-deep hover:text-ilm-gold"
-            >
-              {showDemo ? 'Hide demo credentials' : 'Show demo credentials'}
-            </button>
-            {showDemo && (
-              <div className="rounded-xl border border-ilm-navy/8 bg-ilm-cream/80 px-3 py-2.5 text-[10px] leading-relaxed text-ilm-navy/70">
-                <ul className="space-y-0.5 font-mono">
-                  <li>Admin · {DEMO_ACCOUNTS.admin.email}</li>
-                  <li>Editor · {DEMO_ACCOUNTS.editor.email}</li>
-                  <li>Author · {DEMO_ACCOUNTS.author.email}</li>
-                </ul>
-              </div>
-            )}
 
             {error && (
               <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
