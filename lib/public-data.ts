@@ -627,6 +627,178 @@ export const murabbiyūn: Murabbi[] = [
     ],
   },
   {
+    id: 'abu-abbaad',
+    name: 'Imām Abu ʿAbbād ʿAbdul Mutakabbir Hamlet al-Qarawī',
+    role: 'Islamic Educator | Khaṭīb | Prison Chaplain | Daʿwah Contributor',
+    bio: 'Imām Abu ʿAbbād ʿAbdul Mutakabbir Hamlet al-Qarawī is an Islamic educator, khaṭīb, and prison chaplain involved in teaching, religious guidance, and community daʿwah.',
+    biography: [
+      'Imām Abu ʿAbbād ʿAbdul Mutakabbir Hamlet al-Qarawī is an Islamic educator, khaṭīb, and prison chaplain involved in teaching, religious guidance, and community daʿwah.',
+      'His activities include delivering khuṭbahs, conducting Islamic classes, providing religious counseling, and supporting the religious needs of Muslims within correctional institutions.',
+    ],
+    image: images.murabbiPortrait,
+    accent: 'bg-emerald-100 text-emerald-800',
+    sections: [
+      {
+        title: 'Biography and Daʿwah Activities',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Imām Abu ʿAbbād ʿAbdul Mutakabbir Hamlet al-Qarawī is an Islamic educator, khaṭīb, and prison chaplain involved in teaching, religious guidance, and community daʿwah.',
+              'His activities include delivering khuṭbahs, conducting Islamic classes, providing religious counseling, and supporting the religious needs of Muslims within correctional institutions.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Masjid and Community Education',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Imām Abu ʿAbbād serves as a teacher and adviser at Masjid Tawheed in Cheektowaga, New York.',
+              'His responsibilities include delivering Friday sermons, teaching Islamic classes, and providing counseling.',
+              'He also participates in the masjid\'s organized daʿwah activities as an educator.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Supporting the Masjid',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Those interested in supporting the masjid may visit the website provided in his questionnaire:',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              {
+                label: 'Masjid website',
+                value: 'www.ciccmasjid.org',
+                href: 'https://www.ciccmasjid.org/',
+              },
+            ],
+          },
+          {
+            type: 'paragraphs',
+            text: [
+              'Community members may also benefit from and support its educational efforts by watching the available YouTube lectures.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Prison Chaplaincy and Institutional Daʿwah',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Imām Abu ʿAbbād is involved in Islamic chaplaincy at Orleans Correctional Facility in Albion, New York.',
+              'His responsibilities include:',
+            ],
+          },
+          {
+            type: 'list',
+            items: [
+              'Teaching Islamic classes to incarcerated Muslims.',
+              'Performing administrative work relating to religious affiliation.',
+              'Planning and organizing religious events.',
+              'Supporting the establishment and observance of religious rights.',
+              'Helping facilitate Jumuʿah and other Islamic educational activities.',
+            ],
+          },
+          {
+            type: 'paragraphs',
+            text: [
+              'His work addresses the religious and educational needs of Muslims within the correctional system, particularly access to congregational worship, Islamic instruction, and religious accommodation.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'How the Public Can Assist',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Support for this work may include donations of Islamic books, Qurʾāns, educational materials, and volunteer assistance.',
+              'Individuals interested in assisting may contact Imām Abu ʿAbbād for further information.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Online Islamic Education and Digital Daʿwah',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Imām Abu ʿAbbād maintains a YouTube channel through which he makes Islamic educational material available in audio and video formats.',
+              'The channel provides an opportunity for Muslims and others interested in Islamic learning to benefit from his recorded classes and lectures.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              {
+                label: 'YouTube Channel',
+                value: 'youtube.com/@abuabbaad',
+                href: 'https://youtube.com/@abuabbaad',
+              },
+            ],
+          },
+          {
+            type: 'paragraphs',
+            text: [
+              'Those wishing to support his online educational efforts are encouraged to listen to his classes, benefit from the material, and share relevant lectures with others.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Areas of Contribution',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Imām Abu ʿAbbād\'s current work encompasses masjid education, khuṭbah delivery, religious counseling, prison chaplaincy, institutional religious advocacy, community daʿwah, and online Islamic instruction.',
+              'Through these activities, he contributes to the religious education and guidance of Muslims in both community and correctional settings.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Contact and Further Information',
+        blocks: [
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Name', value: 'Imām ʿAbdul Mutakabbir Hamlet al-Qarawī' },
+              {
+                label: 'Email',
+                value: 'abubishaara@gmail.com',
+                href: 'mailto:abubishaara@gmail.com',
+              },
+              {
+                label: 'Online Lectures',
+                value: 'youtube.com/@abuabbaad',
+                href: 'https://youtube.com/@abuabbaad',
+              },
+              {
+                label: 'Masjid Website Provided',
+                value: 'www.ciccmasjid.org',
+                href: 'https://www.ciccmasjid.org/',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'najeeb-al-anjelesi',
     name: 'Najeeb al-Anjelesi',
     role: 'Khaṭīb & Teacher — Talha ibn Ubaidillah Center',

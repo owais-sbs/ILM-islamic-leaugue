@@ -38,8 +38,8 @@ export function ArticlePreview({
           <span>·</span>
           <Clock size={13} className="text-ilm-gold-deep" /> {article.readTime}
         </p>
-        <p className="mt-6 text-lg leading-relaxed text-ilm-navy/70">{article.excerpt}</p>
-        <div className="mt-8 space-y-5 text-[16.5px] leading-[1.85] text-ilm-navy/80">
+        <p className="mt-6 text-justify text-lg leading-relaxed text-ilm-navy/70 sm:text-left">{article.excerpt}</p>
+        <div className="mt-8 space-y-5 text-justify text-[16.5px] leading-[1.85] text-ilm-navy/80 sm:text-left">
           {paragraphs.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
