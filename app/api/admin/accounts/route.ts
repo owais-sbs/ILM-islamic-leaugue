@@ -379,13 +379,15 @@ export async function PATCH(req: Request) {
       .select('value')
       .eq('key', 'staff_profiles')
       .maybeSingle();
-    if (Array.isArray(staffSetting?.value)) {
-      const nextProfiles = (staffSetting.value as Array<Record<string, unknown>>).filter((entry) => {
+    const staffProfiles = staffSetting?.value;
+    if (Array.isArray(staffProfiles)) {
+      const currentProfiles = staffProfiles as Array<Record<string, unknown>>;
+      const nextProfiles = currentProfiles.filter((entry) => {
         const entryId = String(entry.id || '');
         const entryEmail = String(entry.email || '').toLowerCase();
         return entryId !== profile.id && entryEmail !== String(profile.email || '').toLowerCase();
       });
-      if (nextProfiles.length !== (staffSetting.value as unknown[]).length) {
+      if (nextProfiles.length !== currentProfiles.length) {
         await admin.from('site_settings').upsert(
           { key: 'staff_profiles', value: nextProfiles },
           { onConflict: 'key' },
