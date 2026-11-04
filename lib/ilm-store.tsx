@@ -1394,10 +1394,13 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       };
       if (!json.ok || !Array.isArray(json.contributors)) return;
       setContributors((prev) => {
-        const byEmail = new Map(prev.map((p) => [p.email.toLowerCase(), p]));
+        const directoryOnly = prev.filter((person) => person.directoryOnly);
+        const byEmail = new Map<string, (typeof prev)[number]>();
+
+        // Remote login accounts replace local ones (so hard-deleted users disappear)
         for (const remote of json.contributors!) {
           const key = remote.email.toLowerCase();
-          const local = byEmail.get(key);
+          const local = prev.find((person) => person.email.toLowerCase() === key && !person.directoryOnly);
           const parts = remote.name.split(/\s+/).filter(Boolean);
           const initials = ((parts[0]?.[0] || 'A') + (parts[1]?.[0] || parts[0]?.[1] || 'U')).toUpperCase();
           byEmail.set(key, {
@@ -1424,7 +1427,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
             directoryOnly: false,
           });
         }
-        return Array.from(byEmail.values());
+
+        return [...directoryOnly, ...Array.from(byEmail.values())];
       });
     } catch {
       /* ignore */
@@ -1471,8 +1475,9 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       if (!response.ok || !result.ok) {
         return { ok: false, error: result.error || `Could not delete account (HTTP ${response.status}).` };
       }
+      const emailKey = person?.email?.toLowerCase();
       setContributors((prev) =>
-        prev.map((c) => (c.id === id || c.email === person?.email ? { ...c, active: false } : c)),
+        prev.filter((c) => c.id !== id && (!emailKey || c.email.toLowerCase() !== emailKey)),
       );
       log('Deleted author', 'Administrator', person?.name || id);
       return { ok: true, emailOk: result.emailOk };

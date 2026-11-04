@@ -82,21 +82,21 @@ export function AuthorsScreen() {
     const person = contributors.find((r) => r.id === id);
     if (!person) return;
     const result = await adminSwal.confirm(
-      'Remove account?',
-      `${person.name} will be deactivated and receive a removal email. Articles they authored stay on the site.`,
-      'Remove',
+      'Delete account permanently?',
+      `${person.name} (${person.email}) will be deleted from the database and can no longer sign in. Their articles stay on the site under another staff account. This cannot be undone.`,
+      'Delete',
     );
     if (!result.isConfirmed) return;
     const api = await deleteAuthor(id);
     if (!api.ok) {
-      await adminSwal.error('Could not remove account', api.error || 'Please try again.');
+      await adminSwal.error('Could not delete account', api.error || 'Please try again.');
       return;
     }
     await adminSwal.success(
-      'Account removed',
+      'Account deleted',
       api.emailOk === false
-        ? `${person.name} removed, but the notification email could not be sent.`
-        : person.name,
+        ? `${person.name} was deleted, but the notification email could not be sent.`
+        : `${person.name} was removed from the database.`,
     );
   };
 
@@ -359,7 +359,7 @@ export function AuthorsScreen() {
                         { label: 'Edit profile', onClick: () => router.push(adminPath('staff-profiles')) },
                         { label: 'Copy email', onClick: () => { void navigator.clipboard.writeText(c.email); void adminSwal.success('Copied', c.email); } },
                         { label: 'Send email', onClick: () => { window.location.href = `mailto:${c.email}`; } },
-                        { label: 'Remove account', onClick: () => void removeAuthor(c.id), danger: true },
+                        { label: 'Delete permanently', onClick: () => void removeAuthor(c.id), danger: true },
                       ]}
                     />
                   </td>

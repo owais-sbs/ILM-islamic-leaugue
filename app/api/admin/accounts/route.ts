@@ -298,13 +298,116 @@ export async function PATCH(req: Request) {
   let emailOk = false;
 
   if (action === 'delete') {
-    // Soft-delete: deactivate profile and ban auth user so articles FK stay valid
-    await admin.from('profiles').update({ is_active: false }).eq('id', profile.id);
-    try {
-      await admin.auth.admin.updateUserById(profile.id, { ban_duration: '876000h' });
-    } catch {
-      /* ban optional */
+    // Hard-delete: reassign owned articles, drop account mapping, then remove auth user
+    // (profiles cascade from auth.users). Articles.author_id is ON DELETE RESTRICT.
+    if (access.userId && access.userId === profile.id) {
+      return NextResponse.json(
+        { ok: false, error: 'You cannot delete the account you are signed in with.' },
+        { status: 400 },
+      );
     }
+
+    const { data: fallback } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('role', 'admin')
+      .eq('is_active', true)
+      .neq('id', profile.id)
+      .order('full_name', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    let fallbackAuthorId = fallback?.id || access.userId || null;
+    if (!fallbackAuthorId) {
+      const { data: anyOther } = await admin
+        .from('profiles')
+        .select('id')
+        .neq('id', profile.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      fallbackAuthorId = anyOther?.id || null;
+    }
+
+    if (fallbackAuthorId) {
+      const { error: reassignError } = await admin
+        .from('articles')
+        .update({ author_id: fallbackAuthorId })
+        .eq('author_id', profile.id);
+      if (reassignError) {
+        return NextResponse.json(
+          { ok: false, error: `Could not reassign articles before delete: ${reassignError.message}` },
+          { status: 500 },
+        );
+      }
+    } else {
+      const { count } = await admin
+        .from('articles')
+        .select('id', { count: 'exact', head: true })
+        .eq('author_id', profile.id);
+      if ((count || 0) > 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              'This account still has articles and no other active staff member exists to reassign them to.',
+          },
+          { status: 409 },
+        );
+      }
+    }
+
+    // Clear optional FKs that might still block deletion on older schemas
+    await admin.from('questions').update({ assigned_to: null }).eq('assigned_to', profile.id);
+    await admin.from('media').update({ uploaded_by: null }).eq('uploaded_by', profile.id);
+    await admin.from('activity_log').update({ actor_id: null }).eq('actor_id', profile.id);
+    await admin.from('articles').update({ approved_by: null }).eq('approved_by', profile.id);
+
+    const { data: accountRow } = await admin
+      .from('account')
+      .select('id')
+      .eq('auth_user_id', profile.id)
+      .maybeSingle();
+    if (accountRow?.id) {
+      await admin.from('role_mapping').delete().eq('account_id', accountRow.id);
+      await admin.from('account').delete().eq('id', accountRow.id);
+    }
+
+    // Remove from staff_profiles CMS document if present
+    const { data: staffSetting } = await admin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'staff_profiles')
+      .maybeSingle();
+    if (Array.isArray(staffSetting?.value)) {
+      const nextProfiles = (staffSetting.value as Array<Record<string, unknown>>).filter((entry) => {
+        const entryId = String(entry.id || '');
+        const entryEmail = String(entry.email || '').toLowerCase();
+        return entryId !== profile.id && entryEmail !== String(profile.email || '').toLowerCase();
+      });
+      if (nextProfiles.length !== (staffSetting.value as unknown[]).length) {
+        await admin.from('site_settings').upsert(
+          { key: 'staff_profiles', value: nextProfiles },
+          { onConflict: 'key' },
+        );
+      }
+    }
+
+    const { error: deleteAuthError } = await admin.auth.admin.deleteUser(profile.id);
+    if (deleteAuthError) {
+      // Fallback: if auth user already gone, try deleting the orphaned profile row
+      const { error: profileDeleteError } = await admin.from('profiles').delete().eq('id', profile.id);
+      if (profileDeleteError) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: deleteAuthError.message || profileDeleteError.message || 'Could not delete account',
+          },
+          { status: 500 },
+        );
+      }
+    }
+
     try {
       const mail = accountDeletedEmail({ fullName: profile.full_name || '', email: profile.email });
       const sent = await sendMail({ to: profile.email, ...mail });
@@ -312,7 +415,7 @@ export async function PATCH(req: Request) {
     } catch {
       emailOk = false;
     }
-    return NextResponse.json({ ok: true, action: 'delete', id: profile.id, emailOk });
+    return NextResponse.json({ ok: true, action: 'delete', id: profile.id, emailOk, hardDeleted: true });
   }
 
   const nextActive = action === 'activate';
