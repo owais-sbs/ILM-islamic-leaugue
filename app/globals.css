@@ -50,7 +50,9 @@
   body {
     @apply bg-ilm-cream text-ilm-ink antialiased;
     margin: 0;
-    font-family: var(--font-sans), Inter, Arial, Helvetica, sans-serif;
+    /* The var() fallback keeps a sans-serif stack if next/font could not load Inter
+       (otherwise the whole rule is dropped and the browser shows Times New Roman). */
+    font-family: var(--font-sans, Inter, Arial, Helvetica, sans-serif);
     -webkit-font-smoothing: antialiased;
     min-width: 0;
     overflow-x: hidden;
@@ -86,7 +88,7 @@
 }
 
 .font-serif {
-  font-family: var(--font-serif), 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-serif, 'Playfair Display', Georgia, 'Times New Roman', serif);
 }
 
 .font-serif em {

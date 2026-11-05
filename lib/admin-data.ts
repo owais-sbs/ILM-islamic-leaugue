@@ -83,6 +83,7 @@ export interface Contributor {
   focus?: 'Studies' | 'Fiqh' | 'Spiritual' | 'Arabic';
   accent?: string;              // CSS classes e.g. "bg-sky-100 text-sky-700"
   showInDirectory?: boolean;    // true → appears in Murabbiyūn section on homepage
+  directoryId?: string;         // built-in Murabbiyūn profile slug this account fills in
 }
 
 export interface Subscriber {

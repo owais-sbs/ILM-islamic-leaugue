@@ -142,7 +142,7 @@ interface Store {
   toggleAuthorActive: (id: string, active: boolean) => Promise<{ ok: boolean; error?: string; emailOk?: boolean }>;
   deleteAuthor: (id: string) => Promise<{ ok: boolean; error?: string; emailOk?: boolean }>;
   syncAuthors: () => Promise<void>;
-  updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>, fallback?: Contributor) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
+  updateContributorProfile: (id: string, patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory' | 'directoryId'>>, fallback?: Contributor) => Promise<{ ok: boolean; localOnly?: boolean; error?: string }>;
   markNoticeRead: (id: string) => void;
   markAllNoticesRead: (role: Role, authorName?: string) => void;
   addMedia: (item: Omit<MediaItem, 'id' | 'createdAt'>, id?: string) => MediaItem | null;
@@ -1489,7 +1489,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const updateContributorProfile = useCallback(
     async (
       id: string,
-      patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory'>>,
+      patch: Partial<Pick<Contributor, 'staffTitle' | 'bio' | 'biography' | 'focus' | 'accent' | 'image' | 'showInDirectory' | 'directoryId'>>,
       fallback?: Contributor,
     ) => {
       let response: Response;

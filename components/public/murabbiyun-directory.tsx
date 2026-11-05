@@ -3,16 +3,14 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, GraduationCap, Sparkles, UserRound } from 'lucide-react';
-import { murabbiFilters, murabbiyūn, type Murabbi, type MurabbiFilter } from '@/lib/public-data';
+import { murabbiFilters, type MurabbiFilter } from '@/lib/public-data';
 import type { CMDirectory } from '@/lib/content-manager/types';
 import { useContentManager } from '@/lib/content-manager/useContentManager';
-import { useIlm } from '@/lib/ilm-store';
-import { safeScholarImage } from '@/lib/images';
+import { orderMurabbiyun, usePublicMurabbiyun } from '@/lib/murabbiyun';
 import { FilterPills, ViewToggle } from './library-explorer';
 import { ScrollReveal, StaggerChild, StaggerIn } from './scroll-reveal';
 import { GeometricOrnament } from './brand';
 import { cn } from '@/lib/utils';
-import type { Contributor } from '@/lib/admin-data';
 
 const focusIcon = {
   Studies: GraduationCap,
@@ -21,63 +19,22 @@ const focusIcon = {
   Arabic: BookOpen,
 };
 
-/** Convert a Contributor with showInDirectory=true into a Murabbi-compatible shape */
-function contributorToMurabbi(c: Contributor): Murabbi {
-  return {
-    id: c.id,
-    name: c.name,
-    role: c.staffTitle || '',
-    bio: c.bio || `${c.name} is a contributor at ILM.`,
-    biography: c.biography?.length ? c.biography : [c.bio || `${c.name} is a contributor at ILM.`],
-    madhhab: (c.madhhab as Murabbi['madhhab']) || undefined,
-    focus: c.focus,
-    image: safeScholarImage(c.image),
-    accent: c.accent || 'bg-sky-100 text-sky-700',
-    sections: [],
-  };
-}
-
 export function MurabbiyunDirectory({ compact = false }: { compact?: boolean }) {
   const cm = useContentManager();
   const dir: CMDirectory = cm.directory;
-  const { contributors } = useIlm();
+  const { list: murabbiyun } = usePublicMurabbiyun();
 
   const [filter, setFilter] = useState<MurabbiFilter>('All');
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const list = useMemo(() => {
-    const staticIds = new Set(murabbiyūn.map((person) => person.id));
-    const contributorsById = new Map(contributors.map((person) => [person.id, person]));
-
-    const staticMurabbis = murabbiyūn.flatMap((person) => {
-      const profile = contributorsById.get(person.id);
-      if (!profile) return [person];
-      if (!profile.active || !profile.showInDirectory) return [];
-      return [{ ...person, ...contributorToMurabbi(profile), sections: person.sections }];
-    });
-    const dynamicMurabbis: Murabbi[] = contributors
-      .filter((person) => person.showInDirectory && person.active && !staticIds.has(person.id))
-      .map(contributorToMurabbi);
-
-    const allMurabbis = [...staticMurabbis, ...dynamicMurabbis];
-
-    // 3. Apply CM visibility/order for configured ids; append unconfigured dynamic entries
-    const cmConfiguredIds = new Set(dir.murabbiyun.items.map((i) => i.id));
-    const ordered = dir.murabbiyun.items
-      .filter((ci) => ci.visible)
-      .sort((a, b) => a.order - b.order)
-      .map((ci) => allMurabbis.find((m) => m.id === ci.id))
-      .filter(Boolean) as Murabbi[];
-
-    const dynamicNotConfigured = dynamicMurabbis.filter((d) => !cmConfiguredIds.has(d.id));
-    const base = [...ordered, ...dynamicNotConfigured];
-
+    const base = orderMurabbiyun(murabbiyun, dir.murabbiyun.items);
     return base.filter((m) => {
       if (filter === 'All') return true;
       if (filter === 'Studies') return m.focus === 'Studies';
       return true;
     });
-  }, [filter, dir.murabbiyun.items, contributors]);
+  }, [filter, dir.murabbiyun.items, murabbiyun]);
 
   return (
     <section className="relative overflow-x-hidden pb-8">

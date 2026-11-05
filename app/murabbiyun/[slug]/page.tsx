@@ -3,9 +3,9 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { murabbiyūn, type MurabbiDetail, type Murabbi } from '@/lib/public-data';
+import type { MurabbiDetail, Murabbi } from '@/lib/public-data';
 import { useIlm } from '@/lib/ilm-store';
-import { safeScholarImage } from '@/lib/images';
+import { usePublicMurabbiyun } from '@/lib/murabbiyun';
 import { ArticleCard } from '@/components/public/article-card';
 import { AskQuestionModal } from '@/components/public/ask-question-modal';
 import { SiteFooter } from '@/components/public/site-footer';
@@ -77,35 +77,29 @@ function DetailBlock({ block }: { block: MurabbiDetail }) {
 
 export default function MurabbiProfilePage({ params }: { params: { slug: string } }) {
   const slug = params.slug;
-  const { publishedArticles, contributors } = useIlm();
+  const { publishedArticles } = useIlm();
+  const { list, aliases, loading } = usePublicMurabbiyun();
   const [askOpen, setAskOpen] = useState(false);
 
+  // Account ids linked to a built-in profile resolve to that profile.
   const person = useMemo((): Murabbi | null => {
-    const staticMatch = murabbiyūn.find((item) => item.id === slug);
-    const contributor = contributors.find((item) => item.id === slug);
-    if (!contributor) return staticMatch || null;
-    if (!contributor.active || !contributor.showInDirectory) return null;
-
-    return {
-      id: contributor.id,
-      name: contributor.name,
-      role: contributor.staffTitle || staticMatch?.role || '',
-      bio: contributor.bio || staticMatch?.bio || '',
-      biography: contributor.biography?.length
-        ? contributor.biography
-        : staticMatch?.biography || [contributor.bio || ''],
-      madhhab: (contributor.madhhab as Murabbi['madhhab']) || staticMatch?.madhhab,
-      focus: contributor.focus || staticMatch?.focus,
-      image: safeScholarImage(contributor.image || staticMatch?.image),
-      accent: contributor.accent || staticMatch?.accent || 'bg-sky-100 text-sky-700',
-      sections: staticMatch?.sections || [],
-    };
-  }, [slug, contributors]);
+    const id = aliases.get(slug) || slug;
+    return list.find((item) => item.id === id) || null;
+  }, [slug, list, aliases]);
 
   const works = useMemo(
-    () => publishedArticles.filter((a) => a.authorSlug === slug || a.author === person?.name),
-    [publishedArticles, slug, person?.name],
+    () => publishedArticles.filter((a) => a.authorSlug === slug || a.authorSlug === person?.id || a.author === person?.name),
+    [publishedArticles, slug, person?.id, person?.name],
   );
+
+  if (!person && loading) {
+    return (
+      <main className="flex min-h-[100svh] flex-col pt-28">
+        <SiteHeader active="murabbiyun" />
+        <div className="flex-1" />
+      </main>
+    );
+  }
 
   if (!person) {
     return (

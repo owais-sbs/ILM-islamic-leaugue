@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdminWrite } from '@/lib/supabase/admin-bridge';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/env';
+import { murabbiyūn as staticMurabbiyun } from '@/lib/public-data';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -68,6 +69,10 @@ export async function PUT(req: Request) {
   if (typeof input.showInDirectory !== 'boolean') {
     return NextResponse.json({ ok: false, error: 'Directory visibility is required' }, { status: 400 });
   }
+  const directoryId = typeof input.directoryId === 'string' ? input.directoryId.trim() : '';
+  if (directoryId && !staticMurabbiyun.some((m) => m.id === directoryId)) {
+    return NextResponse.json({ ok: false, error: 'Unknown linked directory profile' }, { status: 400 });
+  }
 
   const profile = {
     id,
@@ -78,6 +83,7 @@ export async function PUT(req: Request) {
     accent: input.accent,
     image: input.image,
     showInDirectory: input.showInDirectory,
+    directoryId,
   };
 
   const { data: current, error: readError } = await access.admin

@@ -8,6 +8,7 @@ import {
 import { useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
 import { safeScholarImage } from '@/lib/images';
+import { staticMurabbiIds, staticMurabbiOptions } from '@/lib/murabbiyun';
 import { roleLabels, type Contributor, type Role } from '@/lib/admin-data';
 import { Reveal } from './reveal';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ type EditState = {
   accent: string;
   image: string;
   showInDirectory: boolean;
+  directoryId: string;
 };
 
 function defaultEdit(c: Contributor): EditState {
@@ -43,6 +45,7 @@ function defaultEdit(c: Contributor): EditState {
     accent: c.accent ?? ACCENT_OPTIONS[0].value,
     image: c.image ?? '',
     showInDirectory: c.showInDirectory ?? false,
+    directoryId: c.directoryId ?? '',
   };
 }
 
@@ -130,6 +133,7 @@ export function StaffProfilesScreen() {
       accent: draft.accent,
       image: draft.image,
       showInDirectory: draft.showInDirectory,
+      directoryId: draft.directoryId,
     };
     const result = await updateContributorProfile(c.id, patch, c);
     setSaving(false);
@@ -369,6 +373,24 @@ export function StaffProfilesScreen() {
                         {FOCUS_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
                       </select>
                     </div>
+
+                    {/* Link to a built-in directory profile */}
+                    {!staticMurabbiIds.has(c.id) && (
+                      <div className="sm:col-span-2">
+                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-[0.12em] text-ilm-navy/40">
+                          Existing directory profile{' '}
+                          <span className="font-normal text-ilm-navy/30">(pick one if this account belongs to a murabbi already on the site)</span>
+                        </label>
+                        <select
+                          value={draft.directoryId}
+                          onChange={(e) => setDraft({ ...draft, directoryId: e.target.value })}
+                          className="w-full rounded-lg border border-ilm-navy/10 bg-ilm-cream px-3 py-2 text-sm outline-none"
+                        >
+                          <option value="">— none: show as a new murabbi —</option>
+                          {staticMurabbiOptions.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                      </div>
+                    )}
 
                     {/* Short bio */}
                     <div className="sm:col-span-2">

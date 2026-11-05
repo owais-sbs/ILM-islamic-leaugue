@@ -26,6 +26,7 @@ type Body = {
   madhhab?: string;
   bio?: string;
   staffTitle?: string;
+  showInDirectory?: boolean;
 };
 
 
@@ -222,6 +223,30 @@ export async function POST(req: Request) {
     madhhab,
     bio,
   });
+
+  // New authors are murabbiyūn: list them on the public directory unless the form opted out.
+  if (payload.showInDirectory && profileRole === 'author') {
+    const { data: current } = await admin.from('site_settings').select('value').eq('key', 'staff_profiles').maybeSingle();
+    const entries = Array.isArray(current?.value) ? (current!.value as Array<Record<string, unknown>>) : [];
+    const entry = {
+      id: authUserId,
+      staffTitle: payload.staffTitle ? staffTitle : '',
+      bio: bio || '',
+      biography: bio ? [bio] : [],
+      focus: null,
+      accent: 'bg-sky-100 text-sky-700',
+      image: '',
+      showInDirectory: true,
+      directoryId: '',
+    };
+    const index = entries.findIndex((e) => e.id === authUserId);
+    if (index < 0) entries.push(entry);
+    else entries[index] = { ...entries[index], showInDirectory: true };
+    const { error: dirError } = await admin
+      .from('site_settings')
+      .upsert({ key: 'staff_profiles', value: entries }, { onConflict: 'key' });
+    if (dirError) console.error('[accounts] could not add directory profile', dirError.message);
+  }
 
   const mail = accountWelcomeEmail({
     appName: siteConfig.fullName,

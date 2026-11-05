@@ -38,6 +38,7 @@ export function AuthorsScreen() {
   const [madhhab, setMadhhab] = useState<string>('Hanafi');
   const [staffTitle, setStaffTitle] = useState('');
   const [bio, setBio] = useState('');
+  const [showInDirectory, setShowInDirectory] = useState(true);
 
   useEffect(() => {
     void syncAuthors();
@@ -50,6 +51,7 @@ export function AuthorsScreen() {
     setMadhhab('Hanafi');
     setStaffTitle('');
     setBio('');
+    setShowInDirectory(true);
     setOpen(false);
   };
 
@@ -115,6 +117,7 @@ export function AuthorsScreen() {
           madhhab,
           bio: bio || undefined,
           staffTitle: staffTitle || undefined,
+          showInDirectory: role === 'author' && showInDirectory,
         }),
       });
       const json = (await res.json()) as {
@@ -250,9 +253,17 @@ export function AuthorsScreen() {
                 className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3 py-2.5 text-sm outline-none focus:border-ilm-gold" />
             </label>
 
+            {role === 'author' && (
+              <label className="sm:col-span-2 flex items-center gap-2 text-sm text-ilm-navy">
+                <input type="checkbox" checked={showInDirectory} onChange={(e) => setShowInDirectory(e.target.checked)}
+                  className="h-4 w-4 accent-ilm-navy" />
+                Show on the public Murabbiyūn page
+              </label>
+            )}
+
             <p className="sm:col-span-2 text-[11px] text-ilm-navy/40">
               This creates a Supabase Auth user with a temporary password and sends a welcome email.
-              To upload a photo, set a full biography, or enable directory visibility, use{' '}
+              To upload a photo, write a full biography, or hide/show them in the directory, use{' '}
               <button type="button" className="font-semibold text-ilm-gold-deep underline-offset-2 hover:underline"
                 onClick={() => { resetForm(); router.push(adminPath('staff-profiles')); }}>
                 Staff Profiles

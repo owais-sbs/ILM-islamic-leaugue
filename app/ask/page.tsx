@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Send } from 'lucide-react';
-import { murabbiyūn } from '@/lib/public-data';
+import { usePublicMurabbiyun } from '@/lib/murabbiyun';
 import { useIlm } from '@/lib/ilm-store';
 import { useCMPages } from '@/lib/content-manager/useCMPages';
 import { publicSwal } from '@/lib/public-swal';
@@ -15,9 +15,10 @@ function AskForm() {
   const { askPage: c } = useCMPages();
   const searchParams = useSearchParams();
   const mentorSlug = searchParams.get('mentor') || '';
+  const { list: murabbiyūn, aliases } = usePublicMurabbiyun();
   const preselected = useMemo(
-    () => murabbiyūn.find((m) => m.id === mentorSlug)?.name || '',
-    [mentorSlug],
+    () => murabbiyūn.find((m) => m.id === (aliases.get(mentorSlug) || mentorSlug))?.name || '',
+    [mentorSlug, murabbiyūn, aliases],
   );
   const [preferredAuthor, setPreferredAuthor] = useState(preselected);
   const [busy, setBusy] = useState(false);
