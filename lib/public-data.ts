@@ -968,6 +968,18 @@ export const murabbiyūn: Murabbi[] = [
       },
     ],
   },
+  {
+    // Name only for now — title, bio and photo can be added later in Admin → Staff Profiles
+    // (link his login account to this profile) or here.
+    id: 'khalid-green',
+    name: 'Khalid Green',
+    role: '',
+    bio: '',
+    biography: [],
+    image: images.murabbiPortrait,
+    accent: 'bg-sky-100 text-sky-700',
+    sections: [],
+  },
 ];
 
 /** Home pillars mapped to the supplied tagline — wording from Opening Page Info only. */

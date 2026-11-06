@@ -20,12 +20,10 @@ writeFileSync(backup, JSON.stringify(cur?.value ?? null, null, 2));
 
 const entries = Array.isArray(cur?.value) ? cur.value : [];
 const links = {
-  'b39bc95d-aa3b-4e1f-8e75-17332a839e2d': 'abu-abbaad', // "Abu Abbaad"
-  '589df52a-99fa-4a69-8e7c-bc880c7d22c8': 'aqil-ingram', // "Aqil Ingram"
-  'b26d3bdb-3be4-42d9-921f-db6e4b4452af': 'hanif-fouse', // "hfouse"
-  'f384a28f-a71a-448b-870d-03ff68e5bbbd': 'ilir-aliji', // "Illr213"
-  '765868f6-da73-47cc-be7b-f1b6587f51b6': 'mujahid-keith', // "Ibnkeith"
-  'c1b6e06e-58f2-44a1-9db8-1b35893bc79b': '', // "Khalid" → new card
+  'c1b6e06e-58f2-44a1-9db8-1b35893bc79b': '', // "Khalid" → new card (no linked built-in profile)
+  // Other logins can be linked to a built-in profile the same way, e.g.:
+  // '<account id>': 'hanif-fouse',
+  // Or use Admin → Staff Profiles → "Existing directory profile".
 };
 
 for (const [id, directoryId] of Object.entries(links)) {

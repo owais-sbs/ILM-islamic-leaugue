@@ -107,7 +107,7 @@ export function buildMurabbiyun(remote: DirectoryProfile[]) {
   const list = [...staticMurabbiyun.map((m) => m.id), ...dynamicIds]
     .filter((id) => !hidden.has(id))
     .map((id) => byId.get(id)!)
-    .map((m) => (m.biography.length ? m : { ...m, biography: [m.bio] }));
+    .map((m) => (m.biography.length || !m.bio ? m : { ...m, biography: [m.bio] }));
 
   return { list, aliases };
 }

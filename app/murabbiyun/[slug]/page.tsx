@@ -154,12 +154,16 @@ export default function MurabbiProfilePage({ params }: { params: { slug: string 
 
         {/* Right column — biography + sections + articles */}
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Biography</p>
-          <div className="mt-4 space-y-4 text-base leading-relaxed text-ilm-navy/70 sm:text-lg">
-            {person.biography.map((para) => (
-              <p key={para.slice(0, 48)}>{para}</p>
-            ))}
-          </div>
+          {person.biography.length > 0 && (
+            <>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ilm-gold-deep">Biography</p>
+              <div className="mt-4 space-y-4 text-base leading-relaxed text-ilm-navy/70 sm:text-lg">
+                {person.biography.map((para) => (
+                  <p key={para.slice(0, 48)}>{para}</p>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Rich sections (static murabbiyūn only) */}
           {person.sections.length > 0 && (
