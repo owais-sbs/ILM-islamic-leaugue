@@ -969,16 +969,111 @@ export const murabbiyūn: Murabbi[] = [
     ],
   },
   {
-    // Name only for now — title, bio and photo can be added later in Admin → Staff Profiles
-    // (link his login account to this profile) or here.
     id: 'khalid-green',
     name: 'Khalid Green',
-    role: '',
-    bio: '',
-    biography: [],
+    role: 'Khaṭīb',
+    bio: 'Khalid Green serves as a Khaṭīb at Al-Muqarrabun in Roy, New Mexico. His primary masjid-based activity is delivering the Friday khuṭbah, providing Islamic preaching, reminders, and religious instruction to the congregation.',
+    biography: [
+      'Khalid Green serves as a Khaṭīb at Al-Muqarrabun in Roy, New Mexico. His primary masjid-based activity is delivering the Friday khuṭbah, providing Islamic preaching, reminders, and religious instruction to the congregation.',
+      'Through the khuṭbah, Khalid contributes to the religious education of the Muslim community by addressing matters of faith, worship, Islamic character, and other subjects relevant to the lives of Muslims.',
+    ],
     image: images.murabbiPortrait,
     accent: 'bg-sky-100 text-sky-700',
-    sections: [],
+    sections: [
+      {
+        title: 'Khaṭīb',
+        blocks: [
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Masjid', value: 'Al-Muqarrabun' },
+              { label: 'Location', value: 'Roy, New Mexico' },
+              { label: 'Role', value: 'Khaṭīb' },
+              { label: 'Email', value: 'greenkhalid@gmail.com', href: 'mailto:greenkhalid@gmail.com' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Owner & Online Islamic Educator — Al-Athari',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Khalid is the owner of Al-Athari, an online Islamic educational platform hosted through Thinkific. The platform serves the Muslim community by providing Islamic courses in a structured online format.',
+              'His work through Al-Athari combines the responsibilities of operating the platform with the direct work of online Islamic education. The program makes Islamic instruction available to students who may not have consistent access to local classes or structured study in their area.',
+              'The educational work centers on offering courses, with online instruction forming a central part of the program. This allows students to study Islamic subjects remotely and benefit from organized lessons regardless of their geographic location.',
+              'Al-Athari also complements Khalid\'s work as a Khaṭīb. While the Friday khuṭbah provides direct instruction to a local congregation, the online platform gives him a means of extending Islamic education beyond his immediate community.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Educational Platform', value: 'Al-Athari' },
+              { label: 'Platform', value: 'al-athari.thinkific.com', href: 'https://al-athari.thinkific.com' },
+              { label: 'Role', value: 'Owner / Online Islamic Educator' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Supporting Al-Athari',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'The principal need identified for the educational program is financial support. Contributions can assist with maintaining the platform, developing educational material, and continuing to make Islamic courses available online.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              { label: 'Contact', value: 'greenkhalid@gmail.com', href: 'mailto:greenkhalid@gmail.com' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Social Media Influencer',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Khalid is active in digital Islamic education and social-media daʿwah, producing educational content intended to benefit Muslims through online media.',
+              'His digital content is primarily educational, using video and social-media platforms to make Islamic instruction available to a broader audience.',
+            ],
+          },
+        ],
+      },
+      {
+        title: 'YouTube',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Khalid maintains a dedicated YouTube channel under the name Khalid Green. The channel provides another avenue for distributing Islamic educational content and reaching Muslims beyond his local community.',
+            ],
+          },
+          {
+            type: 'meta',
+            entries: [
+              { label: 'YouTube', value: '@khalidgreen', href: 'https://youtube.com/@khalidgreen' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Supporting His Digital Daʿwah',
+        blocks: [
+          {
+            type: 'paragraphs',
+            text: [
+              'Financial contributions can help support the continued production and distribution of Khalid\'s Islamic educational content, including the resources needed to maintain an online presence and continue producing beneficial material for Muslims.',
+            ],
+          },
+        ],
+      },
+    ],
   },
 ];
 
