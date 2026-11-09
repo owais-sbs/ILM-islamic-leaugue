@@ -3,7 +3,7 @@ import { images, safeArticleImage } from '@/lib/images';
 import type { ArticleRow, ProfileRow, CategoryRow } from '@/types/database';
 
 type RemoteArticle = ArticleRow & {
-  profiles?: Pick<ProfileRow, 'full_name' | 'slug' | 'avatar_url'> | null;
+  profiles?: Pick<ProfileRow, 'full_name' | 'slug' | 'avatar_url' | 'email'> | null;
   categories?: Pick<CategoryRow, 'name' | 'slug'> | null;
 };
 
@@ -43,6 +43,8 @@ export function mapRemoteArticle(row: RemoteArticle, featured = false): Article 
     seoDescription: row.seo_description || row.excerpt || '',
     category,
     author: authorName,
+    authorId: row.author_id || undefined,
+    authorEmail: row.profiles?.email || undefined,
     authorSlug,
     authorInitials: initials(authorName),
     status: row.status,

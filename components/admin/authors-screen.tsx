@@ -31,6 +31,7 @@ export function AuthorsScreen() {
   const { contributors, addAuthor, toggleAuthorActive, deleteAuthor, syncAuthors } = useIlm();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -52,7 +53,22 @@ export function AuthorsScreen() {
     setStaffTitle('');
     setBio('');
     setShowInDirectory(true);
+    setEditingId(null);
     setOpen(false);
+  };
+
+  const openEdit = (id: string) => {
+    const person = contributors.find((r) => r.id === id);
+    if (!person) return;
+    setEditingId(id);
+    setName(person.name);
+    setEmail(person.email);
+    setRole(person.role);
+    setMadhhab(person.madhhab || 'Hanafi');
+    setStaffTitle(person.staffTitle || '');
+    setBio(person.bio || '');
+    setShowInDirectory(person.showInDirectory !== false);
+    setOpen(true);
   };
 
   const toggleActive = async (id: string) => {
@@ -106,6 +122,34 @@ export function AuthorsScreen() {
     e.preventDefault();
     setBusy(true);
     try {
+      if (editingId) {
+        const res = await fetch('/api/admin/accounts', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            id: editingId,
+            fullName: name,
+            role,
+            roleId: roleIdByUi[role],
+            madhhab,
+            bio: bio || '',
+            staffTitle: staffTitle || '',
+            credentials: staffTitle || '',
+            showInDirectory: role === 'author' && showInDirectory,
+          }),
+        });
+        const json = (await res.json()) as { ok?: boolean; error?: string };
+        if (!res.ok || !json.ok) {
+          await adminSwal.error('Could not update account', json.error || 'Request failed');
+          return;
+        }
+        await syncAuthors();
+        await adminSwal.success('Profile updated', `${name} was saved to Supabase.`);
+        resetForm();
+        return;
+      }
+
       const res = await fetch('/api/admin/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -191,7 +235,7 @@ export function AuthorsScreen() {
         <div className="mb-6 rounded-2xl border border-ilm-navy/10 bg-white p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <p className="inline-flex items-center gap-2 text-sm font-semibold text-ilm-navy">
-              <UserPlus size={16} /> New account
+              <UserPlus size={16} /> {editingId ? 'Edit account' : 'New account'}
             </p>
             <button type="button" onClick={resetForm} className="text-ilm-navy/40 hover:text-ilm-navy" aria-label="Close">
               <X size={16} />
@@ -209,9 +253,15 @@ export function AuthorsScreen() {
             {/* Email */}
             <label className="block text-sm">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-ilm-navy/45">Email *</span>
-              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={Boolean(editingId)}
                 placeholder="author@ilm.org"
-                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3 py-2.5 text-sm outline-none focus:border-ilm-gold" />
+                className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-3 py-2.5 text-sm outline-none focus:border-ilm-gold disabled:opacity-60"
+              />
             </label>
 
             {/* Role */}
@@ -261,19 +311,21 @@ export function AuthorsScreen() {
               </label>
             )}
 
-            <p className="sm:col-span-2 text-[11px] text-ilm-navy/40">
-              This creates a Supabase Auth user with a temporary password and sends a welcome email.
-              To upload a photo, write a full biography, or hide/show them in the directory, use{' '}
-              <button type="button" className="font-semibold text-ilm-gold-deep underline-offset-2 hover:underline"
-                onClick={() => { resetForm(); router.push(adminPath('staff-profiles')); }}>
-                Staff Profiles
-              </button>.
-            </p>
+            {!editingId && (
+              <p className="sm:col-span-2 text-[11px] text-ilm-navy/40">
+                This creates a Supabase Auth user with a temporary password and sends a welcome email.
+                To upload a photo or write a full biography, use{' '}
+                <button type="button" className="font-semibold text-ilm-gold-deep underline-offset-2 hover:underline"
+                  onClick={() => { resetForm(); router.push(adminPath('staff-profiles')); }}>
+                  Staff Profiles
+                </button>.
+              </p>
+            )}
 
             <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
               <button type="submit" disabled={busy}
                 className="rounded-full bg-ilm-navy px-5 py-2 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-60">
-                {busy ? 'Creating…' : 'Create account'}
+                {busy ? (editingId ? 'Saving…' : 'Creating…') : editingId ? 'Save changes' : 'Create account'}
               </button>
               <button type="button" onClick={resetForm}
                 className="rounded-full border border-ilm-navy/15 px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy">
@@ -367,7 +419,8 @@ export function AuthorsScreen() {
                       label={`Actions for ${c.name}`}
                       items={[
                         { label: c.active ? 'Deactivate' : 'Activate', onClick: () => void toggleActive(c.id) },
-                        { label: 'Edit profile', onClick: () => router.push(adminPath('staff-profiles')) },
+                        { label: 'Edit account', onClick: () => openEdit(c.id) },
+                        { label: 'Staff Profiles', onClick: () => router.push(adminPath('staff-profiles')) },
                         { label: 'Copy email', onClick: () => { void navigator.clipboard.writeText(c.email); void adminSwal.success('Copied', c.email); } },
                         { label: 'Send email', onClick: () => { window.location.href = `mailto:${c.email}`; } },
                         { label: 'Delete permanently', onClick: () => void removeAuthor(c.id), danger: true },

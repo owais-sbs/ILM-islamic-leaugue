@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, CheckCircle2, FileText, MailQuestion, TrendingUp, Users } from 'lucide-react';
-import type { Article, Role } from '@/lib/admin-data';
+import { articleOwnedBy, type Article, type Role } from '@/lib/admin-data';
 import { useIlm } from '@/lib/ilm-store';
 import { StaggerContainer, StaggerItem, Reveal } from './reveal';
 import { StatusPill } from './status-pill';
@@ -17,7 +17,7 @@ export function DashboardScreen({
 }) {
   const { questions, contributors, subscribers, profiles } = useIlm();
   const profile = profiles[role];
-  const mine = articles.filter((a) => a.author === profile.name);
+  const mine = articles.filter((a) => articleOwnedBy(a, profile));
   const pool = role === 'author' ? mine : articles;
   const published = articles.filter((a) => a.status === 'published');
   const submitted = articles.filter((a) => a.status === 'submitted');
@@ -182,7 +182,7 @@ export function DashboardScreen({
                 {contributors
                   .filter((c) => c.role === 'author' && !c.directoryOnly)
                   .map((c) => {
-                    const count = articles.filter((a) => a.author === c.name).length;
+                    const count = articles.filter((a) => articleOwnedBy(a, c)).length;
                     return (
                       <div key={c.id} className="flex items-center gap-4">
                         <div className="grid h-8 w-8 place-items-center rounded-lg bg-ilm-cream font-serif text-[10px] text-ilm-navy/50">

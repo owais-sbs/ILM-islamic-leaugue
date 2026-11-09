@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Search, Trash2 } from 'lucide-react';
-import type { Article, ArticleStatus, Role } from '@/lib/admin-data';
+import { articleOwnedBy, type Article, type Role } from '@/lib/admin-data';
 import { StatusPill } from './status-pill';
 import { canEditArticle } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
@@ -14,6 +14,8 @@ export function ArticleTable({
   articles,
   role,
   userName,
+  userEmail,
+  userId,
   title,
   onPreview,
   onEdit,
@@ -22,6 +24,8 @@ export function ArticleTable({
   articles: Article[];
   role: Role;
   userName: string;
+  userEmail?: string;
+  userId?: string;
   title?: string;
   onPreview: (article: Article) => void;
   onEdit: (article: Article) => void;
@@ -29,6 +33,7 @@ export function ArticleTable({
 }) {
   const [filter, setFilter] = useState<(typeof statusFilters)[number]>('all');
   const [q, setQ] = useState('');
+  const owner = { name: userName, email: userEmail, id: userId };
 
   const filtered = useMemo(() => {
     return articles.filter((a) => {
@@ -43,7 +48,7 @@ export function ArticleTable({
 
   const canDelete = (article: Article) => {
     if (role === 'administrator' || role === 'editor') return true;
-    return article.author === userName && (article.status === 'draft' || article.status === 'returned');
+    return articleOwnedBy(article, owner) && (article.status === 'draft' || article.status === 'returned');
   };
 
   return (
@@ -90,7 +95,7 @@ export function ArticleTable({
             </thead>
             <tbody>
               {filtered.map((article) => {
-                const editable = canEditArticle(role, article, userName);
+                const editable = canEditArticle(role, article, owner);
                 return (
                   <tr key={article.id} className="border-b border-ilm-navy/5 last:border-0 hover:bg-ilm-cream/40">
                     <td className="px-5 py-4">
@@ -99,7 +104,9 @@ export function ArticleTable({
                         <p className="mt-1 max-w-[280px] truncate text-xs italic text-red-600/70">“{article.reviewNotes}”</p>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-sm text-ilm-navy/60">{article.author}</td>
+                    <td className="max-w-[180px] px-5 py-4 text-sm text-ilm-navy/60">
+                      <span className="line-clamp-2 break-words">{article.author}</span>
+                    </td>
                     <td className="hidden px-5 py-4 text-sm text-ilm-navy/50 md:table-cell">{article.category}</td>
                     <td className="px-5 py-4">
                       <StatusPill status={article.status as ArticleStatus} />

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Camera, Save } from 'lucide-react';
 import { Reveal } from './reveal';
-import type { Role } from '@/lib/admin-data';
+import { articleOwnedBy, type Role } from '@/lib/admin-data';
 import { roleLabels } from '@/lib/admin-data';
 import { useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
@@ -17,6 +17,7 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
   const [madhhab, setMadhhab] = useState(profile.madhhab);
   const [credentials, setCredentials] = useState(profile.credentials);
   const [image, setImage] = useState(profile.image);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setName(profile.name);
@@ -27,7 +28,9 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
     setImage(profile.image);
   }, [profile, role]);
 
-  const publishedCount = articles.filter((a) => a.author === profile.name && a.status === 'published').length;
+  const publishedCount = articles.filter(
+    (a) => a.status === 'published' && articleOwnedBy(a, { ...profile, name, email, id: profile.id }),
+  ).length;
   const initials =
     name
       .split(/\s+/)
@@ -40,6 +43,10 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
   const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 4.5 * 1024 * 1024) {
+      void adminSwal.error('Image too large', 'Please choose an image under 4.5 MB.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') setImage(reader.result);
@@ -52,15 +59,55 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
       await adminSwal.error('Missing fields', 'Name and email are required.');
       return;
     }
-    updateProfile(role, {
-      name: name.trim(),
-      email: email.trim(),
-      bio: bio.trim(),
-      madhhab,
-      credentials: credentials.trim(),
-      image,
-    });
-    await adminSwal.success('Profile saved', 'Your details are updated across the portal.');
+    setBusy(true);
+    try {
+      const res = await fetch('/api/account/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: name.trim(),
+          email: email.trim(),
+          bio: bio.trim(),
+          madhhab,
+          credentials: credentials.trim(),
+          avatarUrl: image || null,
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        profile?: {
+          id?: string;
+          name?: string;
+          email?: string;
+          bio?: string;
+          madhhab?: string;
+          credentials?: string;
+          image?: string;
+        };
+      };
+
+      if (!res.ok || !json.ok || !json.profile) {
+        await adminSwal.error('Could not save profile', json.error || 'Supabase update failed.');
+        return;
+      }
+
+      updateProfile(role, {
+        id: json.profile.id || profile.id,
+        name: json.profile.name || name.trim(),
+        email: json.profile.email || email.trim(),
+        bio: json.profile.bio || '',
+        madhhab: json.profile.madhhab || madhhab,
+        credentials: json.profile.credentials || '',
+        image: json.profile.image || undefined,
+      });
+      if (json.profile.image) setImage(json.profile.image);
+      await adminSwal.success('Profile saved', 'Your details are stored in Supabase and will persist after reload.');
+    } catch (err) {
+      await adminSwal.error('Network error', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -147,10 +194,11 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
             </div>
             <button
               type="button"
+              disabled={busy}
               onClick={() => void save()}
-              className="flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-ilm-navy-soft"
+              className="flex items-center gap-2 rounded-full bg-ilm-navy px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-ilm-navy-soft disabled:opacity-60"
             >
-              <Save size={14} /> Save Changes
+              <Save size={14} /> {busy ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>

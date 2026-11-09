@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu, Plus, X } from 'lucide-react';
-import { navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
+import { articleOwnedBy, navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
 import { adminPath, normalizeAdminSection, type AdminSection } from '@/lib/admin-routes';
 import { clearAdminRole, readAdminRole, writeAdminRole } from '@/lib/admin-session';
 import { canPublish, emptyArticle, useIlm } from '@/lib/ilm-store';
@@ -112,7 +112,7 @@ export function AdminShell() {
 
         const { data: liveProfile } = await supabase
           .from('profiles')
-          .select('full_name, email, role, bio, madhhab, credentials, avatar_url, is_active')
+          .select('id, full_name, email, role, bio, madhhab, credentials, avatar_url, is_active')
           .eq('id', uid)
           .maybeSingle();
 
@@ -134,12 +134,20 @@ export function AdminShell() {
           setRole(mappedRole);
           writeAdminRole(mappedRole);
           updateProfile(mappedRole, {
+            id: liveProfile.id || uid,
             name: liveProfile.full_name,
-            email: liveProfile.email || '',
+            email: liveProfile.email || data.user?.email || '',
             bio: liveProfile.bio || '',
             madhhab: liveProfile.madhhab || '',
             credentials: liveProfile.credentials || '',
             image: liveProfile.avatar_url || undefined,
+          });
+        } else if (data.user?.email) {
+          // Still track auth identity so ownership checks work before profile row exists
+          const fallbackRole = stored || 'author';
+          updateProfile(fallbackRole, {
+            id: uid,
+            email: data.user.email,
           });
         }
 
@@ -207,7 +215,9 @@ export function AdminShell() {
   const user = role && profile
     ? {
         ...roleUsers[role],
+        id: profile.id,
         name: profile.name,
+        email: profile.email,
         image: profile.image || roleUsers[role].image,
         initials: profile.name
           .split(/\s+/)
@@ -234,7 +244,7 @@ export function AdminShell() {
         }
         return questions.filter((q) => q.status === 'new' || q.status === 'author_ready').length;
       case 'my-articles':
-        return articles.filter((a) => a.author === user.name && a.status === 'returned').length;
+        return articles.filter((a) => articleOwnedBy(a, user) && a.status === 'returned').length;
       case 'articles':
         return role !== 'author' ? articles.filter((a) => a.status === 'submitted').length : 0;
       case 'create-article':
@@ -274,20 +284,25 @@ export function AdminShell() {
 
   const myNotices = useMemo(() => {
     if (!role || !user) return [];
-    return notices.filter((n) => n.role === role || n.role === 'all' || (n.role === 'author' && n.authorName === user.name));
+    return notices.filter(
+      (n) =>
+        n.role === role ||
+        n.role === 'all' ||
+        (n.role === 'author' && (n.authorName === user.name || n.authorName === user.email)),
+    );
   }, [notices, role, user]);
 
   const unread = myNotices.filter((n) => !n.read).length;
 
   const visibleArticles = useMemo(() => {
     if (!role || !user) return [];
-    if (role === 'author') return articles.filter((a) => a.author === user.name);
+    if (role === 'author') return articles.filter((a) => articleOwnedBy(a, user));
     return articles;
   }, [articles, role, user]);
 
   const myArticles = useMemo(() => {
     if (!user) return [];
-    return articles.filter((a) => a.author === user.name);
+    return articles.filter((a) => articleOwnedBy(a, user));
   }, [articles, user]);
 
   const ping = (msg: string) => {
@@ -380,6 +395,8 @@ export function AdminShell() {
             articles={myArticles}
             role={role}
             userName={user.name}
+            userEmail={user.email}
+            userId={user.id}
             onPreview={openPreview}
             onEdit={openEdit}
             onDelete={(a) => {
@@ -393,6 +410,8 @@ export function AdminShell() {
             articles={visibleArticles}
             role={role}
             userName={user.name}
+            userEmail={user.email}
+            userId={user.id}
             onPreview={openPreview}
             onEdit={openEdit}
             onDelete={(a) => {

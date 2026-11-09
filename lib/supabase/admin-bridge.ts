@@ -16,9 +16,11 @@ type AdminBridge =
  */
 export async function requireAdminWrite(opts?: {
   allowEditor?: boolean;
+  allowAuthor?: boolean;
   allowDemoBridge?: boolean;
 }): Promise<AdminBridge> {
   const allowEditor = opts?.allowEditor !== false;
+  const allowAuthor = opts?.allowAuthor === true;
   const allowDemoBridge = opts?.allowDemoBridge !== false;
 
   if (!isSupabaseConfigured() || !isSupabaseAdminConfigured()) {
@@ -59,11 +61,11 @@ export async function requireAdminWrite(opts?: {
     }
   }
 
-  if (role === 'admin' || (allowEditor && role === 'editor')) {
+  if (role === 'admin' || (allowEditor && role === 'editor') || (allowAuthor && role === 'author')) {
     return { ok: true, admin, userId, role, demoBridge: false };
   }
 
-  if (role && role !== 'admin' && role !== 'editor') {
+  if (role && role !== 'admin' && role !== 'editor' && !(allowAuthor && role === 'author')) {
     return {
       ok: false,
       response: NextResponse.json(
