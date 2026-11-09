@@ -6,7 +6,13 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Bell, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu, Plus, X } from 'lucide-react';
 import { articleOwnedBy, navConfig, roleLabels, roleUsers, type Article, type Role } from '@/lib/admin-data';
 import { adminPath, normalizeAdminSection, type AdminSection } from '@/lib/admin-routes';
-import { clearAdminRole, readAdminRole, writeAdminRole } from '@/lib/admin-session';
+import {
+  clearAdminRole,
+  mapDbRole,
+  readAdminAuthUserId,
+  readAdminRole,
+  writeAdminRole,
+} from '@/lib/admin-session';
 import { canPublish, emptyArticle, useIlm } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
 import { tryCreateClient } from '@/lib/supabase/client';
@@ -94,75 +100,139 @@ export function AdminShell() {
   }, [sectionParam, role, router]);
 
   useEffect(() => {
-    const stored = readAdminRole();
-    if (!stored) {
-      router.replace('/login');
-      return;
-    }
-    setRole(stored);
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+    const boundUserIdRef = { current: readAdminAuthUserId() };
+
+    const applySession = async (
+      uid: string,
+      email: string | undefined,
+      opts?: { announceSwitch?: boolean },
+    ) => {
+      const { tryCreateClient } = await import('@/lib/supabase/client');
+      const supabase = tryCreateClient();
+      if (!supabase) return;
+
+      const { data: liveProfile } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role, bio, madhhab, credentials, avatar_url, is_active')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (liveProfile?.is_active === false) {
+        clearAdminRole();
+        router.replace('/login');
+        return;
+      }
+
+      let nextRole = mapDbRole(liveProfile?.role);
+
+      const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, { cache: 'no-store' });
+      if (meRes.ok) {
+        const me = (await meRes.json()) as { mustChangePassword?: boolean; role?: Role | null };
+        if (me.role) nextRole = me.role;
+        if (me.mustChangePassword) {
+          router.replace('/change-password');
+          return;
+        }
+      }
+
+      if (!nextRole) {
+        clearAdminRole();
+        router.replace('/login');
+        return;
+      }
+
+      const switched =
+        Boolean(opts?.announceSwitch) &&
+        Boolean(boundUserIdRef.current) &&
+        boundUserIdRef.current !== uid;
+
+      boundUserIdRef.current = uid;
+      setRole(nextRole);
+      writeAdminRole(nextRole, uid);
+
+      if (liveProfile?.full_name) {
+        updateProfile(nextRole, {
+          id: liveProfile.id || uid,
+          name: liveProfile.full_name,
+          email: liveProfile.email || email || '',
+          bio: liveProfile.bio || '',
+          madhhab: liveProfile.madhhab || '',
+          credentials: liveProfile.credentials || '',
+          image: liveProfile.avatar_url || undefined,
+        });
+      } else if (email) {
+        updateProfile(nextRole, { id: uid, email });
+      }
+
+      if (switched) {
+        setFlash(
+          `This browser signed in as another account. Dashboard switched to ${roleLabels[nextRole]}. Use separate browser profiles to keep Author and Editor open at once.`,
+        );
+        setTimeout(() => setFlash(''), 6000);
+        setScreen('tab');
+        setActive(null);
+        router.replace(adminPath('dashboard'));
+      }
+    };
 
     void (async () => {
       try {
         const { tryCreateClient } = await import('@/lib/supabase/client');
         const supabase = tryCreateClient();
-        if (!supabase) return;
+        if (!supabase) {
+          const stored = readAdminRole();
+          if (!stored) router.replace('/login');
+          else setRole(stored);
+          return;
+        }
+
         const { data } = await supabase.auth.getUser();
         const uid = data.user?.id;
-        if (!uid) return;
-
-        const { data: liveProfile } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, role, bio, madhhab, credentials, avatar_url, is_active')
-          .eq('id', uid)
-          .maybeSingle();
-
-        if (liveProfile?.is_active === false) {
+        if (!uid) {
+          clearAdminRole();
           router.replace('/login');
           return;
         }
 
-        const mappedRole: Role | null =
-          liveProfile?.role === 'admin'
-            ? 'administrator'
-            : liveProfile?.role === 'editor'
-              ? 'editor'
-              : liveProfile?.role === 'author'
-                ? 'author'
-                : null;
-
-        if (mappedRole && liveProfile?.full_name) {
-          setRole(mappedRole);
-          writeAdminRole(mappedRole);
-          updateProfile(mappedRole, {
-            id: liveProfile.id || uid,
-            name: liveProfile.full_name,
-            email: liveProfile.email || data.user?.email || '',
-            bio: liveProfile.bio || '',
-            madhhab: liveProfile.madhhab || '',
-            credentials: liveProfile.credentials || '',
-            image: liveProfile.avatar_url || undefined,
-          });
-        } else if (data.user?.email) {
-          // Still track auth identity so ownership checks work before profile row exists
-          const fallbackRole = stored || 'author';
-          updateProfile(fallbackRole, {
-            id: uid,
-            email: data.user.email,
-          });
+        // Only reuse cached role when it belongs to this same auth user
+        const storedRole = readAdminRole();
+        const storedUid = readAdminAuthUserId();
+        if (storedRole && storedUid === uid) {
+          setRole(storedRole);
         }
 
-        const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, { cache: 'no-store' });
-        if (!meRes.ok) return;
-        const me = (await meRes.json()) as { mustChangePassword?: boolean; role?: Role | null };
-        if (me.role) {
-          setRole(me.role);
-          writeAdminRole(me.role);
-        }
-        if (me.mustChangePassword) router.replace('/change-password');
+        await applySession(uid, data.user?.email || undefined);
+        if (cancelled) return;
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          if (cancelled) return;
+          if (event === 'SIGNED_OUT') {
+            clearAdminRole();
+            router.replace('/login');
+            return;
+          }
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+            const nextUid = session?.user?.id;
+            if (!nextUid) return;
+            void applySession(nextUid, session.user.email || undefined, {
+              announceSwitch: nextUid !== boundUserIdRef.current,
+            });
+          }
+        });
+        unsubscribe = () => authListener.subscription.unsubscribe();
       } catch {
-        /* ignore */
+        if (!readAdminRole()) router.replace('/login');
       }
     })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [router, updateProfile]);
 
   useEffect(() => {
