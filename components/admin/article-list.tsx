@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Search, Trash2 } from 'lucide-react';
-import { articleOwnedBy, type Article, type Role } from '@/lib/admin-data';
+import { articleOwnedBy, type Article, type ArticleStatus, type Role } from '@/lib/admin-data';
 import { StatusPill } from './status-pill';
 import { canEditArticle } from '@/lib/ilm-store';
 import { adminSwal } from '@/lib/admin-swal';
