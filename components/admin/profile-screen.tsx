@@ -40,18 +40,71 @@ export function ProfileScreen({ role = 'author' }: { role?: Role }) {
       .join('')
       .toUpperCase() || 'IL';
 
+  const fileToJpegDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const max = 1024;
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const width = Math.max(1, Math.round(img.width * scale));
+          const height = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not process image'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error('Could not process image'));
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Could not read that image. Try JPG or PNG.'));
+      };
+      img.src = objectUrl;
+    });
+
   const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !file.type.startsWith('image/')) return;
     if (file.size > 4.5 * 1024 * 1024) {
       void adminSwal.error('Image too large', 'Please choose an image under 4.5 MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') setImage(reader.result);
-    };
-    reader.readAsDataURL(file);
+
+    // Convert AVIF/HEIC (and large photos) to JPEG so Supabase Storage accepts them
+    const needsConvert = /avif|heic|heif/i.test(file.type) || file.size > 1.5 * 1024 * 1024;
+    void (async () => {
+      try {
+        if (needsConvert) {
+          setImage(await fileToJpegDataUrl(file));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') setImage(reader.result);
+        };
+        reader.onerror = () => {
+          void adminSwal.error('Could not read image', 'Try JPG or PNG instead.');
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
+        await adminSwal.error(
+          'Image not supported',
+          err instanceof Error ? err.message : 'Try JPG or PNG instead of AVIF.',
+        );
+      }
+    })();
   };
 
   const save = async () => {

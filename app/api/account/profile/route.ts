@@ -6,6 +6,17 @@ import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const AVATAR_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/avif',
+  'image/heic',
+  'image/heif',
+];
+
 type Body = {
   fullName?: string;
   email?: string;
@@ -30,10 +41,29 @@ function parseDataUrl(dataUrl: string): { contentType: string; buffer: Buffer } 
   const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl);
   if (!match) return null;
   try {
-    return { contentType: match[1], buffer: Buffer.from(match[2], 'base64') };
+    return { contentType: match[1].toLowerCase(), buffer: Buffer.from(match[2], 'base64') };
   } catch {
     return null;
   }
+}
+
+async function ensureAvatarsBucket(admin: NonNullable<ReturnType<typeof tryCreateServiceClient>>) {
+  const { data: buckets } = await admin.storage.listBuckets();
+  const existing = buckets?.find((b) => b.name === 'avatars' || b.id === 'avatars');
+  if (!existing) {
+    await admin.storage.createBucket('avatars', {
+      public: true,
+      fileSizeLimit: 5242880,
+      allowedMimeTypes: AVATAR_MIME_TYPES,
+    });
+    return;
+  }
+  // Widen MIME allow-list so AVIF/HEIC uploads are accepted
+  await admin.storage.updateBucket('avatars', {
+    public: true,
+    fileSizeLimit: 5242880,
+    allowedMimeTypes: AVATAR_MIME_TYPES,
+  });
 }
 
 async function uploadAvatar(
@@ -51,31 +81,54 @@ async function uploadAvatar(
     throw new Error('Avatar exceeds 4.5 MB');
   }
 
-  const ext = parsed.contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+  const rawExt = parsed.contentType.split('/')[1] || 'jpg';
+  const ext = rawExt.replace('jpeg', 'jpg').replace('svg+xml', 'svg');
   const path = `${userId}/${Date.now()}.${ext}`;
 
-  const upload = await admin.storage.from('avatars').upload(path, parsed.buffer, {
+  await ensureAvatarsBucket(admin);
+
+  let upload = await admin.storage.from('avatars').upload(path, parsed.buffer, {
     contentType: parsed.contentType,
     upsert: true,
   });
 
-  if (upload.error) {
-    const missingBucket = /bucket|not found|does not exist/i.test(upload.error.message);
-    if (!missingBucket) throw new Error(upload.error.message);
-    await admin.storage.createBucket('avatars', {
-      public: true,
-      fileSizeLimit: 5242880,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-    });
-    const retry = await admin.storage.from('avatars').upload(path, parsed.buffer, {
-      contentType: parsed.contentType,
+  if (upload.error && /mime type|not supported|allowed/i.test(upload.error.message)) {
+    await ensureAvatarsBucket(admin);
+    upload = await admin.storage.from('avatars').upload(path, parsed.buffer, {
+      contentType: parsed.contentType === 'image/jpg' ? 'image/jpeg' : parsed.contentType,
       upsert: true,
     });
-    if (retry.error) throw new Error(retry.error.message);
+  }
+
+  if (upload.error) {
+    throw new Error(upload.error.message);
   }
 
   const { data: pub } = admin.storage.from('avatars').getPublicUrl(path);
   return pub.publicUrl;
+}
+
+async function resolveUniqueSlug(
+  admin: NonNullable<ReturnType<typeof tryCreateServiceClient>>,
+  userId: string,
+  fullName: string,
+  currentSlug: string | null | undefined,
+) {
+  const desired = slugify(fullName);
+  if (currentSlug && currentSlug === desired) return currentSlug;
+
+  const { data: clash } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('slug', desired)
+    .neq('id', userId)
+    .maybeSingle();
+
+  if (!clash) return desired;
+
+  // Another profile already owns this slug — keep current if set, else uniquify
+  if (currentSlug && currentSlug.trim()) return currentSlug;
+  return `${desired}-${userId.slice(0, 8)}`;
 }
 
 /** Persist the signed-in user's My Profile fields to Supabase. */
@@ -110,22 +163,40 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: false, error: 'Full name and a valid email are required' }, { status: 400 });
   }
 
+  const { data: existing } = await admin
+    .from('profiles')
+    .select('id, slug, avatar_url')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ ok: false, error: 'Profile not found' }, { status: 404 });
+  }
+
   let avatarPublicUrl: string | null | undefined = undefined;
   if (body.avatarUrl === null || body.avatarUrl === '') {
     avatarPublicUrl = null;
   } else if (typeof body.avatarUrl === 'string' && body.avatarUrl.trim()) {
-    try {
-      avatarPublicUrl = await uploadAvatar(admin, user.id, body.avatarUrl.trim());
-      if (!avatarPublicUrl) {
-        return NextResponse.json({ ok: false, error: 'Invalid avatar image' }, { status: 400 });
+    const incoming = body.avatarUrl.trim();
+    // Skip re-upload when the avatar URL is unchanged
+    if (existing.avatar_url && incoming === existing.avatar_url) {
+      avatarPublicUrl = existing.avatar_url;
+    } else {
+      try {
+        avatarPublicUrl = await uploadAvatar(admin, user.id, incoming);
+        if (!avatarPublicUrl) {
+          return NextResponse.json({ ok: false, error: 'Invalid avatar image' }, { status: 400 });
+        }
+      } catch (err) {
+        return NextResponse.json(
+          { ok: false, error: err instanceof Error ? err.message : 'Avatar upload failed' },
+          { status: 500 },
+        );
       }
-    } catch (err) {
-      return NextResponse.json(
-        { ok: false, error: err instanceof Error ? err.message : 'Avatar upload failed' },
-        { status: 500 },
-      );
     }
   }
+
+  const slug = await resolveUniqueSlug(admin, user.id, fullName, existing.slug);
 
   const profilePatch: Record<string, unknown> = {
     full_name: fullName,
@@ -133,7 +204,7 @@ export async function PATCH(req: Request) {
     bio: (body.bio || '').trim(),
     madhhab: (body.madhhab || '').trim() || null,
     credentials: (body.credentials || '').trim() || null,
-    slug: slugify(fullName),
+    slug,
     updated_at: new Date().toISOString(),
   };
   if (avatarPublicUrl !== undefined) {
