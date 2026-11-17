@@ -26,6 +26,7 @@ import {
   type UserProfile,
   type MediaItem,
   type SiteSettings,
+  articleOwnedBy,
 } from '@/lib/admin-data';
 
 const SEED_TAGS = [
@@ -601,6 +602,10 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   const syncArticleWorkflow = useCallback(
     (article: Article, action: 'submit' | 'approve' | 'return' | 'unpublish' | 'save', reviewNotes?: string) => {
       const minutes = Number.parseInt(String(article.readTime), 10) || 5;
+      const authorMatch =
+        contributors.find((c) => c.id && article.authorId && c.id === article.authorId) ||
+        contributors.find((c) => c.email && article.authorEmail && c.email.toLowerCase() === article.authorEmail.toLowerCase()) ||
+        contributors.find((c) => c.name === article.author);
       void fetch('/api/articles/workflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -618,10 +623,13 @@ export function IlmProvider({ children }: { children: ReactNode }) {
           readingMinutes: minutes,
           reviewNotes,
           status: article.status,
+          authorId: article.authorId || authorMatch?.id || undefined,
+          authorEmail: article.authorEmail || authorMatch?.email || undefined,
+          authorName: article.author,
         }),
       }).catch(() => undefined);
     },
-    [],
+    [contributors],
   );
 
   const saveArticle = useCallback(
@@ -651,6 +659,10 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       });
       if (next.status === 'published') {
         // Admin may save while published — keep content live via publish API
+        const authorMatch =
+          contributors.find((c) => c.id && next.authorId && c.id === next.authorId) ||
+          contributors.find((c) => c.email && next.authorEmail && c.email.toLowerCase() === next.authorEmail.toLowerCase()) ||
+          contributors.find((c) => c.name === next.author);
         void fetch('/api/articles/publish', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -665,6 +677,9 @@ export function IlmProvider({ children }: { children: ReactNode }) {
             category: next.category,
             image: next.image,
             readingMinutes: Number.parseInt(String(next.readTime), 10) || 5,
+            authorId: next.authorId || authorMatch?.id || undefined,
+            authorEmail: next.authorEmail || authorMatch?.email || undefined,
+            authorName: next.author,
           }),
         }).catch(() => undefined);
       } else {
@@ -681,7 +696,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [articles, log, notify, syncArticleWorkflow],
+    [articles, contributors, log, notify, syncArticleWorkflow],
   );
 
   const submitArticle = useCallback(
@@ -771,7 +786,12 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       void (async () => {
         try {
           const minutes = Number.parseInt(String(article.readTime), 10) || 5;
-          const authorMatch = contributors.find((c) => c.name === article.author);
+          const authorMatch =
+            contributors.find((c) => c.id && article.authorId && c.id === article.authorId) ||
+            contributors.find(
+              (c) => c.email && article.authorEmail && c.email.toLowerCase() === article.authorEmail.toLowerCase(),
+            ) ||
+            contributors.find((c) => c.name === article.author);
           await fetch('/api/articles/publish', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -786,7 +806,8 @@ export function IlmProvider({ children }: { children: ReactNode }) {
               category: article.category,
               image: article.image,
               readingMinutes: minutes,
-              authorEmail: authorMatch?.email || undefined,
+              authorId: article.authorId || authorMatch?.id || undefined,
+              authorEmail: article.authorEmail || authorMatch?.email || undefined,
               authorName: article.author,
             }),
           });
@@ -1656,6 +1677,10 @@ export function emptyArticle(role: Role, profile?: UserProfile): Article {
       .map((p) => p[0])
       .join('')
       .toUpperCase() || user.initials;
+  const slugBase = (profile?.name || user.slug || 'author')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   return {
     id: `a${Date.now()}`,
     title: '',
@@ -1667,7 +1692,9 @@ export function emptyArticle(role: Role, profile?: UserProfile): Article {
     seoDescription: '',
     category: 'Islamic Education',
     author: name,
-    authorSlug: user.slug,
+    authorId: profile?.id,
+    authorEmail: profile?.email || undefined,
+    authorSlug: slugBase || user.slug,
     authorInitials: initials,
     status: 'draft',
     date: shortDate(),
@@ -1678,9 +1705,14 @@ export function emptyArticle(role: Role, profile?: UserProfile): Article {
   };
 }
 
-export function canEditArticle(role: Role, article: Article, userName: string) {
+export function canEditArticle(
+  role: Role,
+  article: Article,
+  user: string | { name?: string; email?: string; id?: string },
+) {
   if (role === 'editor' || role === 'administrator') return true;
-  return article.author === userName;
+  if (typeof user === 'string') return article.author === user;
+  return articleOwnedBy(article, user);
 }
 
 export function canApprove(role: Role) {

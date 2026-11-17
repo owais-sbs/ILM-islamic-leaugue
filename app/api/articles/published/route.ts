@@ -29,7 +29,7 @@ export async function GET() {
     .select(
       `
       *,
-      profiles:author_id ( full_name, slug, avatar_url ),
+      profiles:author_id ( full_name, slug, avatar_url, email ),
       categories:category_id ( name, slug )
     `,
     )

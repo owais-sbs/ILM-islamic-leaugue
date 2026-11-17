@@ -290,7 +290,16 @@ type PatchBody = {
   id?: string;
   email?: string;
   active?: boolean;
-  action?: 'activate' | 'deactivate' | 'delete';
+  action?: 'activate' | 'deactivate' | 'delete' | 'update';
+  fullName?: string;
+  bio?: string;
+  madhhab?: string;
+  credentials?: string;
+  staffTitle?: string;
+  role?: Role;
+  roleId?: number;
+  avatarUrl?: string | null;
+  showInDirectory?: boolean;
 };
 
 export async function PATCH(req: Request) {
@@ -306,11 +315,11 @@ export async function PATCH(req: Request) {
   }
 
   const action = payload.action || (payload.active === false ? 'deactivate' : payload.active === true ? 'activate' : '');
-  if (!action || !['activate', 'deactivate', 'delete'].includes(action)) {
-    return NextResponse.json({ ok: false, error: 'action must be activate, deactivate, or delete' }, { status: 400 });
+  if (!action || !['activate', 'deactivate', 'delete', 'update'].includes(action)) {
+    return NextResponse.json({ ok: false, error: 'action must be activate, deactivate, delete, or update' }, { status: 400 });
   }
 
-  let profileQuery = admin.from('profiles').select('id, email, full_name, is_active');
+  let profileQuery = admin.from('profiles').select('id, email, full_name, is_active, role, bio, madhhab, credentials, avatar_url');
   if (payload.id) profileQuery = profileQuery.eq('id', payload.id);
   else if (payload.email) profileQuery = profileQuery.ilike('email', payload.email.trim().toLowerCase());
   else return NextResponse.json({ ok: false, error: 'id or email required' }, { status: 400 });
@@ -321,6 +330,96 @@ export async function PATCH(req: Request) {
 
   const loginUrl = `${getPublicSiteUrl()}/login`;
   let emailOk = false;
+
+  if (action === 'update') {
+    const fullName = (payload.fullName || profile.full_name || '').trim().slice(0, 120);
+    if (!fullName) {
+      return NextResponse.json({ ok: false, error: 'Full name is required' }, { status: 400 });
+    }
+
+    const roleId = roleIdFromUi(payload.role, payload.roleId);
+    const { data: roleRow } = await admin.from('role_master').select('id, role_name').eq('id', roleId).maybeSingle();
+    const profileRole = roleRow ? toProfileRole(String(roleRow.role_name)) : toProfileRole(String(profile.role || 'author'));
+
+    const patch: Record<string, unknown> = {
+      full_name: fullName,
+      bio: typeof payload.bio === 'string' ? payload.bio.trim() : profile.bio,
+      madhhab: typeof payload.madhhab === 'string' ? payload.madhhab.trim() : profile.madhhab,
+      credentials:
+        typeof payload.credentials === 'string'
+          ? payload.credentials.trim()
+          : typeof payload.staffTitle === 'string'
+            ? payload.staffTitle.trim()
+            : profile.credentials,
+      role: profileRole,
+      slug: slugify(fullName),
+      updated_at: new Date().toISOString(),
+    };
+    if (typeof payload.avatarUrl === 'string') {
+      patch.avatar_url = payload.avatarUrl.trim() || null;
+    } else if (payload.avatarUrl === null) {
+      patch.avatar_url = null;
+    }
+
+    const { error: updateError } = await admin.from('profiles').update(patch).eq('id', profile.id);
+    if (updateError) return NextResponse.json({ ok: false, error: updateError.message }, { status: 500 });
+
+    await admin
+      .from('account')
+      .update({
+        full_name: fullName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('auth_user_id', profile.id);
+
+    if (roleRow) {
+      const { data: accountRow } = await admin.from('account').select('id').eq('auth_user_id', profile.id).maybeSingle();
+      if (accountRow?.id) {
+        await admin.from('role_mapping').delete().eq('account_id', accountRow.id);
+        await admin.from('role_mapping').insert({ account_id: accountRow.id, role_id: roleRow.id });
+      }
+    }
+
+    // Optional directory visibility via staff_profiles CMS document
+    if (typeof payload.showInDirectory === 'boolean' || typeof payload.staffTitle === 'string' || typeof payload.bio === 'string') {
+      const { data: staffSetting } = await admin.from('site_settings').select('value').eq('key', 'staff_profiles').maybeSingle();
+      const current = Array.isArray(staffSetting?.value) ? ([...(staffSetting!.value as Array<Record<string, unknown>>)] as Array<Record<string, unknown>>) : [];
+      const idx = current.findIndex((entry) => {
+        const entryId = String(entry.id || '');
+        const entryEmail = String(entry.email || '').toLowerCase();
+        return entryId === profile.id || entryEmail === String(profile.email || '').toLowerCase();
+      });
+      const nextEntry = {
+        ...(idx >= 0 ? current[idx] : {}),
+        id: profile.id,
+        name: fullName,
+        email: profile.email,
+        role: profileRole === 'admin' ? 'administrator' : profileRole,
+        madhhab: patch.madhhab,
+        bio: patch.bio,
+        staffTitle: typeof payload.staffTitle === 'string' ? payload.staffTitle.trim() : (idx >= 0 ? current[idx].staffTitle : undefined),
+        showInDirectory:
+          typeof payload.showInDirectory === 'boolean'
+            ? payload.showInDirectory
+            : idx >= 0
+              ? current[idx].showInDirectory !== false
+              : true,
+        active: true,
+        image: typeof patch.avatar_url === 'string' ? patch.avatar_url : idx >= 0 ? current[idx].image : undefined,
+      };
+      if (idx >= 0) current[idx] = nextEntry;
+      else current.push(nextEntry);
+      await admin.from('site_settings').upsert({ key: 'staff_profiles', value: current }, { onConflict: 'key' });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      action: 'update',
+      id: profile.id,
+      fullName,
+      role: profileRole,
+    });
+  }
 
   if (action === 'delete') {
     // Hard-delete: reassign owned articles, drop account mapping, then remove auth user

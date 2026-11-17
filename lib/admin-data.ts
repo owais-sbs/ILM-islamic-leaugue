@@ -21,6 +21,10 @@ export interface Article {
   seoDescription: string;
   category: string;
   author: string;
+  /** Supabase profiles.id / auth user id when known */
+  authorId?: string;
+  /** Author login email when known — preferred for ownership checks */
+  authorEmail?: string;
   authorSlug: string;
   authorInitials: string;
   status: ArticleStatus;
@@ -59,6 +63,25 @@ export interface UserProfile {
   madhhab: string;
   credentials: string;
   image?: string;
+  /** Auth / profiles.id when loaded from Supabase */
+  id?: string;
+}
+
+/** Match articles to the signed-in contributor (id/email preferred over display name). */
+export function articleOwnedBy(
+  article: Pick<Article, 'author' | 'authorId' | 'authorEmail'>,
+  user: { name?: string; email?: string; id?: string },
+) {
+  const userId = user.id?.trim();
+  if (userId && article.authorId && article.authorId === userId) return true;
+
+  const userEmail = user.email?.trim().toLowerCase();
+  if (userEmail && article.authorEmail?.trim().toLowerCase() === userEmail) return true;
+
+  const userName = user.name?.trim().toLowerCase();
+  if (userName && article.author?.trim().toLowerCase() === userName) return true;
+
+  return false;
 }
 
 export interface Contributor {

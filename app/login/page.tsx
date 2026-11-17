@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, ShieldCheck, PencilLine, UserRound } from 'lucide-react';
 import { Brand } from '@/components/public/brand';
-import { writeAdminRole } from '@/lib/admin-session';
+import { mapDbRole, writeAdminRole } from '@/lib/admin-session';
 import type { Role } from '@/lib/admin-data';
 import { roleLabels } from '@/lib/admin-data';
 import { tryCreateClient } from '@/lib/supabase/client';
@@ -16,13 +16,6 @@ const roles: { key: Role; icon: typeof ShieldCheck; hint: string }[] = [
   { key: 'editor', icon: PencilLine, hint: 'Review & shape' },
   { key: 'administrator', icon: ShieldCheck, hint: 'Full publishing' },
 ];
-
-function mapDbRole(role: string | null | undefined): Role | null {
-  if (role === 'admin') return 'administrator';
-  if (role === 'editor') return 'editor';
-  if (role === 'author') return 'author';
-  return null;
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -82,10 +75,16 @@ export default function LoginPage() {
         if (profile && !profile.is_active) {
           throw new Error('This account is inactive. Contact an administrator.');
         }
+        // Role always comes from the signed-in account — workspace tabs are only a UI hint
         nextRole = roleFromMapping || mapped || role;
+        if (!roleFromMapping && !mapped) {
+          throw new Error('No staff role is assigned to this account. Contact an administrator.');
+        }
+        nextRole = roleFromMapping || mapped!;
       }
 
-      writeAdminRole(nextRole);
+      // One browser = one Supabase session. Signing in here replaces any other tab’s login.
+      writeAdminRole(nextRole, uid || undefined);
       router.push(mustChangePassword ? '/change-password' : '/admin/dashboard');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign-in failed';
@@ -111,6 +110,9 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">Sign in to ILM Admin</h1>
             <p className="mt-1.5 text-xs text-ilm-navy/50 sm:text-sm">Enter your staff credentials to continue.</p>
+            <p className="mt-2 text-[10px] leading-relaxed text-ilm-navy/35">
+              One browser can only stay signed in as one staff account. To use Author and Editor at the same time, open a second browser profile (or Chrome Incognito / Edge InPrivate).
+            </p>
           </div>
 
           <form onSubmit={signIn} className="mt-5 space-y-3.5">

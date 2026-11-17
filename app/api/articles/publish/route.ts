@@ -32,7 +32,13 @@ function slugify(input: string) {
 
 async function resolveAuthorId(
   admin: NonNullable<ReturnType<typeof tryCreateServiceClient>>,
-  opts: { authorId?: string; authorEmail?: string; authorName?: string; sessionUserId?: string },
+  opts: {
+    authorId?: string;
+    authorEmail?: string;
+    authorName?: string;
+    sessionUserId?: string;
+    existingAuthorId?: string | null;
+  },
 ) {
   if (opts.authorId && /^[0-9a-f-]{36}$/i.test(opts.authorId)) {
     const { data } = await admin.from('profiles').select('id').eq('id', opts.authorId).maybeSingle();
@@ -49,6 +55,9 @@ async function resolveAuthorId(
     const { data } = await admin.from('profiles').select('id').ilike('full_name', opts.authorName.trim()).maybeSingle();
     if (data?.id) return data.id as string;
   }
+
+  // Never reassign ownership just because an admin/editor saved/published again
+  if (opts.existingAuthorId) return opts.existingAuthorId;
 
   if (opts.sessionUserId) return opts.sessionUserId;
   return null;
@@ -101,11 +110,18 @@ export async function POST(req: Request) {
   }
 
   const slug = slugify(body.slug || body.title);
+  const { data: existing } = await admin
+    .from('articles')
+    .select('id, status, author_id')
+    .eq('slug', slug)
+    .maybeSingle();
+
   const authorId = await resolveAuthorId(admin, {
     authorId: body.authorId,
     authorEmail: body.authorEmail,
     authorName: body.authorName,
     sessionUserId,
+    existingAuthorId: (existing?.author_id as string | undefined) || null,
   });
   if (!authorId) {
     return NextResponse.json(
@@ -132,8 +148,6 @@ export async function POST(req: Request) {
   const reading = Math.max(1, Number(body.readingMinutes) || 5);
   const html = body.body || `<p>${body.excerpt || body.title}</p>`;
   const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-
-  const { data: existing } = await admin.from('articles').select('id, status').eq('slug', slug).maybeSingle();
 
   let rowId = existing?.id as string | undefined;
 
@@ -193,7 +207,7 @@ export async function POST(req: Request) {
     .select(
       `
       *,
-      profiles:author_id ( full_name, slug, avatar_url ),
+      profiles:author_id ( full_name, slug, avatar_url, email ),
       categories:category_id ( name, slug )
     `,
     )

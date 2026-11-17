@@ -85,7 +85,7 @@ export default function ChangePasswordPage() {
       }
 
       const role = readAdminRole();
-      if (role) writeAdminRole(role);
+      if (role) writeAdminRole(role, user.id);
       router.replace('/admin/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not change password');
