@@ -10,8 +10,10 @@ function smtpConfigured() {
 }
 
 function transporter() {
-  const port = Number.parseInt(process.env.SMTP_PORT || '587', 10);
-  const secure = process.env.SMTP_SECURE === 'true';
+  const port = Number.parseInt(process.env.SMTP_PORT || '465', 10);
+  // Port 465 uses implicit SSL; 587 upgrades with STARTTLS. An explicit SMTP_SECURE always wins.
+  const secureEnv = process.env.SMTP_SECURE?.trim().toLowerCase();
+  const secure = secureEnv ? secureEnv === 'true' : port === 465;
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port,
@@ -20,6 +22,10 @@ function transporter() {
       user: process.env.SMTP_USER,
       pass: smtpPass(),
     },
+    // Fail fast instead of hanging an API request when the mail server is slow or unreachable.
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 30_000,
   });
 }
 
@@ -101,19 +107,35 @@ export async function sendMail(opts: { to: string; subject: string; html: string
   const replyTo = process.env.SMTP_REPLY_TO?.trim() || from.address;
   const text = opts.text || htmlToText(opts.html);
 
-  await transporter().sendMail({
-    from: { name: from.name, address: from.address },
-    replyTo,
-    to: opts.to,
-    subject: opts.subject,
-    text,
-    html: opts.html,
-    headers: {
-      'X-Auto-Response-Suppress': 'OOF, AutoReply',
-      'X-Mailer': 'ILM Mailer',
-    },
-  });
-  return { ok: true as const };
+  try {
+    const info = await transporter().sendMail({
+      from: { name: from.name, address: from.address },
+      replyTo,
+      to: opts.to,
+      subject: opts.subject,
+      text,
+      html: opts.html,
+      headers: {
+        'X-Auto-Response-Suppress': 'OOF, AutoReply',
+        'X-Mailer': 'ILM Mailer',
+      },
+    });
+    const rejected = info.rejected.map(String);
+    if (rejected.length) {
+      console.error('[mail] recipient rejected by server:', rejected.join(', '), '—', info.response);
+      return { ok: false as const, rejected };
+    }
+    console.info('[mail] sent', JSON.stringify({ to: opts.to, subject: opts.subject, response: info.response }));
+    return { ok: true as const, messageId: info.messageId, response: info.response };
+  } catch (err) {
+    // Callers often discard the result (Promise.allSettled), so log the real reason here.
+    const e = err as { code?: string; responseCode?: number; command?: string; message?: string };
+    console.error(
+      '[mail] send failed',
+      JSON.stringify({ to: opts.to, subject: opts.subject, code: e.code, responseCode: e.responseCode, command: e.command, message: e.message }),
+    );
+    throw err;
+  }
 }
 
 export function staffInboxEmails(): string[] {
