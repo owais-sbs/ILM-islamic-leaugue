@@ -251,3 +251,26 @@ export function accountReactivatedEmail(opts: { fullName: string; email: string;
     ),
   };
 }
+
+export function passwordResetEmail(opts: { fullName?: string; email: string; resetUrl: string }) {
+  return {
+    subject: 'Reset your ILM admin password',
+    html: shell(
+      'Reset your password',
+      `<p>Assalamu Alaikum ${opts.fullName || 'colleague'},</p>
+       <p>We received a request to reset the password for <strong>${opts.email}</strong>.</p>
+       <p>Click the button below to choose a new password. This link expires soon and can only be used once.</p>
+       <p style="margin:28px 0;">
+         <a href="${opts.resetUrl}" style="display:inline-block;background:${navy};color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.04em;">
+           SET NEW PASSWORD
+         </a>
+       </p>
+       <p style="font-size:13px;color:#6b7280;font-family:Arial,Helvetica,sans-serif;">
+         If the button does not work, copy and paste this link into your browser:<br/>
+         <a href="${opts.resetUrl}" style="color:${gold};word-break:break-all;">${opts.resetUrl}</a>
+       </p>
+       <p>If you did not request this, you can ignore this email — your password will stay the same.</p>
+       <p style="margin-top:24px;color:${navy};">With peace,<br/><strong>The ILM team</strong></p>`,
+    ),
+  };
+}

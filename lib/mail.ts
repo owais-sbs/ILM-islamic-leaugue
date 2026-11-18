@@ -2,7 +2,11 @@ import nodemailer from 'nodemailer';
 import { siteConfig } from '@/lib/site';
 
 function smtpPass() {
-  return process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
+  let pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
+  if ((pass.startsWith("'") && pass.endsWith("'")) || (pass.startsWith('"') && pass.endsWith('"'))) {
+    pass = pass.slice(1, -1);
+  }
+  return pass.replace(/\\\$/g, '$');
 }
 
 function smtpConfigured() {

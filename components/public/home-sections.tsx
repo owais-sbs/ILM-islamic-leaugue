@@ -141,7 +141,9 @@ function FeaturedAndSubjects() {
             <StaggerChild key={cat.id} from={i % 2 === 0 ? 'up' : 'down'}>
               <Link href={`/articles?category=${cat.slug}`} className="block rounded-2xl border border-ilm-navy/8 bg-white p-5 transition hover:-translate-y-1 hover:border-ilm-gold">
                 <p className="text-sm font-semibold text-ilm-navy">{cat.name}</p>
-                <p className="mt-1 text-xs text-ilm-navy/40">{publishedArticles.filter((a) => a.category === cat.name).length} published</p>
+                <p className="mt-1 text-xs text-ilm-navy/40">
+                  {publishedArticles.filter((a) => a.category?.trim().toLowerCase() === cat.name.trim().toLowerCase()).length} published
+                </p>
               </Link>
             </StaggerChild>
           ))}

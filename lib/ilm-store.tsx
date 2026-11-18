@@ -104,11 +104,12 @@ interface Store {
   siteSettings: SiteSettings;
   publishedArticles: Article[];
   newlyPublishedSlugs: string[];
+  ready: boolean;
   saveArticle: (article: Article, actor: string, asSubmit?: boolean) => void;
   submitArticle: (id: string, actor: string) => void;
   approveArticle: (id: string, actor: string) => void;
   returnArticle: (id: string, actor: string, notes: string) => void;
-  publishArticle: (id: string, actor: string) => void;
+  publishArticle: (target: string | Article, actor: string) => void;
   unpublishArticle: (id: string, actor: string) => void;
   deleteArticle: (id: string, slug: string, actor: string) => Promise<{ ok: boolean; error?: string }>;
   addQuestion: (q: Omit<Question, 'id' | 'date' | 'status'>) => void;
@@ -755,72 +756,78 @@ export function IlmProvider({ children }: { children: ReactNode }) {
   );
 
   const publishArticle = useCallback(
-    (id: string, actor: string) => {
-      const article = articles.find((a) => a.id === id);
+    (target: string | Article, actor: string) => {
+      const article =
+        typeof target === 'string'
+          ? articles.find((a) => a.id === target)
+          : target;
       if (!article) return;
       const publishedStamp = shortDate();
-      setArticles((prev) =>
-        prev.map((a) => {
-          if (a.id === id) {
-            return {
-              ...a,
-              status: 'published' as const,
-              publishedAt: publishedStamp,
-              date: publishedStamp,
-              featured: true,
-            };
+      const nextArticle: Article = {
+        ...article,
+        status: 'published' as const,
+        publishedAt: article.publishedAt || publishedStamp,
+        date: article.date || publishedStamp,
+        featured: true,
+      };
+      setArticles((prev) => {
+        const already = prev.some((a) => a.id === nextArticle.id);
+        const mapped = prev.map((a) => {
+          if (a.id === nextArticle.id) {
+            return nextArticle;
           }
           if (a.status === 'published' && a.featured) {
             return { ...a, featured: false };
           }
           return a;
-        }),
-      );
+        });
+        return already ? mapped : [nextArticle, ...mapped.map((a) => (a.featured ? { ...a, featured: false } : a))];
+      });
       try {
-        localStorage.setItem(LATEST_PUBLISH_KEY, article.slug);
+        localStorage.setItem(LATEST_PUBLISH_KEY, nextArticle.slug);
       } catch {
         /* ignore */
       }
-      setNewlyPublishedSlugs((prev) => [article.slug, ...prev.filter((s) => s !== article.slug)].slice(0, 12));
+      setNewlyPublishedSlugs((prev) => [nextArticle.slug, ...prev.filter((s) => s !== nextArticle.slug)].slice(0, 12));
       // Sync to Supabase so the live site shows the article for all users
       void (async () => {
         try {
-          const minutes = Number.parseInt(String(article.readTime), 10) || 5;
+          const minutes = Number.parseInt(String(nextArticle.readTime), 10) || 5;
           const authorMatch =
-            contributors.find((c) => c.id && article.authorId && c.id === article.authorId) ||
+            contributors.find((c) => c.id && nextArticle.authorId && c.id === nextArticle.authorId) ||
             contributors.find(
-              (c) => c.email && article.authorEmail && c.email.toLowerCase() === article.authorEmail.toLowerCase(),
+              (c) => c.email && nextArticle.authorEmail && c.email.toLowerCase() === nextArticle.authorEmail.toLowerCase(),
             ) ||
-            contributors.find((c) => c.name === article.author);
+            contributors.find((c) => c.name === nextArticle.author);
           await fetch('/api/articles/publish', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              title: article.title,
-              slug: article.slug,
-              excerpt: article.excerpt,
-              body: article.body,
-              footnotes: article.footnotes,
-              seoTitle: article.seoTitle,
-              seoDescription: article.seoDescription,
-              category: article.category,
-              image: article.image,
+              title: nextArticle.title,
+              slug: nextArticle.slug,
+              excerpt: nextArticle.excerpt,
+              body: nextArticle.body,
+              footnotes: nextArticle.footnotes,
+              seoTitle: nextArticle.seoTitle,
+              seoDescription: nextArticle.seoDescription,
+              category: nextArticle.category,
+              image: nextArticle.image,
               readingMinutes: minutes,
-              authorId: article.authorId || authorMatch?.id || undefined,
-              authorEmail: article.authorEmail || authorMatch?.email || undefined,
-              authorName: article.author,
+              authorId: nextArticle.authorId || authorMatch?.id || undefined,
+              authorEmail: nextArticle.authorEmail || authorMatch?.email || undefined,
+              authorName: nextArticle.author,
             }),
           });
         } catch {
           /* local publish still works */
         }
       })();
-      log('Published', actor, article.title);
+      log('Published', actor, nextArticle.title);
       notify({
         title: 'Your article is live',
-        body: `“${article.title}” is now published on the ILM website.`,
+        body: `“${nextArticle.title}” is now published on the ILM website.`,
         role: 'author',
-        authorName: article.author,
+        authorName: nextArticle.author,
       });
     },
     [articles, contributors, log, notify],
@@ -1567,6 +1574,7 @@ export function IlmProvider({ children }: { children: ReactNode }) {
       media,
       siteSettings,
       newlyPublishedSlugs,
+      ready,
       publishedArticles: articles
         .filter((a) => a.status === 'published')
         .slice()

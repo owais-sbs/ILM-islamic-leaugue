@@ -10,7 +10,7 @@ import { SiteFooter } from '@/components/public/site-footer';
 import { SiteHeader } from '@/components/public/site-header';
 
 export default function ArticleDetailPage({ params }: { params: { slug: string } }) {
-  const { publishedArticles } = useIlm();
+  const { publishedArticles, ready } = useIlm();
   const article = useMemo(
     () => publishedArticles.find((a) => a.slug === params.slug),
     [publishedArticles, params.slug]
@@ -22,6 +22,22 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
     return publishedArticles.filter((a) => a.slug !== article.slug).slice(0, 3);
   }, [publishedArticles, article]);
 
+  if (!ready) {
+    return (
+      <main className="flex min-h-[100svh] flex-col pt-28">
+        <SiteHeader active="articles" />
+        <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-12">
+          <div className="h-4 w-28 animate-pulse rounded bg-ilm-navy/10" />
+          <div className="mt-8 space-y-4">
+            <div className="h-8 w-3/4 animate-pulse rounded bg-ilm-navy/10" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-ilm-navy/10" />
+            <div className="mt-6 h-64 w-full animate-pulse rounded-2xl bg-ilm-navy/10" />
+          </div>
+        </div>
+        <SiteFooter />
+      </main>
+    );
+  }
 
   if (!article) {
     return (

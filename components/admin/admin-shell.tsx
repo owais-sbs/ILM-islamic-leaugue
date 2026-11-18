@@ -510,12 +510,8 @@ export function AdminShell() {
               returnArticle(a.id, user.name, notes);
             }}
             onPublish={(a) => {
-              // Admin can publish from 'approved' or 'submitted' (editor's own article)
-              if (a.status !== 'approved') {
-                // Force through approved state first so store triggers work correctly
-                approveArticle(a.id, user.name);
-              }
-              publishArticle(a.id, user.name);
+              publishArticle(a, user.name);
+              void adminSwal.success('Published', a.title);
             }}
           />
         );
@@ -811,8 +807,7 @@ export function AdminShell() {
                     {canPublish(role) && (active.status === 'approved' || active.status === 'submitted') && (
                       <button
                         onClick={() => {
-                          if (active.status !== 'approved') approveArticle(active.id, user.name);
-                          publishArticle(active.id, user.name);
+                          publishArticle(active, user.name);
                           ping(`Published. "${active.title}" is live on the site.`);
                           backToList();
                         }}
@@ -824,8 +819,7 @@ export function AdminShell() {
                     {canPublish(role) && (active.status === 'draft' || active.status === 'returned') && (
                       <button
                         onClick={() => {
-                          approveArticle(active.id, user.name);
-                          publishArticle(active.id, user.name);
+                          publishArticle(active, user.name);
                           ping(`Published. "${active.title}" is live on the site.`);
                           backToList();
                         }}
@@ -865,8 +859,7 @@ export function AdminShell() {
                   onPublish={(a) => {
                     // Admin publishing — works from any status (draft, returned, approved, published)
                     const next = { ...a, slug: a.slug || a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') };
-                    saveArticle({ ...next, status: 'approved' }, user.name, false);
-                    publishArticle(next.id, user.name);
+                    publishArticle(next, user.name);
                     void adminSwal.success('Published', next.title);
                     backToList();
                   }}

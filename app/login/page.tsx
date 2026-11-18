@@ -111,7 +111,7 @@ export default function LoginPage() {
             <h1 className="text-xl font-semibold tracking-tight text-ilm-navy sm:text-2xl">Sign in to ILM Admin</h1>
             <p className="mt-1.5 text-xs text-ilm-navy/50 sm:text-sm">Enter your staff credentials to continue.</p>
             <p className="mt-2 text-[10px] leading-relaxed text-ilm-navy/35">
-              One browser can only stay signed in as one staff account. To use Author and Editor at the same time, open a second browser profile (or Chrome Incognito / Edge InPrivate).
+              
             </p>
           </div>
 

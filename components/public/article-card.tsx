@@ -39,16 +39,20 @@ export function ArticleCard({ article, className, isNew = false }: { article: Ca
             </span>
           )}
           <span className="rounded-full bg-black/45 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-white backdrop-blur-sm">
-            {article.category}
+            {article.category || 'General'}
           </span>
         </div>
       </div>
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         <p className="flex items-center gap-2 text-[12px] text-ilm-navy/40">
           <Clock size={13} className="text-ilm-gold-deep" />
-          {article.readTime}
-          <span className="text-ilm-navy/20">·</span>
-          {article.date}
+          {article.readTime || '5 min'}
+          {article.date && (
+            <>
+              <span className="text-ilm-navy/20">·</span>
+              {article.date}
+            </>
+          )}
         </p>
         <h3 className="mt-3 line-clamp-2 text-[20px] font-semibold leading-snug tracking-tight text-ilm-navy sm:text-[22px]" suppressHydrationWarning>
           {article.title}

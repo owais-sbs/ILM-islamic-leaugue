@@ -31,17 +31,63 @@ export function LibraryExplorer({
   heading?: boolean;
   limit?: number;
 }) {
-  const { publishedArticles, newlyPublishedSlugs } = useIlm();
+  const { publishedArticles, newlyPublishedSlugs, categories: storeCategories } = useIlm();
   const searchParams = useSearchParams();
-  const [filter, setFilter] = useState<LibraryCategory>('All');
+  const [filter, setFilter] = useState<string>('All');
+
+  const availableCategories = useMemo(() => {
+    const list: string[] = ['All'];
+    const seen = new Set<string>(['all']);
+    libraryCategories.forEach((cat) => {
+      const lower = cat.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        list.push(cat);
+      }
+    });
+    storeCategories.forEach((cat) => {
+      if (!cat?.name) return;
+      const lower = cat.name.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        list.push(cat.name);
+      }
+    });
+    return list;
+  }, [storeCategories]);
 
   useEffect(() => {
-    setFilter(resolveCategory(searchParams.get('category')));
-  }, [searchParams]);
+    const raw = searchParams.get('category');
+    if (!raw) {
+      setFilter('All');
+      return;
+    }
+    const decoded = decodeURIComponent(raw).trim().toLowerCase();
+    const match = availableCategories.find((c) => c.toLowerCase() === decoded);
+    if (match) {
+      setFilter(match);
+      return;
+    }
+    const bySlug = storeCategories.find((c) => c.slug.toLowerCase() === decoded);
+    if (bySlug) {
+      setFilter(bySlug.name);
+      return;
+    }
+    const bySeedSlug = seedCategories.find((c) => c.slug.toLowerCase() === decoded);
+    if (bySeedSlug) {
+      setFilter(bySeedSlug.name);
+      return;
+    }
+    setFilter('All');
+  }, [searchParams, availableCategories, storeCategories]);
 
   const filtered = useMemo(() => {
     const list =
-      filter === 'All' ? publishedArticles : publishedArticles.filter((a) => a.category === filter);
+      filter === 'All'
+        ? publishedArticles
+        : publishedArticles.filter(
+            (a) => a.category?.trim().toLowerCase() === filter.trim().toLowerCase()
+          );
     return typeof limit === 'number' ? list.slice(0, limit) : list;
   }, [filter, limit, publishedArticles]);
 
@@ -66,7 +112,7 @@ export function LibraryExplorer({
 
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
         <div className="mt-8 -mx-1 flex max-w-full gap-2 overflow-x-auto px-1 py-1.5 scrollbar-none sm:flex-wrap sm:overflow-visible">
-          {libraryCategories.map((cat) => (
+          {availableCategories.map((cat) => (
             <button
               key={cat}
               type="button"

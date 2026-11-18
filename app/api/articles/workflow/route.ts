@@ -136,7 +136,7 @@ export async function POST(req: Request) {
     unpublish: 'approved',
     save: body.status && STATUSES.has(body.status) ? body.status : 'draft',
   };
-  const nextStatus = statusMap[action] || 'draft';
+  let nextStatus = statusMap[action] || 'draft';
 
   // Editors cannot publish via this route; admins use /api/articles/publish
   if (nextStatus === 'published') {
@@ -153,6 +153,11 @@ export async function POST(req: Request) {
     .select('id, author_id, status')
     .eq('slug', slug)
     .maybeSingle();
+
+  // If the article is already published, do not accidentally demote it back to draft/approved on workflow save
+  if (existing?.status === 'published' && action !== 'unpublish') {
+    nextStatus = 'published';
+  }
 
   // Authors can only edit their own rows
   if (role === 'author' && userId && existing?.author_id && existing.author_id !== userId) {

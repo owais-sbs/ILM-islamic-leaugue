@@ -8,7 +8,44 @@ import { Brand, GeometricOrnament } from '@/components/public/brand';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@')) {
+      setError('Enter a valid email address.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: string; message?: string; warning?: string };
+
+      if (!res.ok || !json.ok) {
+        setError(json.error || 'Could not send the reset link. Please try again.');
+        return;
+      }
+
+      setSent(true);
+      setInfo(json.warning || json.message || 'If an account exists for that email, a reset link is on its way.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-ilm-cream">
@@ -28,29 +65,40 @@ export default function ResetPasswordPage() {
           <span className="mx-auto block h-px w-12 bg-ilm-gold" />
           <h1 className="mt-5 text-center text-2xl font-semibold text-ilm-navy">Reset password</h1>
           <p className="mt-2 text-center text-sm text-ilm-navy/50">
-            Enter your email and we&apos;ll send a reset link. This screen is UI only.
+            Enter your email and we&apos;ll send a link to create a new password.
           </p>
           {sent ? (
-            <p className="mt-8 rounded-2xl bg-ilm-cream px-4 py-5 text-center text-sm text-ilm-navy">
-              If this were wired up, a reset link would be on its way to {email || 'your inbox'}.
-            </p>
+            <div className="mt-8 space-y-4">
+              <p className="rounded-2xl bg-ilm-cream px-4 py-5 text-center text-sm text-ilm-navy">
+                {info || `If an account exists for ${email}, a reset link is on its way. Check your inbox and spam folder.`}
+              </p>
+              <Link
+                href="/login"
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-ilm-navy/15 py-3 text-[12px] font-bold uppercase tracking-[0.1em] text-ilm-navy"
+              >
+                Back to sign in
+              </Link>
+            </div>
           ) : (
-            <form
-              className="mt-8 space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true);
-              }}
-            >
+            <form className="mt-8 space-y-4" onSubmit={(e) => void submit(e)}>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@ilm.org"
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
                 className="w-full rounded-xl border border-ilm-navy/10 bg-ilm-cream px-4 py-3 text-sm outline-none focus:border-ilm-gold"
               />
-              <button className="flex w-full items-center justify-center gap-2 rounded-full bg-ilm-navy py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-white">
-                Send reset link <ArrowRight size={16} />
+              {error && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={busy}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-ilm-navy py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-white disabled:opacity-60"
+              >
+                {busy ? 'Sending…' : 'Send reset link'} <ArrowRight size={16} />
               </button>
             </form>
           )}
