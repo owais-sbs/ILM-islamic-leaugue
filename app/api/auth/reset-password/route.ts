@@ -90,10 +90,18 @@ export async function POST(req: Request) {
     .eq('id', user.id)
     .maybeSingle();
 
+  // Email scanners (Gmail, HostGator, antivirus) open links to check them, which burns Supabase's
+  // one-time action_link before the person clicks it. Link to our own page with the token hash
+  // instead: the page verifies it in the browser (scanners do not run JavaScript).
+  const hashedToken = linkData.properties.hashed_token;
+  const resetUrl = hashedToken
+    ? `${siteUrl}/update-password?token_hash=${encodeURIComponent(hashedToken)}&type=recovery`
+    : linkData.properties.action_link;
+
   const mail = passwordResetEmail({
     fullName: profile?.full_name || user.user_metadata?.full_name || undefined,
     email,
-    resetUrl: linkData.properties.action_link,
+    resetUrl,
   });
 
   try {

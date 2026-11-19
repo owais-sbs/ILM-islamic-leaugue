@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
@@ -18,8 +18,10 @@ export default function UpdatePasswordPage() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
 
+  const verifyStarted = useRef(false);
+
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = false;
 
     const establishRecoverySession = async () => {
       const supabase = tryCreateClient();
@@ -76,10 +78,10 @@ export default function UpdatePasswordPage() {
       }
     };
 
+    // The token is single-use: React dev strict mode runs effects twice, so verify only once.
+    if (verifyStarted.current) return;
+    verifyStarted.current = true;
     void establishRecoverySession();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const submit = async (e: React.FormEvent) => {
