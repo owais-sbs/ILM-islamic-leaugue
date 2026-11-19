@@ -158,7 +158,7 @@ export interface SiteSettings {
 
 export const defaultSiteSettings: SiteSettings = {
   siteTitle: 'Islamic League of Murabbiyūn',
-  contactEmail: 'salam@ilm.org',
+  contactEmail: 'admin@murabbiyun.org',
   disclaimerText:
     'The content on this site is for educational and spiritual guidance purposes. Always consult qualified scholars for specific religious rulings.',
   featuredArticleId: 'a1',

@@ -29,7 +29,7 @@ export async function GET() {
 
   const [{ data: setting, error: settingsError }, { data: staff, error: staffError }] = await Promise.all([
     admin.from('site_settings').select('value').eq('key', 'staff_profiles').maybeSingle(),
-    admin.from('profiles').select('id, full_name, is_active, bio, madhhab, credentials, avatar_url'),
+    admin.from('profiles').select('id, full_name, is_active, role, bio, madhhab, credentials, avatar_url'),
   ]);
   if (settingsError || staffError) {
     return NextResponse.json({ ok: false, error: settingsError?.message || staffError?.message }, { status: 500 });
@@ -42,7 +42,9 @@ export async function GET() {
     if (typeof override.id !== 'string') return [];
     const account = accounts.get(override.id);
     const active = account ? account.is_active !== false : override.active !== false;
-    const showInDirectory = override.showInDirectory === true;
+    // Administrator accounts run the site; they are never listed as public Murabbiyūn.
+    const isAdminAccount = account?.role === 'admin';
+    const showInDirectory = override.showInDirectory === true && !isAdminAccount;
     const directoryId = str(override.directoryId) || undefined;
 
     if (!active || !showInDirectory) return [{ id: override.id, directoryId, active, showInDirectory }];

@@ -21,7 +21,12 @@ export default function ContactPage() {
         <h1 className="mt-3 text-4xl font-semibold text-ilm-navy">{c.title}</h1>
         <p className="mt-4 leading-relaxed text-ilm-navy/60">
           {c.intro}{' '}
-          <strong className="font-medium text-ilm-navy">{c.contactEmail}</strong>
+          <a
+            href={`mailto:${c.contactEmail.trim()}`}
+            className="font-medium text-ilm-navy underline decoration-ilm-gold/50 underline-offset-4 hover:text-ilm-gold-deep"
+          >
+            {c.contactEmail}
+          </a>
         </p>
         <p className="mt-2 text-sm text-ilm-navy/50">{c.secondaryNote}</p>
 

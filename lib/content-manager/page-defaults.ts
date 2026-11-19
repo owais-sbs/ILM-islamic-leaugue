@@ -84,7 +84,7 @@ export const CM_PAGE_DEFAULTS: CMPagesContent = {
       { heading: 'How we use information', body: 'We use contact details to reply to questions and correspondence, to operate the contributor portal, and to send newsletter notes only when you have subscribed. We do not sell personal information.' },
       { heading: 'Storage and access', body: 'Submissions may be stored in our systems so administrators, editors, and assigned Murabbiyūn can respond. Access is limited to people who need it to serve the request.' },
       { heading: 'Cookies and local storage', body: 'The site may use cookies or browser storage for session preferences and demo/admin state. You can clear these through your browser settings.' },
-      { heading: 'Contact', body: 'For privacy requests, write to salam@ilm.org or use the contact page.' },
+      { heading: 'Contact', body: 'For privacy requests, write to admin@murabbiyun.org or use the contact page.' },
     ],
   },
 
@@ -137,7 +137,7 @@ export const CM_PAGE_DEFAULTS: CMPagesContent = {
     title: 'Write to ILM',
     intro: 'For general correspondence:',
     contactEmailLabel: 'Email',
-    contactEmail: 'salam@ilm.org',
+    contactEmail: 'admin@murabbiyun.org',
     secondaryNote:
       'Questions about sacred knowledge belong on the Ask a Question page so they can be assigned to a murabbi.',
     successTitle: 'Message sent successfully',
