@@ -1,30 +1,29 @@
 import { NextResponse } from 'next/server';
+import { mergeStaffProfile, type StaffAccount } from '@/lib/staff-merge';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-const str = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
-
-/** Account form fills `credentials` with the role name when no title is given — not a display title. */
-const ROLE_LABELS = new Set(['author', 'editor', 'admin', 'administrator']);
-const displayTitle = (value: unknown) => {
-  const title = str(value);
-  return ROLE_LABELS.has(title.toLowerCase()) ? '' : title;
-};
+const NO_STORE = { 'Cache-Control': 'no-store, max-age=0' };
 
 /**
  * Public Murabbiyūn directory data. Only fields that are safe to show publicly
  * (no emails, roles or account status details beyond visibility).
+ *
+ * Name, bio, title and photo come live from the account in `public.profiles`, so edits made in the
+ * admin dashboard show on the public site without a second update. `site_settings.staff_profiles`
+ * only adds display extras and visibility (see lib/staff-merge.ts).
  */
 export async function GET() {
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({ ok: true, profiles: [] });
+    return NextResponse.json({ ok: true, profiles: [] }, { headers: NO_STORE });
   }
 
   const admin = tryCreateServiceClient();
   if (!admin) {
-    return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 503 });
+    return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 503, headers: NO_STORE });
   }
 
   const [{ data: setting, error: settingsError }, { data: staff, error: staffError }] = await Promise.all([
@@ -32,38 +31,19 @@ export async function GET() {
     admin.from('profiles').select('id, full_name, is_active, role, bio, madhhab, credentials, avatar_url'),
   ]);
   if (settingsError || staffError) {
-    return NextResponse.json({ ok: false, error: settingsError?.message || staffError?.message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: settingsError?.message || staffError?.message },
+      { status: 500, headers: NO_STORE },
+    );
   }
 
   const overrides = Array.isArray(setting?.value) ? (setting!.value as Array<Record<string, unknown>>) : [];
-  const accounts = new Map((staff || []).map((profile) => [profile.id, profile]));
+  const accounts = new Map((staff || []).map((profile) => [profile.id, profile as StaffAccount]));
 
   const profiles = overrides.flatMap((override) => {
-    if (typeof override.id !== 'string') return [];
-    const account = accounts.get(override.id);
-    const active = account ? account.is_active !== false : override.active !== false;
-    // Administrator accounts run the site; they are never listed as public Murabbiyūn.
-    const isAdminAccount = account?.role === 'admin';
-    const showInDirectory = override.showInDirectory === true && !isAdminAccount;
-    const directoryId = str(override.directoryId) || undefined;
-
-    if (!active || !showInDirectory) return [{ id: override.id, directoryId, active, showInDirectory }];
-
-    return [{
-      id: override.id,
-      directoryId,
-      active,
-      showInDirectory,
-      name: str(account?.full_name),
-      staffTitle: str(override.staffTitle) || displayTitle(account?.credentials),
-      bio: str(override.bio) || str(account?.bio),
-      biography: Array.isArray(override.biography) ? override.biography.filter((p) => typeof p === 'string') : [],
-      focus: override.focus || undefined,
-      accent: str(override.accent) || undefined,
-      image: str(override.image) || str(account?.avatar_url),
-      madhhab: str(account?.madhhab),
-    }];
+    const merged = mergeStaffProfile(override, typeof override.id === 'string' ? accounts.get(override.id) : undefined);
+    return merged ? [merged] : [];
   });
 
-  return NextResponse.json({ ok: true, profiles });
+  return NextResponse.json({ ok: true, profiles }, { headers: NO_STORE });
 }

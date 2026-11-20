@@ -104,5 +104,26 @@ export async function PUT(req: Request) {
     .upsert({ key: 'staff_profiles', value: profiles }, { onConflict: 'key' });
   if (saveError) return NextResponse.json({ ok: false, error: saveError.message }, { status: 500 });
 
+  // Keep the account in step: the public directory reads name/bio/title/photo from `profiles`,
+  // so an edit made on this screen must land there too (otherwise the two stores drift apart).
+  const accountPatch: Record<string, unknown> = {
+    bio: profile.bio.trim() || null,
+    credentials: profile.staffTitle.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+  if (profile.image.trim()) accountPatch.avatar_url = profile.image.trim();
+  // Built-in/demo entries (ids like "abu-abbaad", "c1") have no account row; only real UUIDs do.
+  const isAccountId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const { error: accountError } = isAccountId
+    ? await access.admin.from('profiles').update(accountPatch).eq('id', id)
+    : { error: null };
+  if (accountError) {
+    console.error('[staff-profiles] could not sync profiles row', id, accountError.message);
+    return NextResponse.json(
+      { ok: false, error: `Saved display settings, but could not update the account profile: ${accountError.message}` },
+      { status: 500 },
+    );
+  }
+
   return NextResponse.json({ ok: true, profile });
 }
