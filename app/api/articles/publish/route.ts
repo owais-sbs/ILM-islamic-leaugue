@@ -3,6 +3,7 @@ import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { tryCreateServerSupabase } from '@/lib/supabase/server';
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/env';
 import { mapRemoteArticle } from '@/lib/map-article';
+import { canPublishDirectly } from '@/lib/direct-publishers';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,7 +106,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'title and slug are required' }, { status: 400 });
   }
 
-  if (profileRole && profileRole !== 'admin' && profileRole !== 'editor') {
+  // Authors may publish only if the admin put their account on the direct-publish list.
+  const isDirectAuthor =
+    profileRole === 'author' && (await canPublishDirectly(admin, sessionUserId));
+  if (profileRole && profileRole !== 'admin' && profileRole !== 'editor' && !isDirectAuthor) {
     return NextResponse.json({ ok: false, error: 'Only editor/admin can publish via API' }, { status: 403 });
   }
 
@@ -116,13 +120,20 @@ export async function POST(req: Request) {
     .eq('slug', slug)
     .maybeSingle();
 
-  const authorId = await resolveAuthorId(admin, {
-    authorId: body.authorId,
-    authorEmail: body.authorEmail,
-    authorName: body.authorName,
-    sessionUserId,
-    existingAuthorId: (existing?.author_id as string | undefined) || null,
-  });
+  // A direct-publish author can only publish and update their own articles.
+  if (isDirectAuthor && existing?.author_id && existing.author_id !== sessionUserId) {
+    return NextResponse.json({ ok: false, error: 'You can only publish your own articles.' }, { status: 403 });
+  }
+
+  const authorId = isDirectAuthor
+    ? (sessionUserId as string)
+    : await resolveAuthorId(admin, {
+        authorId: body.authorId,
+        authorEmail: body.authorEmail,
+        authorName: body.authorName,
+        sessionUserId,
+        existingAuthorId: (existing?.author_id as string | undefined) || null,
+      });
   if (!authorId) {
     return NextResponse.json(
       { ok: false, error: 'No matching author profile found. Create the author account first, then publish.' },

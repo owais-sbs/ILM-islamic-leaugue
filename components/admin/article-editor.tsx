@@ -18,9 +18,12 @@ export function ArticleEditor({
   onSave,
   onPublish,
   onApproveAndPublish,
+  directPublish = false,
 }: {
   article: Article;
   role: Role;
+  /** Author allowed by the admin to publish their own articles without review. */
+  directPublish?: boolean;
   onBack: () => void;
   onPreview: (article: Article) => void;
   onSave: (article: Article, submit?: boolean) => void;
@@ -30,6 +33,7 @@ export function ArticleEditor({
   const { categories } = useIlm();
   const [draft, setDraft] = useState(article);
   const [saved, setSaved] = useState('');
+  const mayPublishOwn = canPublish(role) || (role === 'author' && directPublish);
 
   useEffect(() => setDraft(article), [article]);
 
@@ -122,7 +126,7 @@ export function ArticleEditor({
           )}
 
           {/* Admin: publish own draft/returned directly — no review needed */}
-          {canPublish(role) && (draft.status === 'draft' || draft.status === 'returned') && onPublish && (
+          {mayPublishOwn && (draft.status === 'draft' || draft.status === 'returned') && onPublish && (
             <button
               onClick={async () => {
                 const res = await adminSwal.confirm('Publish directly to website?', draft.title || 'Untitled article', 'Publish');
@@ -155,7 +159,7 @@ export function ArticleEditor({
             </button>
           )}
           {/* Admin: update/unpublish a live article */}
-          {canPublish(role) && draft.status === 'published' && onPublish && (
+          {mayPublishOwn && draft.status === 'published' && onPublish && (
             <button
               onClick={() => onPublish(draft)}
               className="inline-flex items-center gap-2 rounded-full bg-ilm-gold px-5 py-2 text-xs font-bold uppercase tracking-wide text-ilm-navy-deep"

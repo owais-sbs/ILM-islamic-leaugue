@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { tryCreateServerSupabase } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { canPublishDirectly } from '@/lib/direct-publishers';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,6 +89,7 @@ export async function GET(req: Request) {
     mustChangePassword: Boolean(account.must_change_password),
     role: mapRoleName(roleName),
     roleName: roleName || null,
+    canPublishDirectly: await canPublishDirectly(admin, authUserId),
     fullName: account.full_name,
     email: account.email,
   });

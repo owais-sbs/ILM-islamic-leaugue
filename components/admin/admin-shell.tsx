@@ -66,6 +66,7 @@ export function AdminShell() {
   const reduce = useReducedMotion();
   const { articles, questions, notices, profiles, updateProfile, saveArticle, approveArticle, returnArticle, publishArticle, unpublishArticle, deleteArticle, markNoticeRead, markAllNoticesRead, syncQuestions } = useIlm();
   const [role, setRole] = useState<Role | null>(null);
+  const [directPublish, setDirectPublish] = useState(false);
   const [tab, setTab] = useState<AdminSection>(() => normalizeAdminSection(sectionParam));
   const [screen, setScreen] = useState<Screen>('tab');
   const [active, setActive] = useState<Article | null>(null);
@@ -131,8 +132,13 @@ export function AdminShell() {
 
       const meRes = await fetch(`/api/account/me?authUserId=${encodeURIComponent(uid)}`, { cache: 'no-store' });
       if (meRes.ok) {
-        const me = (await meRes.json()) as { mustChangePassword?: boolean; role?: Role | null };
+        const me = (await meRes.json()) as {
+          mustChangePassword?: boolean;
+          role?: Role | null;
+          canPublishDirectly?: boolean;
+        };
         if (me.role) nextRole = me.role;
+        setDirectPublish(Boolean(me.canPublishDirectly));
         if (me.mustChangePassword) {
           router.replace('/change-password');
           return;
@@ -848,6 +854,7 @@ export function AdminShell() {
                 <ArticleEditor
                   article={articles.find((a) => a.id === active.id) ?? active}
                   role={role}
+                  directPublish={directPublish}
                   onBack={backToList}
                   onPreview={openPreview}
                   onSave={(a, submit) => {
