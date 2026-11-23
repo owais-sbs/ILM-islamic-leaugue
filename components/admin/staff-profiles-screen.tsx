@@ -70,7 +70,17 @@ export function StaffProfilesScreen() {
         const accounts = accountsResponse.ok
           ? (await accountsResponse.json()) as {
               ok?: boolean;
-              contributors?: Array<{ id: string; name: string; email: string; role: Role; active: boolean }>;
+              contributors?: Array<{
+                id: string;
+                name: string;
+                email: string;
+                role: Role;
+                active: boolean;
+                bio?: string;
+                madhhab?: string;
+                staffTitle?: string;
+                image?: string;
+              }>;
             }
           : null;
         const profiles = profilesResponse.ok
@@ -81,10 +91,12 @@ export function StaffProfilesScreen() {
         if (accounts?.ok && Array.isArray(accounts.contributors)) {
           setRemoteAccounts(accounts.contributors.map((person) => ({
             ...person,
+            bio: person.bio || '',
+            madhhab: person.madhhab || 'Hanafi',
+            staffTitle: person.staffTitle,
             initials: person.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase(),
-            madhhab: 'Hanafi',
             articles: 0,
-            image: safeScholarImage(''),
+            image: safeScholarImage(person.image || ''),
           })));
         }
         if (profiles?.ok && Array.isArray(profiles.profiles)) {
@@ -108,11 +120,24 @@ export function StaffProfilesScreen() {
       if (existing && existing.id !== remote.id) byId.delete(existing.id);
       byId.set(remote.id, { ...existing, ...remote, image: existing?.image || remote.image });
     }
-    return Array.from(byId.values()).map((person) => ({
-      ...person,
-      ...savedProfiles[person.id],
-      image: savedProfiles[person.id]?.image || person.image,
-    }));
+    return Array.from(byId.values()).map((person) => {
+      const saved = savedProfiles[person.id];
+      // Live `profiles` fields from /api/admin/accounts win over stale staff_profiles overrides
+      return {
+        ...person,
+        ...saved,
+        name: person.name || saved?.name || '',
+        bio: person.bio || saved?.bio || '',
+        madhhab: person.madhhab || saved?.madhhab || 'Hanafi',
+        staffTitle: person.staffTitle || saved?.staffTitle,
+        image: person.image || saved?.image || person.image,
+        biography: saved?.biography,
+        showInDirectory: saved?.showInDirectory ?? person.showInDirectory,
+        directoryId: saved?.directoryId ?? person.directoryId,
+        focus: saved?.focus ?? person.focus,
+        accent: saved?.accent ?? person.accent,
+      };
+    });
   }, [contributors, remoteAccounts, savedProfiles]);
 
   const openEdit = (c: Contributor) => {

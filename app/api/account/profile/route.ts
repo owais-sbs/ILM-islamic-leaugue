@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { syncOverrideFromAccount } from '@/lib/staff-merge';
 import { tryCreateServiceClient } from '@/lib/supabase/admin';
 import { tryCreateServerSupabase } from '@/lib/supabase/server';
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/supabase/env';
@@ -234,6 +235,31 @@ export async function PATCH(req: Request) {
       updated_at: new Date().toISOString(),
     })
     .eq('auth_user_id', user.id);
+
+  // Keep public Murabbiyūn directory extras aligned so /api/staff-profiles reflects My Profile edits
+  const { data: staffSetting } = await admin
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'staff_profiles')
+    .maybeSingle();
+  if (Array.isArray(staffSetting?.value)) {
+    const { next, changed } = syncOverrideFromAccount(
+      staffSetting.value as Array<Record<string, unknown>>,
+      {
+        id: profile.id,
+        full_name: profile.full_name,
+        email: profile.email,
+        bio: profile.bio,
+        credentials: profile.credentials,
+        avatar_url: profile.avatar_url,
+        madhhab: profile.madhhab,
+        role: profile.role,
+      },
+    );
+    if (changed) {
+      await admin.from('site_settings').upsert({ key: 'staff_profiles', value: next }, { onConflict: 'key' });
+    }
+  }
 
   return NextResponse.json({
     ok: true,

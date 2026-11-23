@@ -12,9 +12,10 @@ const NO_STORE = { 'Cache-Control': 'no-store, max-age=0' };
  * Public Murabbiyūn directory data. Only fields that are safe to show publicly
  * (no emails, roles or account status details beyond visibility).
  *
- * Name, bio, title and photo come live from the account in `public.profiles`, so edits made in the
- * admin dashboard show on the public site without a second update. `site_settings.staff_profiles`
- * only adds display extras and visibility (see lib/staff-merge.ts).
+ * For every contributor in the directory list, name / bio / title / photo / madhhab are read live
+ * from `public.profiles` and win over any stale CMS override. `site_settings.staff_profiles` only
+ * controls visibility and extras (multi-paragraph biography, focus, accent, directoryId).
+ * See lib/staff-merge.ts.
  */
 export async function GET() {
   if (!isSupabaseConfigured()) {

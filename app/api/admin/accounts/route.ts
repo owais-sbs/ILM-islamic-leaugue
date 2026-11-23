@@ -11,6 +11,7 @@ import { requireAdminWrite } from '@/lib/supabase/admin-bridge';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { siteConfig } from '@/lib/site';
 import { getPublicSiteUrl } from '@/lib/public-site-url';
+import { syncOverrideFromAccount } from '@/lib/staff-merge';
 import type { Role } from '@/lib/admin-data';
 
 export const dynamic = 'force-dynamic';
@@ -380,35 +381,52 @@ export async function PATCH(req: Request) {
       }
     }
 
-    // Optional directory visibility via staff_profiles CMS document
-    if (typeof payload.showInDirectory === 'boolean' || typeof payload.staffTitle === 'string' || typeof payload.bio === 'string') {
-      const { data: staffSetting } = await admin.from('site_settings').select('value').eq('key', 'staff_profiles').maybeSingle();
-      const current = Array.isArray(staffSetting?.value) ? ([...(staffSetting!.value as Array<Record<string, unknown>>)] as Array<Record<string, unknown>>) : [];
-      const idx = current.findIndex((entry) => {
-        const entryId = String(entry.id || '');
-        const entryEmail = String(entry.email || '').toLowerCase();
-        return entryId === profile.id || entryEmail === String(profile.email || '').toLowerCase();
-      });
-      const nextEntry = {
-        ...(idx >= 0 ? current[idx] : {}),
+    // Keep public directory document aligned with the live profiles row
+    const { data: staffSetting } = await admin.from('site_settings').select('value').eq('key', 'staff_profiles').maybeSingle();
+    let current = Array.isArray(staffSetting?.value)
+      ? ([...(staffSetting!.value as Array<Record<string, unknown>>)] as Array<Record<string, unknown>>)
+      : [];
+    const idx = current.findIndex((entry) => {
+      const entryId = String(entry.id || '');
+      const entryEmail = String(entry.email || '').toLowerCase();
+      return entryId === profile.id || entryEmail === String(profile.email || '').toLowerCase();
+    });
+
+    if (idx < 0 && (payload.showInDirectory === true || typeof payload.bio === 'string' || typeof payload.staffTitle === 'string')) {
+      current.push({
         id: profile.id,
         name: fullName,
         email: profile.email,
         role: profileRole === 'admin' ? 'administrator' : profileRole,
         madhhab: patch.madhhab,
         bio: patch.bio,
-        staffTitle: typeof payload.staffTitle === 'string' ? payload.staffTitle.trim() : (idx >= 0 ? current[idx].staffTitle : undefined),
-        showInDirectory:
-          typeof payload.showInDirectory === 'boolean'
-            ? payload.showInDirectory
-            : idx >= 0
-              ? current[idx].showInDirectory !== false
-              : true,
+        biography: typeof patch.bio === 'string' && patch.bio ? [String(patch.bio)] : [],
+        staffTitle: typeof payload.staffTitle === 'string' ? payload.staffTitle.trim() : undefined,
+        showInDirectory: payload.showInDirectory === true,
         active: true,
-        image: typeof patch.avatar_url === 'string' ? patch.avatar_url : idx >= 0 ? current[idx].image : undefined,
-      };
-      if (idx >= 0) current[idx] = nextEntry;
-      else current.push(nextEntry);
+        image: typeof patch.avatar_url === 'string' ? patch.avatar_url : undefined,
+      });
+    } else if (idx >= 0) {
+      if (typeof payload.showInDirectory === 'boolean') {
+        current[idx] = { ...current[idx], showInDirectory: payload.showInDirectory };
+      }
+      if (typeof payload.staffTitle === 'string') {
+        current[idx] = { ...current[idx], staffTitle: payload.staffTitle.trim() };
+      }
+      const synced = syncOverrideFromAccount(current, {
+        id: profile.id,
+        full_name: fullName,
+        email: profile.email,
+        bio: typeof patch.bio === 'string' ? patch.bio : profile.bio,
+        credentials: typeof patch.credentials === 'string' ? patch.credentials : profile.credentials,
+        avatar_url: typeof patch.avatar_url === 'string' ? patch.avatar_url : profile.avatar_url,
+        madhhab: typeof patch.madhhab === 'string' ? patch.madhhab : profile.madhhab,
+        role: profileRole,
+      });
+      current = synced.next;
+    }
+
+    if (current.length) {
       await admin.from('site_settings').upsert({ key: 'staff_profiles', value: current }, { onConflict: 'key' });
     }
 

@@ -39,16 +39,23 @@ function staticTarget(profile: DirectoryProfile) {
   return staticMurabbiIds.has(profile.id) ? profile.id : null;
 }
 
-/** Fill a profile with whatever the admin has saved; empty admin fields keep the existing value. */
+/**
+ * Apply live Supabase/directory fields onto a base murabbi.
+ * When the API returns bio/biography, those win over static seed text so admin edits show publicly.
+ */
 function applyProfile(base: Murabbi, profile: DirectoryProfile): Murabbi {
   const bio = text(profile.bio);
   const biography = paragraphs(profile.biography);
   const madhhab = text(profile.madhhab);
+  const name = text(profile.name);
+  const liveBiography = biography.length ? biography : bio ? [bio] : [];
   return {
     ...base,
+    name: name || base.name,
     role: text(profile.staffTitle) || base.role,
-    bio: bio || base.bio,
-    biography: biography.length ? biography : bio && !base.biography.length ? [bio] : base.biography,
+    bio: bio || (liveBiography[0] ?? base.bio),
+    // Live API biography/bio always replaces static seed paragraphs when present
+    biography: liveBiography.length ? liveBiography : base.biography,
     madhhab: MADHHABS.has(madhhab) ? (madhhab as Murabbi['madhhab']) : base.madhhab,
     focus: profile.focus || base.focus,
     accent: text(profile.accent) || base.accent,
@@ -84,6 +91,7 @@ export function buildMurabbiyun(remote: DirectoryProfile[]) {
     const name = text(profile.name);
     if (!visible || !name) continue;
     const bio = text(profile.bio);
+    const biography = paragraphs(profile.biography);
     byId.set(
       profile.id,
       applyProfile(
@@ -92,7 +100,7 @@ export function buildMurabbiyun(remote: DirectoryProfile[]) {
           name,
           role: '',
           bio: bio || `${name} is one of the murabbiyūn of ILM.`,
-          biography: [],
+          biography: biography.length ? biography : bio ? [bio] : [],
           // Same illustrated portrait as the built-in profiles until a photo is uploaded.
           image: images.murabbiPortrait,
           accent: DEFAULT_ACCENT,
@@ -128,27 +136,19 @@ export function orderMurabbiyun(list: Murabbi[], items: OrderItem[]) {
   return [...ordered, ...rest];
 }
 
-let cache: DirectoryProfile[] | null = null;
-let pending: Promise<DirectoryProfile[]> | null = null;
-
+/** Always refetch on mount so public pages pick up My Profile / Staff Profiles edits. */
 function loadProfiles() {
-  if (cache) return Promise.resolve(cache);
-  pending ??= fetch('/api/staff-profiles', { cache: 'no-store' })
+  return fetch('/api/staff-profiles', { cache: 'no-store' })
     .then((res) => (res.ok ? res.json() : { ok: false }))
-    .then((json: { ok?: boolean; profiles?: DirectoryProfile[] }) => {
-      cache = json.ok && Array.isArray(json.profiles) ? json.profiles : [];
-      return cache;
-    })
-    .catch(() => [] as DirectoryProfile[])
-    .finally(() => {
-      pending = null;
-    });
-  return pending;
+    .then((json: { ok?: boolean; profiles?: DirectoryProfile[] }) =>
+      json.ok && Array.isArray(json.profiles) ? json.profiles : [],
+    )
+    .catch(() => [] as DirectoryProfile[]);
 }
 
-/** Public murabbiyūn list: built-in profiles merged with what admins saved in Staff Profiles. */
+/** Public murabbiyūn list: built-in profiles merged with live Supabase staff data. */
 export function usePublicMurabbiyun() {
-  const [state, setState] = useState(() => ({ ...buildMurabbiyun(cache || []), loading: !cache }));
+  const [state, setState] = useState(() => ({ ...buildMurabbiyun([]), loading: true }));
 
   useEffect(() => {
     let cancelled = false;
