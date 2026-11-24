@@ -242,9 +242,10 @@ export async function PATCH(req: Request) {
     .select('value')
     .eq('key', 'staff_profiles')
     .maybeSingle();
-  if (Array.isArray(staffSetting?.value)) {
+  const staffOverrides = staffSetting?.value;
+  if (staffSetting && Array.isArray(staffOverrides)) {
     const { next, changed } = syncOverrideFromAccount(
-      staffSetting.value as Array<Record<string, unknown>>,
+      staffOverrides as Array<Record<string, unknown>>,
       {
         id: profile.id,
         full_name: profile.full_name,
